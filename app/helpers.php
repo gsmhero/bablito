@@ -21,20 +21,20 @@ function fdatetime(?string $d): string
     return $d ? date('d.m.Y | H:i', strtotime($d)) : '';
 }
 
-function redirect(string $to): never
+function redirect(string $to): void
 {
     header('Location: ' . $to);
     exit;
 }
 
-function not_found(): never
+function not_found(): void
 {
     http_response_code(404);
     render('Not found', fn() => print('<div class="narrow"><h1>404</h1><p>Page not found.</p></div>'));
     exit;
 }
 
-function forbidden(): never
+function forbidden(): void
 {
     http_response_code(403);
     render('Forbidden', fn() => print('<div class="narrow"><h1>403</h1><p>You have no access to this page.</p></div>'));
