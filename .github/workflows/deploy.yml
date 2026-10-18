@@ -1,0 +1,64 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install sshpass and rsync
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq sshpass rsync
+
+      - name: Deploy files via rsync over SSH
+        env:
+          SSHPASS: ${{ secrets.SSH_PASS }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          PORT="${SSH_PORT:-22}"
+          sshpass -e rsync -rlvz --delete \
+            -e "ssh -p ${PORT} -o StrictHostKeyChecking=accept-new" \
+            --exclude='.git' --exclude='.github' --exclude='.env' \
+            --exclude='README.md' --exclude='uploads/' \
+            ./ "${SSH_USER}@${SSH_HOST}:${DEPLOY_PATH}/"
+
+      - name: Write .env on server
+        env:
+          SSHPASS: ${{ secrets.SSH_PASS }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASS: ${{ secrets.DB_PASS }}
+          SITE_URL: ${{ secrets.SITE_URL }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+        run: |
+          PORT="${SSH_PORT:-22}"
+          {
+            for v in DB_HOST DB_NAME DB_USER DB_PASS SITE_URL SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASS SMTP_FROM; do
+              printf '%s="%s"\n' "$v" "$(printf '%s' "${!v}" | sed 's/\/\\/g; s/"/\\"/g')"
+            done
+          } > .env.generated
+          sshpass -e scp -P "${PORT}" -o StrictHostKeyChecking=accept-new \
+            .env.generated "${SSH_USER}@${SSH_HOST}:${DEPLOY_PATH}/.env"
+          sshpass -e ssh -p "${PORT}" -o StrictHostKeyChecking=accept-new \
+            "${SSH_USER}@${SSH_HOST}" "chmod 600 '${DEPLOY_PATH}/.env'"
+          rm -f .env.generated
