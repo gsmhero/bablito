@@ -86,11 +86,14 @@ function val(string $sql, array $params = [])
 
 set_exception_handler(function (Throwable $e) {
     error_log((string)$e);
-    @file_put_contents(ROOT . '/storage/error.log', '[' . date('c') . '] ' . $e . "
-
-", FILE_APPEND);
+    $line = '[' . date('c') . '] ' . $e . PHP_EOL . PHP_EOL;
+    if (!@file_put_contents(ROOT . '/storage/error.log', $line, FILE_APPEND)) {
+        @file_put_contents(ROOT . '/error.log', $line, FILE_APPEND);
+    }
+    // Short hint without quoted values (no user names, hosts or paths).
+    $hint = get_class($e) . ': ' . preg_replace("/'[^']*'/", "'...'", $e->getMessage());
     http_response_code(500);
-    echo '<!doctype html><meta charset="utf-8"><title>Error</title><p style="font-family:sans-serif;padding:2rem">Something went wrong. Please try again later.</p>';
+    echo '<!doctype html><meta charset="utf-8"><title>Error</title><p style="font-family:sans-serif;padding:2rem">Something went wrong. Please try again later.</p><!-- ' . htmlspecialchars($hint, ENT_NOQUOTES) . ' -->';
 });
 
 ensure_dirs();
