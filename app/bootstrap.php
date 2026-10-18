@@ -11,12 +11,15 @@ function load_env(string $file): array
         return $env;
     }
     foreach (file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
-        if (!preg_match('/^([A-Z0-9_]+)=(.*)$/', $line, $m)) {
+        $line = rtrim($line, "\r");
+        if (!preg_match('/^\s*(?:export\s+)?([A-Za-z0-9_]+)\s*=\s*(.*?)\s*$/', $line, $m)) {
             continue;
         }
         $v = $m[2];
         if (strlen($v) >= 2 && $v[0] === '"' && substr($v, -1) === '"') {
-            $v = preg_replace('/\\(.)/', '$1', substr($v, 1, -1));
+            $v = strtr(substr($v, 1, -1), ['\\\\' => '\\', '\\"' => '"']);
+        } elseif (strlen($v) >= 2 && $v[0] === "'" && substr($v, -1) === "'") {
+            $v = substr($v, 1, -1);
         }
         $env[$m[1]] = $v;
     }

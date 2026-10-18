@@ -54,7 +54,10 @@ jobs:
           PORT="${SSH_PORT:-22}"
           {
             for v in DB_HOST DB_NAME DB_USER DB_PASS SITE_URL SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASS SMTP_FROM; do
-              printf '%s="%s"\n' "$v" "$(printf '%s' "${!v}" | sed 's/\/\\/g; s/"/\\"/g')"
+              val="${!v}"
+              val="${val//\\/\\\\}"
+              val="${val//\"/\\\"}"
+              printf '%s="%s"\n' "$v" "$val"
             done
           } > .env.generated
           sshpass -e scp -P "${PORT}" -o StrictHostKeyChecking=accept-new \
