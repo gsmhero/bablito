@@ -122,3 +122,10 @@ input.num{width:110px!important}
 .thread-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.thread-tabs a{border:1px solid var(--line);border-radius:14px;padding:2px 10px;font-size:.85rem}.thread-tabs a.on{background:var(--blue);border-color:var(--blue);color:#fff}
 .extra-todo .row{align-items:flex-end}.extra-todo label{margin:4px 0}
 .picked{font-size:.8rem;color:var(--muted);margin:4px 0;word-break:break-all}
+
+/* compact filter bar */
+.filters{gap:14px 18px;flex-wrap:wrap}
+.filters label{white-space:nowrap;flex-wrap:nowrap}
+.filters input:not([type=checkbox]):not([type=radio]){width:92px;padding:5px 8px}
+.filters select{width:auto;padding:5px 8px}
+.filters .btn{padding:5px 14px;font-size:.95rem}
