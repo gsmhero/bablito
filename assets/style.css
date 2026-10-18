@@ -108,3 +108,17 @@ table.offers{width:100%;border-collapse:collapse;margin:10px 0}.offers td{paddin
 .star-input{display:inline-flex;flex-direction:row-reverse;font-size:1.8rem}.star-input input{display:none}.star-input label{color:#aaa;cursor:pointer;margin:0}
 .star-input input:checked~label,.star-input label:hover,.star-input label:hover~label{color:var(--green)}
 @media(max-width:800px){.two-col,.block,.block.rev{grid-template-columns:1fr;display:block}.thumb{width:110px}.sums{grid-template-columns:1fr 1fr}.block-art{margin-bottom:20px}.field-row{flex-wrap:wrap}.comment-form{flex-wrap:wrap}}
+
+/* v2 corrections */
+.todo-fields{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.todo-fields label.tiny{margin:0;display:flex;flex-direction:column}
+input.num{width:110px!important}
+.todo-fields input.num[type=number],.offer-row input.num[type=number],.extra-todo input.num[type=number]{width:72px!important}
+.offer-row{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.offer-row label{margin:0;display:flex;flex-direction:column}
+.offer-row .btn{margin-left:auto}
+.big.sm{font-size:1.9rem;line-height:1.5}
+.watch{display:inline-flex;align-items:center;gap:5px}.clock{vertical-align:-3px}
+.thread-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.thread-tabs a{border:1px solid var(--line);border-radius:14px;padding:2px 10px;font-size:.85rem}.thread-tabs a.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.extra-todo .row{align-items:flex-end}.extra-todo label{margin:4px 0}
+.picked{font-size:.8rem;color:var(--muted);margin:4px 0;word-break:break-all}

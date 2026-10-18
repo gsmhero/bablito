@@ -22,7 +22,7 @@ $form = [
     'category_id' => (int)($c['category_id'] ?? 0),
     'location' => $c['location'] ?? '',
     'description' => $c['description'] ?? '',
-    'accept_offers' => (int)($c['accept_offers'] ?? 1),
+    'allow_extra_todos' => (int)($c['allow_extra_todos'] ?? 0),
     'prepay_required' => (int)($c['prepay_required'] ?? 0),
     'deadline' => $c['deadline'] ?? '',
     'publish' => ($c['status'] ?? 'draft') === 'published' ? 1 : 0,
@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $form['category_id'] = (int)($_POST['category_id'] ?? 0);
     $form['location'] = trim((string)($_POST['location'] ?? ''));
     $form['description'] = trim((string)($_POST['description'] ?? ''));
-    $form['accept_offers'] = empty($_POST['accept_offers']) ? 0 : 1;
+    $form['allow_extra_todos'] = empty($_POST['allow_extra_todos']) ? 0 : 1;
     $form['prepay_required'] = empty($_POST['prepay_required']) ? 0 : 1;
     $form['deadline'] = trim((string)($_POST['deadline'] ?? ''));
     $form['publish'] = empty($_POST['publish']) ? 0 : 1;
@@ -64,10 +64,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $price = (float)str_replace([' ', "\u{00A0}", ','], ['', '', '.'], (string)($t['price'] ?? '0'));
             $days = (int)($t['days'] ?? 1);
-            if ($price < 0 || $price > 999999999 || $days < 1 || $days > 3650) {
+            if ($price < 0 || $price > 999999999 || $days < 0 || $days > 3650) {
                 $errors[] = 'Check price and days of "' . $name . '".';
             }
-            $newTodos[] = ['id' => (int)($t['id'] ?? 0), 'name' => mb_substr($name, 0, 190), 'description' => trim((string)($t['description'] ?? '')), 'price' => $price, 'days' => max(1, $days)];
+            $newTodos[] = ['id' => (int)($t['id'] ?? 0), 'name' => mb_substr($name, 0, 190), 'description' => trim((string)($t['description'] ?? '')), 'price' => $price, 'days' => max(0, $days)];
         }
         if (!$newTodos) {
             $errors[] = 'Add at least one To Do.';
@@ -84,11 +84,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($form['deadline'] === '' && !$hasOffers) {
                 $form['deadline'] = date('Y-m-d', strtotime('+' . array_sum(array_column($todos, 'days')) . ' days'));
             }
-            $vals = [$form['title'], $form['category_id'] ?: null, $form['location'], $form['description'], $form['accept_offers'], $form['prepay_required'], $form['deadline'] ?: null, $status];
+            $vals = [$form['title'], $form['category_id'] ?: null, $form['location'], $form['description'], $form['allow_extra_todos'], $form['prepay_required'], $form['deadline'] ?: null, $status];
             if ($id) {
-                q('UPDATE contracts SET title=?, category_id=?, location=?, description=?, accept_offers=?, prepay_required=?, deadline=?, status=? WHERE id=?', [...$vals, $id]);
+                q('UPDATE contracts SET title=?, category_id=?, location=?, description=?, allow_extra_todos=?, prepay_required=?, deadline=?, status=? WHERE id=?', [...$vals, $id]);
             } else {
-                q('INSERT INTO contracts (title, category_id, location, description, accept_offers, prepay_required, deadline, status, user_id) VALUES (?,?,?,?,?,?,?,?,?)', [...$vals, $u['id']]);
+                q('INSERT INTO contracts (title, category_id, location, description, allow_extra_todos, prepay_required, deadline, status, user_id) VALUES (?,?,?,?,?,?,?,?,?)', [...$vals, $u['id']]);
                 $id = (int)$pdo->lastInsertId();
             }
             if (!$hasOffers) {
@@ -172,7 +172,7 @@ render($id ? 'Edit contract' : 'New contract', function () use ($id, $c, $form, 
     <label class="small">Description <textarea name="description" rows="6"><?= h($form['description']) ?></textarea></label>
 
     <div class="row between"><h3>Contract</h3>
-      <label class="check"><input type="checkbox" name="accept_offers" value="1" <?= $form['accept_offers'] ? 'checked' : '' ?>> Make Me Offer</label>
+      <label class="check"><input type="checkbox" name="allow_extra_todos" value="1" <?= $form['allow_extra_todos'] ? 'checked' : '' ?>> Make Me Offer</label>
     </div>
     <?php if ($hasOffers): ?><p class="muted small">Offers already exist, so the steps can no longer be changed.</p><?php endif; ?>
     <div id="todos">
@@ -183,7 +183,7 @@ render($id ? 'Edit contract' : 'New contract', function () use ($id, $c, $form, 
           <label class="tiny">Description <textarea name="todos[<?= $i ?>][description]" rows="2" <?= $hasOffers ? 'readonly' : '' ?>><?= h($t['description']) ?></textarea></label>
           <div class="row gap">
             <label class="tiny">Price <input class="t-price" name="todos[<?= $i ?>][price]" value="<?= h($t['price'] === '' ? '' : (string)(float)$t['price']) ?>" inputmode="decimal" <?= $hasOffers ? 'readonly' : '' ?>></label>
-            <label class="tiny">Days <input class="t-days" name="todos[<?= $i ?>][days]" type="number" min="1" value="<?= (int)$t['days'] ?>" <?= $hasOffers ? 'readonly' : '' ?>></label>
+            <label class="tiny">Days <input class="t-days" name="todos[<?= $i ?>][days]" type="number" min="0" value="<?= (int)$t['days'] ?>" <?= $hasOffers ? 'readonly' : '' ?>></label>
             <?php if (!$hasOffers): ?><button type="button" class="linkbtn red remove-todo">Remove</button><?php endif; ?>
           </div>
         </div>
@@ -234,7 +234,7 @@ render($id ? 'Edit contract' : 'New contract', function () use ($id, $c, $form, 
     <label class="tiny">Description <textarea name="todos[__i__][description]" rows="2"></textarea></label>
     <div class="row gap">
       <label class="tiny">Price <input class="t-price" name="todos[__i__][price]" inputmode="decimal"></label>
-      <label class="tiny">Days <input class="t-days" name="todos[__i__][days]" type="number" min="1" value="1"></label>
+      <label class="tiny">Days <input class="t-days" name="todos[__i__][days]" type="number" min="0" value="1"></label>
       <button type="button" class="linkbtn red remove-todo">Remove</button>
     </div>
   </div>

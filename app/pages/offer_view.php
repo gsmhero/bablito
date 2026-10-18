@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+require_once ROOT . '/app/offers.php';
 $u = require_login();
 $offer = row('SELECT o.*, COALESCE(NULLIF(u.name,\'\'), CONCAT(\'User #\', u.id)) AS oname, u.rating_avg, u.rating_count FROM offers o JOIN users u ON u.id = o.user_id WHERE o.id = ?', [(int)$args[0]]);
 if (!$offer) {
@@ -19,10 +20,11 @@ $tot = contract_totals((int)$c['id']);
 $comments = comments_for("cm.scope = 'offer' AND cm.offer_id = ?", [$offer['id']]);
 $editable = $isOfferer && $offer['status'] === 'pending' && $c['status'] === 'published';
 $decidable = $isOwner && $offer['status'] === 'pending' && $c['status'] === 'published';
-$hasSteps = (bool)array_filter($todos, fn($t) => $t['o_price'] !== null);
+$extras = rows('SELECT * FROM offer_extra_todos WHERE offer_id = ? ORDER BY position, id', [$offer['id']]);
+$hasSteps = $extras || (bool)array_filter($todos, fn($t) => $t['o_price'] !== null);
 
-render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $comments, $editable, $decidable, $hasSteps, $isOwner) { ?>
-<form method="post" action="/offer/<?= (int)$offer['id'] ?>/edit" class="wrap two-col">
+render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $comments, $editable, $decidable, $hasSteps, $isOwner, $extras) { ?>
+<form method="post" action="/offer/<?= (int)$offer['id'] ?>/edit" class="wrap two-col" id="offer-form">
   <?= csrf_field() ?>
   <div class="col">
     <h1><a href="/contract/<?= (int)$c['id'] ?>" class="plain"><?= h($c['title']) ?></a></h1>
@@ -41,12 +43,12 @@ render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $com
       <div class="card todo-view">
         <h4><?= h($t['name']) ?></h4>
         <p class="small"><?= nl2br(h($t['description'])) ?></p>
-        <div class="row gap">
+        <div class="todo-fields">
           <div><div class="tiny">Price</div><div class="mid green"><?= money($t['price']) ?></div></div>
           <div><div class="tiny">Days</div><div class="mid grey"><?= (int)$t['days'] ?></div></div>
           <?php if ($editable): ?>
-            <label class="tiny">Offer price <input name="otodo[<?= (int)$t['id'] ?>][price]" value="<?= $t['o_price'] === null ? '' : h((string)(float)$t['o_price']) ?>" class="o-price" inputmode="decimal"></label>
-            <label class="tiny">Offer days <input name="otodo[<?= (int)$t['id'] ?>][days]" value="<?= $t['o_days'] === null ? '' : (int)$t['o_days'] ?>" class="o-days" type="number" min="1"></label>
+            <label class="tiny">Offer price <input name="otodo[<?= (int)$t['id'] ?>][price]" value="<?= $t['o_price'] === null ? '' : h((string)(float)$t['o_price']) ?>" class="num o-price" inputmode="decimal"></label>
+            <label class="tiny">Offer days <input name="otodo[<?= (int)$t['id'] ?>][days]" value="<?= $t['o_days'] === null ? '' : (int)$t['o_days'] ?>" class="num o-days" type="number" min="0"></label>
           <?php elseif ($t['o_price'] !== null): ?>
             <div><div class="tiny">Offer price</div><div class="mid blue"><?= money($t['o_price']) ?></div></div>
             <div><div class="tiny">Offer days</div><div class="mid blue"><?= (int)$t['o_days'] ?></div></div>
@@ -54,6 +56,18 @@ render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $com
         </div>
       </div>
     <?php endforeach; ?>
+    <?php if ($extras || ($editable && $c['allow_extra_todos'])): ?>
+      <h3>Added by the offerer</h3>
+      <div id="extra-todos">
+      <?php foreach ($extras as $i => $e): ?>
+        <?php if ($editable): echo extra_todo_row($i, $e); else: ?>
+        <div class="card todo-view"><h4><?= h($e['name']) ?></h4><p class="small"><?= nl2br(h($e['description'])) ?></p>
+          <div class="todo-fields"><div><div class="tiny">Offer price</div><div class="mid blue"><?= money($e['price']) ?></div></div><div><div class="tiny">Offer days</div><div class="mid blue"><?= (int)$e['days'] ?></div></div></div></div>
+        <?php endif; ?>
+      <?php endforeach; ?>
+      </div>
+      <?php if ($editable && $c['allow_extra_todos']): ?><div class="right"><button type="button" class="btn small blue-outline" id="add-extra">+ Add To Do</button></div><template id="extra-tpl"><?= extra_todo_row(0) ?></template><?php endif; ?>
+    <?php endif; ?>
     <?php if ($decidable): ?>
     <div class="row between">
       <button class="btn green" type="submit" formaction="/offer/<?= (int)$offer['id'] ?>/accept" formnovalidate onclick="return confirm('Accept this offer? Other offers will be rejected.')">Accept Offer</button>
@@ -80,7 +94,7 @@ render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $com
         <?php if ($editable): ?><input name="price" id="offer-price" value="<?= h((string)(float)$offer['price']) ?>" inputmode="decimal" <?= $hasSteps ? 'readonly' : '' ?>><?php else: ?><div class="big blue"><?= money($offer['price']) ?></div><?php endif; ?>
         <div class="cur">RUB</div></div>
       <div class="center"><div class="lbl">Offer days</div>
-        <?php if ($editable): ?><input name="days" id="offer-days" type="number" min="1" value="<?= (int)$offer['days'] ?>" <?= $hasSteps ? 'readonly' : '' ?>><?php else: ?><div class="big blue"><?= (int)$offer['days'] ?></div><?php endif; ?></div>
+        <?php if ($editable): ?><input name="days" id="offer-days" type="number" min="0" value="<?= (int)$offer['days'] ?>" <?= $hasSteps ? 'readonly' : '' ?>><?php else: ?><div class="big blue"><?= (int)$offer['days'] ?></div><?php endif; ?></div>
       <div class="center"><div class="lbl">Offer From</div><a class="blue" href="/user/<?= (int)$offer['user_id'] ?>"><?= h($offer['oname']) ?></a> <?= stars((float)$offer['rating_avg'], (int)$offer['rating_count']) ?></div>
     </div>
     <label class="small">Notes

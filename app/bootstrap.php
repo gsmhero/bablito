@@ -42,8 +42,9 @@ function ensure_dirs(): void
         }
     }
     $ht = ROOT . '/uploads/.htaccess';
-    if (!is_file($ht)) {
-        @file_put_contents($ht, "Options -Indexes -ExecCGI\nRemoveHandler .php .phtml .phar\n<FilesMatch \"\.(php|phtml|phar)\$\">\n  Require all denied\n</FilesMatch>\n");
+    $rules = '<FilesMatch "\.(php|phtml|phar)$">' . "\n  Require all denied\n</FilesMatch>\n";
+    if (!is_file($ht) || file_get_contents($ht) !== $rules) {
+        @file_put_contents($ht, $rules);
     }
     $ht = ROOT . '/storage/.htaccess';
     if (!is_file($ht)) {

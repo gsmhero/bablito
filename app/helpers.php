@@ -58,6 +58,11 @@ function csrf_field(): string
 
 function csrf_check(): void
 {
+    if (!$_POST && (int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+        http_response_code(413);
+        echo 'The files you selected are too large for this server (limit ' . h((string)ini_get('post_max_size')) . ' per request). Go back and choose smaller files.';
+        exit;
+    }
     $sent = (string)($_POST['_csrf'] ?? '');
     if ($sent === '' || !hash_equals(csrf_token(), $sent)) {
         http_response_code(400);
@@ -236,14 +241,14 @@ function load_contract(int $id): array
     return $c;
 }
 
-function log_comment(int $contractId, string $scope, ?int $offerId, ?int $todoId, string $body): void
+function log_comment(int $contractId, string $scope, ?int $offerId, ?int $todoId, string $body, ?int $threadUserId = null): void
 {
     $u = user();
     $body = trim($body);
     if ($body === '' || mb_strlen($body) > 4000) {
         return;
     }
-    q('INSERT INTO comments (contract_id, scope, offer_id, todo_id, user_id, body) VALUES (?,?,?,?,?,?)', [$contractId, $scope, $offerId, $todoId, $u['id'], $body]);
+    q('INSERT INTO comments (contract_id, scope, offer_id, todo_id, thread_user_id, user_id, body) VALUES (?,?,?,?,?,?,?)', [$contractId, $scope, $offerId, $todoId, $threadUserId, $u['id'], $body]);
 }
 
 function render_comments(array $list, int $authorId, bool $bubbles = false): void
@@ -275,8 +280,11 @@ function store_upload(array $f, string $want): array|string
     if ($f['error'] === UPLOAD_ERR_NO_FILE) {
         return 'No file selected.';
     }
+    if ($f['error'] === UPLOAD_ERR_INI_SIZE || $f['error'] === UPLOAD_ERR_FORM_SIZE) {
+        return 'File is larger than the server allows (' . ini_get('upload_max_filesize') . ').';
+    }
     if ($f['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($f['tmp_name'])) {
-        return 'Upload failed.';
+        return 'Upload failed (code ' . (int)$f['error'] . ').';
     }
     if ($f['size'] > 10 * 1024 * 1024) {
         return 'File is larger than 10 MB.';
@@ -294,6 +302,9 @@ function store_upload(array $f, string $want): array|string
         $kind = 'file';
     }
     $stored = bin2hex(random_bytes(12)) . '.' . $ext;
+    if (!is_dir(ROOT . '/uploads') || !is_writable(ROOT . '/uploads')) {
+        return 'The uploads folder is not writable on the server.';
+    }
     if (!move_uploaded_file($f['tmp_name'], ROOT . '/uploads/' . $stored)) {
         return 'Could not save the file.';
     }
@@ -373,4 +384,9 @@ function render(string $title, callable $body, array $opts = []): void
 </body>
 </html>
 <?php
+}
+
+function clock_icon(int $size = 16): string
+{
+    return '<svg class="clock" width="' . $size . '" height="' . $size . '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
 }

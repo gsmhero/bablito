@@ -7,8 +7,6 @@ const TOTALS_SQL = '(SELECT contract_id, SUM(price) AS total_price, SUM(days) AS
 function listing_card(array $c, ?int $watchUserId = null): void
 {
     $img = row("SELECT stored_name FROM files WHERE contract_id = ? AND kind = 'image' ORDER BY id LIMIT 1", [$c['id']]);
-    $answers = (int)val("SELECT COUNT(*) FROM comments WHERE contract_id = ? AND scope = 'public'", [$c['id']]);
-    $offers = (int)val('SELECT COUNT(*) FROM offers WHERE contract_id = ?', [$c['id']]);
     $watched = $watchUserId ? (bool)val('SELECT 1 FROM watch_later WHERE user_id = ? AND contract_id = ?', [$watchUserId, $c['id']]) : false;
     ?>
 <article class="card listing">
@@ -34,10 +32,10 @@ function listing_card(array $c, ?int $watchUserId = null): void
       </div>
     </div>
     <div class="row between tiny muted">
-      <span><?= (int)$c['views'] ?> views · <?= $offers ?> offers · <?= $answers ?> comments</span>
+      <span><?= (int)$c['views'] ?> views</span>
       <span>
         <?php if ($watchUserId): ?>
-          <form method="post" action="/contract/<?= (int)$c['id'] ?>/watch" class="inline"><?= csrf_field() ?><button class="linkbtn green" type="submit"><?= $watched ? 'Remove from watch later' : 'Watch later' ?></button></form>
+          <form method="post" action="/contract/<?= (int)$c['id'] ?>/watch" class="inline"><?= csrf_field() ?><button class="linkbtn green watch" type="submit"><?= clock_icon() ?> <?= $watched ? 'Remove from watch later' : 'Watch later' ?></button></form>
         <?php endif; ?>
         · Contract ID: <?= str_pad((string)$c['id'], 3, '0', STR_PAD_LEFT) ?>
       </span>

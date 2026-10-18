@@ -53,7 +53,7 @@ switch ($args[1]) {
             forbidden();
         }
         $todos = rows('SELECT id FROM todos WHERE contract_id = ?', [$c['id']]);
-        $o = parse_offer_input($todos);
+        $o = parse_offer_input($todos, (bool)$c['allow_extra_todos']);
         if (is_string($o)) {
             flash($o, 'err');
             redirect($back);
@@ -61,7 +61,7 @@ switch ($args[1]) {
         $pdo = db();
         $pdo->beginTransaction();
         q('UPDATE offers SET price = ?, days = ?, notes = ? WHERE id = ?', [$o['price'], $o['days'], $o['notes'], $offer['id']]);
-        save_offer_steps((int)$offer['id'], $o['steps']);
+        save_offer_steps((int)$offer['id'], $o['steps'], $o['extras']);
         $pdo->commit();
         flash('Offer updated.');
         redirect($back);

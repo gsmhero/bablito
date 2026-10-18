@@ -25,7 +25,7 @@ switch ($action) {
         redirect(safe_local_path($ref !== '' ? (string)parse_url($ref, PHP_URL_PATH) : $back));
 
     case 'offer':
-        if ($isOwner || $c['status'] !== 'published' || !$c['accept_offers']) {
+        if ($isOwner || $c['status'] !== 'published') {
             flash('You cannot make an offer on this contract.', 'err');
             redirect($back);
         }
@@ -34,7 +34,7 @@ switch ($action) {
             redirect($back);
         }
         $todos = rows('SELECT id FROM todos WHERE contract_id = ?', [$id]);
-        $o = parse_offer_input($todos);
+        $o = parse_offer_input($todos, (bool)$c['allow_extra_todos']);
         if (is_string($o)) {
             flash($o, 'err');
             redirect($back);
@@ -43,7 +43,7 @@ switch ($action) {
         $pdo->beginTransaction();
         q('INSERT INTO offers (contract_id, user_id, price, days, notes) VALUES (?,?,?,?,?)', [$id, $u['id'], $o['price'], $o['days'], $o['notes']]);
         $oid = (int)$pdo->lastInsertId();
-        save_offer_steps($oid, $o['steps']);
+        save_offer_steps($oid, $o['steps'], $o['extras']);
         $pdo->commit();
         flash('Offer sent.');
         redirect('/offer/' . $oid);
@@ -51,7 +51,13 @@ switch ($action) {
     case 'comment':
         $body = (string)($_POST['body'] ?? '');
         if ($c['status'] === 'published') {
-            log_comment($id, 'public', null, null, $body);
+            // Private thread between the author and one other user; nobody else can read it.
+            $thread = $isOwner ? (int)($_POST['thread'] ?? 0) : (int)$u['id'];
+            if ($thread <= 0 || $thread === (int)$c['user_id']) {
+                forbidden();
+            }
+            log_comment($id, 'public', null, null, $body, $thread);
+            redirect($back . ($isOwner ? '?thread=' . $thread : '') . '#comments');
         } elseif (is_participant($c)) {
             log_comment($id, 'work', null, null, $body);
         } else {

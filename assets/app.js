@@ -83,3 +83,36 @@
     if (sw.dataset.paused !== '1') { setInterval(tick, 1000); }
   }
 })();
+
+(function () {
+  'use strict';
+  // offerer's own extra To Dos (contract + offer pages)
+  var box = document.getElementById('extra-todos'), addBtn = document.getElementById('add-extra'), tpl = document.getElementById('extra-tpl');
+  if (box && addBtn && tpl) {
+    var n = box.querySelectorAll('.extra-todo').length + 100;
+    addBtn.addEventListener('click', function () {
+      box.insertAdjacentHTML('beforeend', tpl.innerHTML.replace(/extra\[0\]/g, 'extra[' + (n++) + ']'));
+      var last = box.lastElementChild; if (last) { var i = last.querySelector('input'); if (i) { i.focus(); } }
+    });
+    box.addEventListener('click', function (e) {
+      if (e.target.classList.contains('remove-extra')) { e.target.closest('.extra-todo').remove(); box.dispatchEvent(new Event('input', { bubbles: true })); }
+    });
+    box.addEventListener('input', function () {
+      var op = document.getElementById('offer-price'), od = document.getElementById('offer-days');
+      if (!op || !od) { return; }
+      var P = document.querySelectorAll('.o-price'), D = document.querySelectorAll('.o-days'), any = false, sp = 0, sd = 0;
+      P.forEach(function (el, i) { if (el.value.trim() !== '' || D[i].value.trim() !== '') { any = true; } sp += parseFloat(String(el.value).replace(/\s/g, '').replace(',', '.')) || 0; sd += parseInt(D[i].value, 10) || 0; });
+      op.readOnly = od.readOnly = any;
+      if (any) { op.value = sp || ''; od.value = sd; }
+    });
+  }
+  // show picked file names in the contract editor (files are sent with "Save Contract")
+  document.querySelectorAll('.file-btn input[type=file]').forEach(function (inp) {
+    if (inp.form && inp.form.id !== 'contract-form') { return; }
+    var info = document.createElement('div'); info.className = 'picked';
+    inp.closest('.file-btn').insertAdjacentElement('afterend', info);
+    inp.addEventListener('change', function () {
+      info.textContent = Array.prototype.map.call(inp.files, function (f) { return f.name; }).join(', ') + (inp.files.length ? ' - will be uploaded when you press Save Contract' : '');
+    });
+  });
+})();

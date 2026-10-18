@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once ROOT . '/app/offers.php';
+
 $id = (int)$args[0];
 $c = load_contract($id);
 if (!can_see_contract($c)) {
@@ -26,17 +28,31 @@ if ($working) {
     exit;
 }
 
+$authorSide = $isOwner || is_admin();
 $tot = contract_totals($id);
-$offers = $isOwner ? rows('SELECT o.*, COALESCE(NULLIF(u.name,\'\'), CONCAT(\'User #\', u.id)) AS oname, u.rating_avg, u.rating_count FROM offers o JOIN users u ON u.id = o.user_id WHERE o.contract_id = ? ORDER BY o.created_at', [$id]) : [];
+$offers = $authorSide ? rows('SELECT o.*, COALESCE(NULLIF(u.name,\'\'), CONCAT(\'User #\', u.id)) AS oname, u.rating_avg, u.rating_count FROM offers o JOIN users u ON u.id = o.user_id WHERE o.contract_id = ? ORDER BY o.created_at', [$id]) : [];
 $myOffer = ($u && !$isOwner) ? row('SELECT id FROM offers WHERE contract_id = ? AND user_id = ?', [$id, $u['id']]) : null;
-$offerCount = (int)val('SELECT COUNT(*) FROM offers WHERE contract_id = ?', [$id]);
-$comments = comments_for("cm.contract_id = ? AND cm.scope = 'public'", [$id]);
-$canOffer = $u && !$isOwner && !$myOffer && $c['status'] === 'published' && $c['accept_offers'];
+$canOffer = $u && !$isOwner && !$myOffer && $c['status'] === 'published';
 
-render($c['title'], function () use ($c, $author, $todos, $files, $tot, $offers, $myOffer, $offerCount, $comments, $canOffer, $isOwner, $u) { ?>
+// Discussion is private: the author sees one thread per user, everyone else only their own thread.
+$threads = [];
+$threadId = 0;
+$comments = [];
+if ($authorSide) {
+    $threads = rows("SELECT cm.thread_user_id AS uid, COALESCE(NULLIF(u.name,''), CONCAT('User #', u.id)) AS uname, COUNT(*) AS n
+        FROM comments cm JOIN users u ON u.id = cm.thread_user_id WHERE cm.contract_id = ? AND cm.scope = 'public' AND cm.thread_user_id IS NOT NULL GROUP BY cm.thread_user_id, uname ORDER BY MAX(cm.id) DESC", [$id]);
+    $threadId = (int)($_GET['thread'] ?? ($threads[0]['uid'] ?? 0));
+    if ($threadId) {
+        $comments = comments_for("cm.contract_id = ? AND cm.scope = 'public' AND cm.thread_user_id = ?", [$id, $threadId]);
+    }
+} elseif ($u) {
+    $comments = comments_for("cm.contract_id = ? AND cm.scope = 'public' AND cm.thread_user_id = ?", [$id, $u['id']]);
+}
+
+render($c['title'], function () use ($c, $author, $todos, $files, $tot, $offers, $myOffer, $comments, $threads, $threadId, $canOffer, $isOwner, $authorSide, $u) { ?>
 <div class="wrap two-col">
   <div class="col">
-    <?php if ($isOwner || is_admin()): ?><div class="right"><a class="btn small" href="/contract/<?= (int)$c['id'] ?>/edit">Edit Contract</a></div><?php endif; ?>
+    <?php if ($authorSide): ?><div class="right"><a class="btn small" href="/contract/<?= (int)$c['id'] ?>/edit">Edit Contract</a></div><?php endif; ?>
     <h1><?= h($c['title']) ?></h1>
     <?php if ($c['status'] === 'draft'): ?><span class="pill grey">Draft</span><?php endif; ?>
     <div class="row between">
@@ -48,25 +64,31 @@ render($c['title'], function () use ($c, $author, $todos, $files, $tot, $offers,
       <span><?php if ($c['category']): ?><span class="chip"><?= h($c['category']) ?></span><?php endif; ?> <?php if ($c['prepay_required']): ?><span class="pill blue">Prepaid</span><?php endif; ?></span>
     </div>
     <hr>
-    <div class="row between"><h3>Description</h3><span class="tiny muted"><?= (int)$c['views'] ?> views · <?= count($comments) ?> comments</span></div>
+    <div class="row between"><h3>Description</h3><span class="tiny muted"><?= (int)$c['views'] ?> views<?= $authorSide ? ' · ' . count($offers) . ' offers' : '' ?></span></div>
     <p><?= nl2br(h($c['description'])) ?></p>
     <hr>
     <h3>Contract</h3>
     <?php if ($canOffer): ?><form method="post" action="/contract/<?= (int)$c['id'] ?>/offer" id="offer-form"><?= csrf_field() ?></form><?php endif; ?>
     <?php foreach ($todos as $t): ?>
-        <div class="card todo-view">
-          <h4><?= h($t['name']) ?></h4>
-          <p class="small"><?= nl2br(h($t['description'])) ?></p>
-          <div class="row gap">
-            <div><div class="tiny">Price</div><div class="mid green"><?= money($t['price']) ?></div></div>
-            <div><div class="tiny">Days</div><div class="mid grey"><?= (int)$t['days'] ?></div></div>
-            <?php if ($canOffer): ?>
-              <label class="tiny">Offer price <input form="offer-form" name="otodo[<?= (int)$t['id'] ?>][price]" class="o-price" inputmode="decimal"></label>
-              <label class="tiny">Offer Days <input form="offer-form" name="otodo[<?= (int)$t['id'] ?>][days]" class="o-days" type="number" min="1"></label>
-            <?php endif; ?>
-          </div>
+      <div class="card todo-view">
+        <h4><?= h($t['name']) ?></h4>
+        <p class="small"><?= nl2br(h($t['description'])) ?></p>
+        <div class="todo-fields">
+          <div><div class="tiny">Price</div><div class="mid green"><?= money($t['price']) ?></div></div>
+          <div><div class="tiny">Days</div><div class="mid grey"><?= (int)$t['days'] ?></div></div>
+          <?php if ($canOffer): ?>
+            <label class="tiny">Offer price <input form="offer-form" name="otodo[<?= (int)$t['id'] ?>][price]" class="num o-price" inputmode="decimal"></label>
+            <label class="tiny">Offer Days <input form="offer-form" name="otodo[<?= (int)$t['id'] ?>][days]" class="num o-days" type="number" min="0"></label>
+          <?php endif; ?>
         </div>
-      <?php endforeach; ?>
+      </div>
+    <?php endforeach; ?>
+    <?php if ($canOffer && $c['allow_extra_todos']): ?>
+      <div id="extra-todos"></div>
+      <div class="right"><button type="button" class="btn small blue-outline" id="add-extra">+ Add To Do</button></div>
+      <p class="tiny muted">The author allows you to add your own To Dos to the contract.</p>
+      <template id="extra-tpl"><?= extra_todo_row(0) ?></template>
+    <?php endif; ?>
   </div>
 
   <div class="col">
@@ -84,13 +106,13 @@ render($c['title'], function () use ($c, $author, $todos, $files, $tot, $offers,
     </div>
     <hr>
     <?php if ($canOffer): ?>
-      <div class="row gap end">
-        <label class="tiny">Price <input form="offer-form" name="price" id="offer-price" inputmode="decimal"></label>
-        <label class="tiny">Time days <input form="offer-form" name="days" id="offer-days" type="number" min="1" class="short"></label>
+      <div class="offer-row">
+        <label class="tiny">Price <input form="offer-form" name="price" id="offer-price" class="num" inputmode="decimal"></label>
+        <label class="tiny">Time days <input form="offer-form" name="days" id="offer-days" class="num" type="number" min="0"></label>
         <button form="offer-form" class="btn green-outline" type="submit">Make Offer</button>
       </div>
       <label class="small">Notes <textarea form="offer-form" name="notes" rows="4"></textarea></label>
-      <p class="tiny muted">Either fill an offer price and days for every To Do, or enter one total price and days.</p>
+      <p class="tiny muted">Either fill an offer price and days for every To Do, or enter one total price and days. 0 days means the same day.</p>
     <?php elseif ($myOffer): ?>
       <p><a class="btn" href="/offer/<?= (int)$myOffer['id'] ?>">View my offer</a></p>
     <?php elseif (!$u && $c['status'] === 'published'): ?>
@@ -111,22 +133,32 @@ render($c['title'], function () use ($c, $author, $todos, $files, $tot, $offers,
       </table>
     <?php endif; ?>
 
-    <?php if ($u && $c['status'] === 'published'): ?>
-      <form method="post" action="/contract/<?= (int)$c['id'] ?>/watch" class="right"><?= csrf_field() ?><button class="linkbtn green" type="submit">Watch later</button></form>
+    <?php if ($u && $c['status'] === 'published' && !$isOwner): ?>
+      <form method="post" action="/contract/<?= (int)$c['id'] ?>/watch" class="right"><?= csrf_field() ?><button class="linkbtn watch" type="submit"><?= clock_icon() ?> Watch later</button></form>
     <?php endif; ?>
 
-    <?php if ($c['status'] === 'published'): ?>
+    <?php if ($c['status'] === 'published' && $u): ?>
     <div id="comments">
-      <h3>Comments <span class="badge"><?= count($comments) ?></span></h3>
-      <?php render_comments($comments, (int)$c['user_id']); ?>
-      <?php if ($u): ?>
+      <h3>Comments <?php if ($comments): ?><span class="badge"><?= count($comments) ?></span><?php endif; ?></h3>
+      <p class="tiny muted">Private: only the author and the other participant can read this conversation.</p>
+      <?php if ($authorSide): ?>
+        <?php if (!$threads): ?><p class="muted small">No one has written to you yet.</p><?php endif; ?>
+        <div class="thread-tabs">
+          <?php foreach ($threads as $th): ?><a class="<?= (int)$th['uid'] === $threadId ? 'on' : '' ?>" href="?thread=<?= (int)$th['uid'] ?>#comments"><?= h($th['uname']) ?> (<?= (int)$th['n'] ?>)</a><?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+      <?php if (!$authorSide || $threadId): ?>
+        <?php render_comments($comments, (int)$c['user_id'], true); ?>
         <form method="post" action="/contract/<?= (int)$c['id'] ?>/comment" class="comment-form">
           <?= csrf_field() ?>
-          <input name="body" maxlength="4000" required placeholder="Write a comment">
+          <?php if ($authorSide): ?><input type="hidden" name="thread" value="<?= $threadId ?>"><?php endif; ?>
+          <input name="body" maxlength="4000" required placeholder="<?= $isOwner ? 'Reply' : 'Ask the author' ?>">
           <button class="btn small" type="submit">Post Comment</button>
         </form>
-      <?php else: ?><p class="small muted"><a href="/login">Log in</a> to comment.</p><?php endif; ?>
+      <?php endif; ?>
     </div>
+    <?php elseif (!$u && $c['status'] === 'published'): ?>
+      <p class="small muted"><a href="/login">Log in</a> to write to the author.</p>
     <?php endif; ?>
   </div>
 </div>

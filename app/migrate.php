@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 const ADMIN_EMAIL = 'admin@bablito.ru';
 
 function migrate_if_needed(): void
@@ -21,6 +21,9 @@ function migrate_if_needed(): void
         $cur = (int)($pdo->query('SELECT version FROM schema_meta WHERE id=1')->fetchColumn() ?: 0);
         if ($cur < 1) {
             migrate_v1($pdo);
+        }
+        if ($cur < 2) {
+            migrate_v2($pdo);
         }
         $pdo->exec('REPLACE INTO schema_meta (id, version) VALUES (1, ' . SCHEMA_VERSION . ')');
         ensure_admin();
@@ -220,4 +223,35 @@ function ensure_admin(): void
         file_put_contents($f, bin2hex(random_bytes(24)) . "
 ");
     }
+}
+
+function column_exists(PDO $pdo, string $table, string $col): bool
+{
+    $st = $pdo->prepare('SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?');
+    $st->execute([$table, $col]);
+    return (int)$st->fetchColumn() > 0;
+}
+
+/** v2: offerers may add own steps; private author<->offerer threads. */
+function migrate_v2(PDO $pdo): void
+{
+    $t = 'ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci';
+    if (!column_exists($pdo, 'contracts', 'allow_extra_todos')) {
+        $pdo->exec('ALTER TABLE contracts ADD COLUMN allow_extra_todos TINYINT(1) NOT NULL DEFAULT 0 AFTER accept_offers');
+    }
+    if (!column_exists($pdo, 'comments', 'thread_user_id')) {
+        $pdo->exec('ALTER TABLE comments ADD COLUMN thread_user_id INT UNSIGNED NULL AFTER offer_id, ADD INDEX (thread_user_id)');
+        // Old public comments from non-authors become private threads with the author.
+        $pdo->exec("UPDATE comments cm JOIN contracts c ON c.id = cm.contract_id SET cm.thread_user_id = cm.user_id WHERE cm.scope = 'public' AND cm.user_id <> c.user_id");
+    }
+    $pdo->exec("CREATE TABLE IF NOT EXISTS offer_extra_todos (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  offer_id INT UNSIGNED NOT NULL,
+  position INT UNSIGNED NOT NULL DEFAULT 0,
+  name VARCHAR(190) NOT NULL,
+  description TEXT NULL,
+  price DECIMAL(12,2) NOT NULL DEFAULT 0,
+  days INT UNSIGNED NOT NULL DEFAULT 0,
+  FOREIGN KEY (offer_id) REFERENCES offers(id) ON DELETE CASCADE
+) $t");
 }
