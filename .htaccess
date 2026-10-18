@@ -1,0 +1,7 @@
+Options -Indexes
+DirectoryIndex index.php
+RewriteEngine On
+RewriteRule ^(app|storage|\.git|\.github)(/|$) - [F,L]
+RewriteRule ^\.env - [F,L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.php [L]

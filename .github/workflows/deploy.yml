@@ -30,7 +30,7 @@ jobs:
           sshpass -e rsync -rlvz --delete \
             -e "ssh -p ${PORT} -o StrictHostKeyChecking=accept-new" \
             --exclude='.git' --exclude='.github' --exclude='.env' \
-            --exclude='README.md' --exclude='uploads/' \
+            --exclude='README.md' --exclude='uploads/' --exclude='storage/' \
             ./ "${SSH_USER}@${SSH_HOST}:${DEPLOY_PATH}/"
 
       - name: Write .env on server

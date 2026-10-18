@@ -1,0 +1,58 @@
+<?php
+declare(strict_types=1);
+
+$u = require_login();
+$extra = json_decode((string)$u['extra_fields'], true);
+$extra = is_array($extra) ? $extra : [];
+$error = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $name = trim((string)($_POST['name'] ?? ''));
+    $email = trim((string)($_POST['contact_email'] ?? ''));
+    if ($name === '' || mb_strlen($name) > 120) {
+        $error = 'Enter your name.';
+    } elseif ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = 'Contact email is invalid.';
+    } else {
+        $fields = [];
+        foreach ((array)($_POST['extra'] ?? []) as $e) {
+            $k = trim((string)($e['label'] ?? ''));
+            $v = trim((string)($e['value'] ?? ''));
+            if ($k !== '' && count($fields) < 10) {
+                $fields[] = ['label' => mb_substr($k, 0, 60), 'value' => mb_substr($v, 0, 190), 'public' => empty($e['public']) ? 0 : 1];
+            }
+        }
+        q('UPDATE users SET name=?, about=?, contact_phone=?, contact_email=?, show_name=?, show_phone=?, show_email=?, extra_fields=? WHERE id=?', [
+            $name, mb_substr(trim((string)($_POST['about'] ?? '')), 0, 4000), mb_substr(trim((string)($_POST['contact_phone'] ?? '')), 0, 60), $email,
+            empty($_POST['show_name']) ? 0 : 1, empty($_POST['show_phone']) ? 0 : 1, empty($_POST['show_email']) ? 0 : 1,
+            json_encode($fields, JSON_UNESCAPED_UNICODE), $u['id'],
+        ]);
+        flash('Profile saved.');
+        redirect('/profile');
+    }
+    $u = array_merge($u, ['name' => $name]);
+}
+
+render('Edit profile', function () use ($u, $extra, $error) { ?>
+<form method="post" class="narrow card-form wide">
+  <?= csrf_field() ?>
+  <div class="row between"><h1>Edit Profile</h1><span><a class="small" href="/user/<?= (int)$u['id'] ?>">View public profile</a> <button class="btn small" type="submit">Save Profile</button></span></div>
+  <?php if ($error): ?><div class="flash err"><?= h($error) ?></div><?php endif; ?>
+  <div class="field-row"><label>Your name <input name="name" value="<?= h($u['name']) ?>" maxlength="120" required></label>
+    <label class="check"><input type="checkbox" name="show_name" value="1" <?= $u['show_name'] ? 'checked' : '' ?>> Show in Public</label></div>
+  <label>About me <textarea name="about" rows="4"><?= h($u['about']) ?></textarea></label>
+  <div class="field-row"><label>Contact Phone <input name="contact_phone" value="<?= h($u['contact_phone']) ?>" maxlength="60"></label>
+    <label class="check"><input type="checkbox" name="show_phone" value="1" <?= $u['show_phone'] ? 'checked' : '' ?>> Show in Public</label></div>
+  <div class="field-row"><label>Contact Email <input type="email" name="contact_email" value="<?= h($u['contact_email']) ?>" maxlength="190"></label>
+    <label class="check"><input type="checkbox" name="show_email" value="1" <?= $u['show_email'] ? 'checked' : '' ?>> Show in Public</label></div>
+  <div id="extra-fields">
+    <?php foreach ($extra as $i => $e): ?>
+      <div class="field-row">
+        <label><?= h($e['label']) ?><input type="hidden" name="extra[<?= $i ?>][label]" value="<?= h($e['label']) ?>"><input name="extra[<?= $i ?>][value]" value="<?= h($e['value']) ?>" maxlength="190"></label>
+        <label class="check"><input type="checkbox" name="extra[<?= $i ?>][public]" value="1" <?= !empty($e['public']) ? 'checked' : '' ?>> Show in Public</label>
+      </div>
+    <?php endforeach; ?>
+  </div>
+  <div class="field-row"><label>Field name <input id="new-field-name" maxlength="60"></label><button type="button" class="btn small" id="add-field">Add Field</button></div>
+</form>
+<?php });
