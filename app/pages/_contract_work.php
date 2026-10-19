@@ -80,7 +80,7 @@ render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $
             </form>
             <form method="post" id="accept-form-<?= (int)$t['id'] ?>" action="/todo/<?= (int)$t['id'] ?>/accept" class="inline"><?= csrf_field() ?>
               <?php $viaDialog = $isStep && !$acc; ?>
-              <label class="check"><input type="checkbox" class="accept-box" <?= $acc ? 'checked' : '' ?> <?= ($isOwner && $active && $done) ? ($viaDialog ? 'onchange="this.checked=false;document.getElementById(\x27acc-' . (int)$t['id'] . '\x27).hidden=false;document.body.classList.add(\x27lb-open\x27)"' : 'onchange="this.form.submit()"') : 'disabled' ?>> Accepted</label>
+              <label class="check"><input type="checkbox" class="accept-box" <?= $acc ? 'checked' : '' ?> <?= ($isOwner && $active && $done) ? ($viaDialog ? 'onchange="this.checked=false;document.getElementById(\'acc-' . (int)$t['id'] . '\').hidden=false;document.body.classList.add(\'lb-open\')"' : 'onchange="this.form.submit()"') : 'disabled' ?>> Accepted</label>
             </form>
           </div>
         </div>
