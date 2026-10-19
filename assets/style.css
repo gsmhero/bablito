@@ -219,3 +219,4 @@ a.offer-link{color:inherit}a.offer-link:hover{text-decoration:underline}
 .small.muted .chip{margin-left:12px}
 .client-row{margin-top:12px}
 .sw-row{gap:22px;align-items:center;margin-bottom:12px}
+.row.end.sw-row{align-items:center}
