@@ -234,7 +234,7 @@ function is_participant(array $c): bool
 
 function load_contract(int $id): array
 {
-    $c = row('SELECT c.*, cat.name AS category FROM contracts c LEFT JOIN categories cat ON cat.id = c.category_id WHERE c.id = ?', [$id]);
+    $c = row('SELECT c.*, cat.name AS category, cat.image AS category_image FROM contracts c LEFT JOIN categories cat ON cat.id = c.category_id WHERE c.id = ?', [$id]);
     if (!$c) {
         not_found();
     }

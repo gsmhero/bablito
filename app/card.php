@@ -11,7 +11,7 @@ function listing_card(array $c, ?int $watchUserId = null): void
     ?>
 <article class="card listing">
   <a class="thumb" href="/contract/<?= (int)$c['id'] ?>">
-    <?php if ($img): ?><img src="/uploads/<?= h($img['stored_name']) ?>" alt=""><?php else: ?><span>image</span><?php endif; ?>
+    <?php if ($img): ?><img src="/uploads/<?= h($img['stored_name']) ?>" alt=""><?php elseif (!empty($c['category_image'])): ?><img src="/uploads/<?= h($c['category_image']) ?>" alt=""><?php else: ?><span>image</span><?php endif; ?>
   </a>
   <div class="listing-body">
     <div class="row between">
@@ -47,7 +47,7 @@ function listing_card(array $c, ?int $watchUserId = null): void
 
 function listing_select(): string
 {
-    return 'SELECT c.*, cat.name AS category, t.total_price, t.total_days, COALESCE(t.steps,0) AS steps,
+    return 'SELECT c.*, cat.name AS category, cat.image AS category_image, t.total_price, t.total_days, COALESCE(t.steps,0) AS steps,
             COALESCE(NULLIF(u.name,\'\'), CONCAT(\'User #\', u.id)) AS author_name, u.rating_avg, u.rating_count
             FROM contracts c
             JOIN users u ON u.id = c.user_id

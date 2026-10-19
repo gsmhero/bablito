@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const SCHEMA_VERSION = 9;
+const SCHEMA_VERSION = 10;
 const ADMIN_EMAIL = 'admin@bablito.ru';
 
 function migrate_if_needed(): void
@@ -83,6 +83,9 @@ function migrate_if_needed(): void
   PRIMARY KEY (user_id, contract_id),
   FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        }
+        if ($cur < 10 && !column_exists($pdo, 'categories', 'image')) {
+            $pdo->exec("ALTER TABLE categories ADD COLUMN image VARCHAR(80) NULL");
         }
         $pdo->exec('REPLACE INTO schema_meta (id, version) VALUES (1, ' . SCHEMA_VERSION . ')');
         ensure_admin();

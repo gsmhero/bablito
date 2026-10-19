@@ -94,6 +94,7 @@ render($c['title'], function () use ($c, $author, $todos, $files, $tot, $offers,
   <div class="col">
     <hr>
     <div class="gallery">
+      <?php if (!array_filter($files, fn($f) => $f['kind'] === 'image') && !empty($c['category_image'])): ?><figure><img src="/uploads/<?= h($c['category_image']) ?>" alt=""></figure><?php endif; ?>
       <?php foreach ($files as $f): if ($f['kind'] !== 'image') { continue; } ?><figure><a href="/uploads/<?= h($f['stored_name']) ?>" target="_blank"><img src="/uploads/<?= h($f['stored_name']) ?>" alt=""></a></figure><?php endforeach; ?>
     </div>
     <h3>Files</h3>

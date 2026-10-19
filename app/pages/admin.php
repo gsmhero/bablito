@@ -41,6 +41,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             flash('Homepage saved.');
             break;
+        case 'categories':
+            $cid = (int)($_POST['id'] ?? 0);
+            if ($do === 'add') {
+                $name = trim((string)($_POST['name'] ?? ''));
+                if ($name !== '' && mb_strlen($name) <= 80 && !val('SELECT id FROM categories WHERE name = ?', [$name])) {
+                    q('INSERT INTO categories (name) VALUES (?)', [$name]);
+                    flash('Category added.');
+                } else {
+                    flash('Enter a unique category name (up to 80 characters).', 'err');
+                }
+            } elseif ($cid && in_array($do, ['delete', 'remove_image'], true)) {
+                $old = (string)val('SELECT image FROM categories WHERE id = ?', [$cid]);
+                if ($old !== '') {
+                    @unlink(ROOT . '/uploads/' . $old);
+                }
+                if ($do === 'delete') {
+                    q('DELETE FROM categories WHERE id = ?', [$cid]);
+                    flash('Category deleted. Its contracts stay without a category.');
+                } else {
+                    q('UPDATE categories SET image = NULL WHERE id = ?', [$cid]);
+                    flash('Default image removed.');
+                }
+            } elseif ($cid && $do === 'save') {
+                $name = trim((string)($_POST['name'] ?? ''));
+                $dup = $name !== '' ? val('SELECT id FROM categories WHERE name = ? AND id <> ?', [$name, $cid]) : 1;
+                if ($name === '' || mb_strlen($name) > 80 || $dup) {
+                    flash('Enter a unique category name (up to 80 characters).', 'err');
+                    break;
+                }
+                q('UPDATE categories SET name = ? WHERE id = ?', [$name, $cid]);
+                $f = $_FILES['image'] ?? ['error' => UPLOAD_ERR_NO_FILE];
+                if ($f['error'] !== UPLOAD_ERR_NO_FILE) {
+                    $res = store_upload($f, 'image');
+                    if (is_string($res)) {
+                        flash($res, 'err');
+                        break;
+                    }
+                    $old = (string)val('SELECT image FROM categories WHERE id = ?', [$cid]);
+                    if ($old !== '') {
+                        @unlink(ROOT . '/uploads/' . $old);
+                    }
+                    q('UPDATE categories SET image = ? WHERE id = ?', [$res[1], $cid]);
+                }
+                flash('Category saved.');
+            }
+            break;
         case 'pages':
             foreach ((array)($_POST['pages'] ?? []) as $slug => $p) {
                 q('UPDATE static_pages SET title = ?, body = ? WHERE slug = ?', [mb_substr(trim((string)($p['title'] ?? '')), 0, 190), (string)($p['body'] ?? ''), (string)$slug]);
@@ -52,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 render('Admin', function () use ($tab) {
-    $tabs = ['users' => 'Users', 'contracts' => 'Contracts', 'home' => 'Homepage', 'pages' => 'Pages']; ?>
+    $tabs = ['users' => 'Users', 'contracts' => 'Contracts', 'home' => 'Homepage', 'pages' => 'Pages', 'categories' => 'Categories']; ?>
 <div class="wrap">
   <h1>Admin mode</h1>
   <div class="tabs"><?php foreach ($tabs as $k => $l): ?><a class="<?= $k === $tab ? 'on' : '' ?>" href="/admin/<?= $k ?>"><?= $l ?></a><?php endforeach; ?></div>
@@ -98,6 +144,29 @@ render('Admin', function () use ($tab) {
         </div>
       <?php endforeach; ?>
       <div class="row between"><button class="btn green" type="submit" name="do" value="save">Save</button><button class="btn" type="submit" name="do" value="add_block">Add Block</button></div>
+    </form>
+  <?php elseif ($tab === 'categories'): $cats = rows('SELECT c.*, (SELECT COUNT(*) FROM contracts x WHERE x.category_id = c.id) AS n FROM categories c ORDER BY c.name'); ?>
+    <p class="small muted">The default image is shown on contracts of this category that have no uploaded images.</p>
+    <?php foreach ($cats as $cat): ?>
+      <form method="post" action="/admin/categories" enctype="multipart/form-data" class="card cat-row">
+        <?= csrf_field() ?>
+        <input type="hidden" name="id" value="<?= (int)$cat['id'] ?>">
+        <div class="cat-img"><?php if ($cat['image']): ?><img src="/uploads/<?= h($cat['image']) ?>" alt=""><?php else: ?><span>no image</span><?php endif; ?></div>
+        <div class="cat-fields">
+          <label class="tiny">Name <input name="name" value="<?= h($cat['name']) ?>" maxlength="80" required></label>
+          <label class="tiny">Default image <input type="file" name="image" accept="image/*"></label>
+          <div class="row gap">
+            <button class="btn small green" type="submit" name="do" value="save">Save</button>
+            <?php if ($cat['image']): ?><button class="btn small" type="submit" name="do" value="remove_image" formnovalidate>Remove image</button><?php endif; ?>
+            <button class="btn small red-outline" type="submit" name="do" value="delete" formnovalidate onclick="return confirm('Delete this category?')">Delete</button>
+            <span class="tiny muted"><?= (int)$cat['n'] ?> contracts</span>
+          </div>
+        </div>
+      </form>
+    <?php endforeach; ?>
+    <form method="post" action="/admin/categories" class="card row gap end"><?= csrf_field() ?>
+      <label class="tiny grow">New category <input name="name" maxlength="80" required></label>
+      <button class="btn green" type="submit" name="do" value="add">Add Category</button>
     </form>
   <?php else: $pgs = rows('SELECT * FROM static_pages ORDER BY slug'); ?>
     <form method="post" action="/admin/pages" class="card-form wide">
