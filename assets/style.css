@@ -197,3 +197,4 @@ a.offer-link{color:inherit}a.offer-link:hover{text-decoration:underline}
 .live-price{margin-top:4px;color:#777}.live-price b{font-size:1.8rem;line-height:1}.live-price small{font-size:.7rem}
 .live-new{animation:livein 2.5s ease-out}@keyframes livein{from{background:#d8f5dc}to{background:transparent}}
 @media(max-width:900px){.dash-grid{grid-template-columns:1fr}.dash-row{grid-template-columns:1fr}.wclock{flex-direction:row;align-items:center;gap:14px}.wtime{font-size:2.4rem}}
+.dash-row.no-clock{grid-template-columns:1fr}

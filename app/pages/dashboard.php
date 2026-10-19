@@ -51,7 +51,7 @@ render('Dashboard', function () use ($list, $totals, $myTz, $u) { ?>
           $pct = $c['steps'] ? round($c['accepted_steps'] / $c['steps'] * 100) : 0;
           $running = $c['status'] === 'active' && $c['timer_started_at'];
           $tz = valid_timezone($c['other_tz'] ?? null); ?>
-        <div class="dash-row">
+        <div class="dash-row<?= $isAuthor ? ' no-clock' : '' ?>">
           <a class="card dash-card" href="/contract/<?= (int)$c['id'] ?>">
             <div class="row between">
               <h3><?= h($c['title']) ?></h3>
@@ -70,7 +70,8 @@ render('Dashboard', function () use ($list, $totals, $myTz, $u) { ?>
               <b class="blue"><?= (int)$c['accepted_steps'] ?>/<?= (int)$c['steps'] ?></b>
             </div>
           </a>
-          <?php if ($tz): ?>
+          <?php if ($isAuthor): ?>
+          <?php elseif ($tz): ?>
             <div class="card wclock" data-tz="<?= h($tz) ?>">
               <div class="row between tiny"><span data-k="wd"></span><span data-k="date"></span></div>
               <div class="wtime"><span data-k="hh"></span><span class="colon">:</span><span data-k="mm"></span></div>
