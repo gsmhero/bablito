@@ -125,8 +125,8 @@ render($c['title'], function () use ($c, $author, $todos, $files, $tot, $offers,
         <?php foreach ($offers as $o): ?>
           <tr>
             <td><a class="blue" href="/user/<?= (int)$o['user_id'] ?>"><?= h($o['oname']) ?></a> <?= stars((float)$o['rating_avg'], (int)$o['rating_count'], false) ?></td>
-            <td><b class="blue"><?= money($o['price']) ?></b> RUB</td>
-            <td><b class="blue"><?= (int)$o['days'] ?></b> days</td>
+            <td><a class="offer-link" href="/offer/<?= (int)$o['id'] ?>"><b class="blue"><?= money($o['price']) ?></b> RUB</a></td>
+            <td><a class="offer-link" href="/offer/<?= (int)$o['id'] ?>"><b class="blue"><?= (int)$o['days'] ?></b> days</a></td>
             <td><a class="btn small" href="/offer/<?= (int)$o['id'] ?>"><?= h(ucfirst($o['status'])) ?></a></td>
           </tr>
         <?php endforeach; ?>

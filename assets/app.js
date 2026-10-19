@@ -196,3 +196,50 @@
     if (e.key === 'Escape') { close(); } else if (e.key === 'ArrowLeft') { show(cur - 1); } else if (e.key === 'ArrowRight') { show(cur + 1); }
   });
 })();
+
+(function () {
+  'use strict';
+
+  // ---- "Back" link: return to the previous page, fall back to the contracts list ----
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest ? e.target.closest('a[data-back]') : null;
+    if (!a) { return; }
+    var ref = document.referrer || '';
+    if (history.length > 1 && ref.indexOf(location.origin) === 0) { e.preventDefault(); history.back(); }
+  });
+
+  // ---- Profile pop-up: opens over the current page instead of navigating away ----
+  var dlg = null, body = null, currentUrl = '';
+  function closeDlg() { if (dlg) { dlg.hidden = true; body.innerHTML = ''; document.body.classList.remove('lb-open'); } }
+  function load(url, fallbackNav) {
+    if (!dlg) {
+      dlg = document.createElement('div'); dlg.className = 'modal'; dlg.hidden = true;
+      dlg.innerHTML = '<div class="modal-card" role="dialog" aria-modal="true"><button type="button" class="modal-x" aria-label="Close">×</button><div class="modal-body"></div></div>';
+      document.body.appendChild(dlg);
+      body = dlg.querySelector('.modal-body');
+      dlg.addEventListener('click', function (e) { if (e.target === dlg || e.target.classList.contains('modal-x')) { closeDlg(); } });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !dlg.hidden) { closeDlg(); } });
+      body.addEventListener('submit', function (e) {
+        var f = e.target; if (!f.action) { return; }
+        e.preventDefault();
+        fetch(f.action, { method: 'POST', body: new FormData(f), credentials: 'same-origin' }).then(function () { load(currentUrl); });
+      });
+    }
+    currentUrl = url;
+    return fetch(url + (url.indexOf('?') < 0 ? '?' : '&') + 'modal=1', { credentials: 'same-origin' }).then(function (r) {
+      if (!r.ok) { throw new Error('http ' + r.status); }
+      return r.text();
+    }).then(function (html) {
+      body.innerHTML = html; dlg.hidden = false; document.body.classList.add('lb-open');
+    }).catch(function () { if (fallbackNav) { location.href = url; } });
+  }
+  document.addEventListener('click', function (e) {
+    if (e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) { return; }
+    var a = e.target.closest ? e.target.closest('a[href]') : null;
+    if (!a || a.target === '_blank' || a.hasAttribute('data-nomodal')) { return; }
+    var m = /^\/user\/(\d+)$/.exec(a.getAttribute('href'));
+    if (!m || a.closest('.modal')) { return; }
+    e.preventDefault();
+    load('/user/' + m[1], true);
+  });
+})();

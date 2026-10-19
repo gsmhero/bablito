@@ -18,7 +18,7 @@ if ($me && !$self) {
         AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.contract_id = c.id AND r.reviewer_id = :a) ORDER BY c.id DESC LIMIT 1", ['a' => $me['id'], 'b' => $p['id']]);
 }
 
-render(public_name($p), function () use ($p, $see, $extra, $reviews, $eligible, $me, $self) { ?>
+$body = function () use ($p, $see, $extra, $reviews, $eligible, $me, $self) { ?>
 <div class="narrow profile">
   <h1 class="green"><?= h(public_name($p)) ?></h1>
   <div><?= stars((float)$p['rating_avg'], (int)$p['rating_count']) ?></div>
@@ -48,4 +48,14 @@ render(public_name($p), function () use ($p, $see, $extra, $reviews, $eligible, 
     <div class="review"><b><?= h($r['rname']) ?></b> <?= stars((float)$r['rating'], 0, false) ?><div class="note-box"><?= nl2br(h($r['body'])) ?></div></div>
   <?php endforeach; ?>
 </div>
-<?php });
+<?php };
+
+if (isset($_GET['modal'])) {
+    $f = flash();
+    if ($f) {
+        echo '<div class="flash ' . ($f[1] === 'err' ? 'err' : 'ok') . '">' . h($f[0]) . '</div>';
+    }
+    $body();
+    exit;
+}
+render(public_name($p), $body);

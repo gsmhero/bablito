@@ -149,3 +149,11 @@ body.lb-open{overflow:hidden}
 /* listing footer: Watch later and Contract ID on one line */
 .listing-meta{display:flex;align-items:center;gap:6px;white-space:nowrap}
 .listing-meta form{display:inline-flex;margin:0}
+
+/* back link, offer links, profile pop-up */
+.back-link{display:inline-flex;align-items:center;gap:4px;margin:14px 0 0;color:#555;font-size:.95rem}.back-link:hover{color:var(--green);text-decoration:none}
+a.offer-link{color:inherit}a.offer-link:hover{text-decoration:underline}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:900;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:5vh 12px}.modal[hidden]{display:none}
+.modal-card{position:relative;background:#fff;border-radius:12px;width:100%;max-width:640px;padding:8px 8px 16px;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+.modal-x{position:absolute;top:6px;right:10px;border:0;background:none;font-size:2rem;line-height:1;cursor:pointer;color:#666;z-index:1}
+.modal .narrow{margin:0;max-width:none}.modal .profile{border:0;box-shadow:none}
