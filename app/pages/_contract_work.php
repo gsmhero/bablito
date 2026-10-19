@@ -41,13 +41,15 @@ render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $
   <div class="col">
     <h1><?= h($c['title']) ?></h1>
     <?php [$lbl, $cls] = status_label($c['status']); ?>
+    <div class="pills">
     <span class="pill <?= h($overdue ? 'red' : $cls) ?>"><?= h($overdue ? 'Overdue' : $lbl) ?></span>
     <?php if ($c['prepay_required']): ?><span class="pill blue"><?= $c['prepaid_at'] ? 'Prepayd' : 'Prepayment pending' ?></span><?php endif; ?>
+    </div>
     <div class="row between">
-      <span class="small">Contractor<br><?php if ($contractor): ?><a class="blue big-link" href="/user/<?= (int)$contractor['id'] ?>"><?= h(public_name($contractor)) ?></a> <?= stars((float)$contractor['rating_avg'], (int)$contractor['rating_count']) ?><?php endif; ?></span>
+      <span class="small">Contractor:<br><?php if ($contractor): ?><a class="blue big-link" href="/user/<?= (int)$contractor['id'] ?>"><?= h(public_name($contractor)) ?></a> <?= stars((float)$contractor['rating_avg'], (int)$contractor['rating_count']) ?><?php endif; ?></span>
       <span class="small muted">Creation Date <?= h(fdate($c['created_at'])) ?> <?php if ($c['category']): ?><span class="chip"><?= h($c['category']) ?></span><?php endif; ?></span>
     </div>
-    <div class="row between"><div class="small">Client: <a class="green" href="/user/<?= (int)$author['id'] ?>"><?= h(public_name($author)) ?></a></div><?php if (($rate = hour_rate($c)) !== null): ?><div class="rate" title="Agreed price / (agreed days x 8 hours)"><?= h(cur_symbol($c)) ?> <?= h(money($rate)) ?>/ hour</div><?php endif; ?></div>
+    <div class="row between client-row"><div class="small">Client:<br><a class="green big-link" href="/user/<?= (int)$author['id'] ?>"><?= h(public_name($author)) ?></a></div><?php if (($rate = hour_rate($c)) !== null): ?><div class="rate" title="Agreed price / (agreed days x 8 hours)"><?= h(cur_symbol($c)) ?> <?= h(money($rate)) ?>/ hour</div><?php endif; ?></div>
     <hr>
     <h3>Description</h3>
     <p><?= nl2br(h($c['description'])) ?></p>
@@ -93,7 +95,7 @@ render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $
 
   <div class="col">
     <?php $ts = (int)$timer['s']; $running = $timer['running'] && $active; ?>
-    <div class="row end gap">
+    <div class="row end gap sw-row">
       <span class="tiny muted">Stopwatch</span>
       <span class="run-state <?= $running ? 'on' : '' ?>" id="run-state"><?= $running ? 'Started' : 'Stopped' ?></span>
       <span class="stopwatch" id="stopwatch" data-poll="/contract/<?= (int)$c['id'] ?>/timer.json" data-seconds="<?= $ts ?>" data-running="<?= $running ? 1 : 0 ?>"><?= h(sprintf('%02d:%02d:%02d:%02d', intdiv($ts, 86400), intdiv($ts % 86400, 3600), intdiv($ts % 3600, 60), $ts % 60)) ?></span>
