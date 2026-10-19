@@ -46,20 +46,10 @@ render('Edit profile', function () use ($u, $extra, $error, $struct, $pvals) { ?
   <div class="field-row"><label>Your name <input name="name" value="<?= h($u['name']) ?>" maxlength="120" required></label>
     <label class="check"><input type="checkbox" name="show_name" value="1" <?= $u['show_name'] ? 'checked' : '' ?>> Show in Public</label></div>
   <label>Time zone <select name="timezone"><option value="">Not set</option><?php $cur = valid_timezone($u['timezone'] ?? null); $zones = common_timezones(); if ($cur && !in_array($cur, $zones, true)) { $zones[] = $cur; } foreach ($zones as $z): ?><option value="<?= h($z) ?>" <?= $cur === $z ? 'selected' : '' ?>><?= h($z) ?></option><?php endforeach; ?></select></label>
-  <label>About me <textarea name="about" rows="4"><?= h($u['about']) ?></textarea></label>
   <div class="field-row"><label>Contact Phone <input name="contact_phone" value="<?= h($u['contact_phone']) ?>" maxlength="60"></label>
     <label class="check"><input type="checkbox" name="show_phone" value="1" <?= $u['show_phone'] ? 'checked' : '' ?>> Show in Public</label></div>
   <div class="field-row"><label>Contact Email <input type="email" name="contact_email" value="<?= h($u['contact_email']) ?>" maxlength="190"></label>
     <label class="check"><input type="checkbox" name="show_email" value="1" <?= $u['show_email'] ? 'checked' : '' ?>> Show in Public</label></div>
-  <?php foreach ($struct as $s): if (!$s['fields']) { continue; } ?>
-    <h3 class="pf-title"><?= h($s['title']) ?></h3>
-    <?php foreach ($s['fields'] as $f): $pv = $pvals[(int)$f['id']] ?? null; ?>
-      <div class="field-row">
-        <label><?= h($f['label']) ?><?= $f['required'] ? ' *' : '' ?> <?= profile_input_html($f, $pv ? (string)$pv['value'] : '') ?></label>
-        <label class="check"><input type="checkbox" name="pf[<?= (int)$f['id'] ?>][public]" value="1" <?= ($pv ? $pv['is_public'] : $f['default_public']) ? 'checked' : '' ?>> Show in Public</label>
-      </div>
-    <?php endforeach; ?>
-  <?php endforeach; ?>
   <div id="extra-fields">
     <?php foreach ($extra as $i => $e): ?>
       <div class="field-row">
@@ -69,5 +59,15 @@ render('Edit profile', function () use ($u, $extra, $error, $struct, $pvals) { ?
     <?php endforeach; ?>
   </div>
   <div class="field-row"><label>Field name <input id="new-field-name" maxlength="60"></label><button type="button" class="btn small" id="add-field">Add Field</button></div>
+  <?php foreach ($struct as $s): if (!$s['fields']) { continue; } ?>
+    <h3 class="pf-title"><?= h($s['title']) ?></h3>
+    <?php foreach ($s['fields'] as $f): $pv = $pvals[(int)$f['id']] ?? null; ?>
+      <div class="field-row">
+        <label><?= h($f['label']) ?><?= $f['required'] ? ' *' : '' ?> <?= profile_input_html($f, $pv ? (string)$pv['value'] : '') ?></label>
+        <label class="check"><input type="checkbox" name="pf[<?= (int)$f['id'] ?>][public]" value="1" <?= ($pv ? $pv['is_public'] : $f['default_public']) ? 'checked' : '' ?>> Show in Public</label>
+      </div>
+    <?php endforeach; ?>
+  <?php endforeach; ?>
+  <label>About me <textarea name="about" rows="4"><?= h($u['about']) ?></textarea></label>
 </form>
 <?php });
