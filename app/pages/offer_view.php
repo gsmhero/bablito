@@ -19,11 +19,12 @@ $files = rows('SELECT * FROM files WHERE contract_id = ? AND by_contractor = 0 O
 $tot = contract_totals((int)$c['id']);
 $comments = comments_for("cm.scope = 'offer' AND cm.offer_id = ?", [$offer['id']]);
 $editable = $isOfferer && $offer['status'] === 'pending' && $c['status'] === 'published';
+$editing = $editable && isset($_GET['edit']);
 $decidable = $isOwner && $offer['status'] === 'pending' && $c['status'] === 'published';
 $extras = rows('SELECT * FROM offer_extra_todos WHERE offer_id = ? ORDER BY position, id', [$offer['id']]);
 $hasSteps = $extras || (bool)array_filter($todos, fn($t) => $t['o_price'] !== null);
 
-render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $comments, $editable, $decidable, $hasSteps, $isOwner, $extras) { ?>
+render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $comments, $editable, $editing, $decidable, $hasSteps, $isOwner, $extras) { ?>
 <form method="post" action="/offer/<?= (int)$offer['id'] ?>/edit" class="wrap two-col" id="offer-form">
   <?= csrf_field() ?>
   <div class="col">
@@ -46,7 +47,7 @@ render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $com
         <div class="todo-fields">
           <div><div class="tiny">Price</div><div class="mid green"><?= money($t['price']) ?></div></div>
           <div><div class="tiny">Days</div><div class="mid grey"><?= (int)$t['days'] ?></div></div>
-          <?php if ($editable): ?>
+          <?php if ($editing): ?>
             <label class="tiny">Offer price <input name="otodo[<?= (int)$t['id'] ?>][price]" value="<?= $t['o_price'] === null ? '' : h((string)(float)$t['o_price']) ?>" class="num o-price" inputmode="decimal"></label>
             <label class="tiny">Offer days <input name="otodo[<?= (int)$t['id'] ?>][days]" value="<?= $t['o_days'] === null ? '' : (int)$t['o_days'] ?>" class="num o-days" type="number" min="0"></label>
           <?php elseif ($t['o_price'] !== null): ?>
@@ -56,17 +57,17 @@ render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $com
         </div>
       </div>
     <?php endforeach; ?>
-    <?php if ($extras || ($editable && $c['allow_extra_todos'])): ?>
+    <?php if ($extras || ($editing && $c['allow_extra_todos'])): ?>
       <h3>Added by the offerer</h3>
       <div id="extra-todos">
       <?php foreach ($extras as $i => $e): ?>
-        <?php if ($editable): echo extra_todo_row($i, $e); else: ?>
+        <?php if ($editing): echo extra_todo_row($i, $e); else: ?>
         <div class="card todo-view"><h4><?= h($e['name']) ?></h4><p class="small"><?= nl2br(h($e['description'])) ?></p>
           <div class="todo-fields"><div><div class="tiny">Offer price</div><div class="mid blue"><?= money($e['price']) ?></div></div><div><div class="tiny">Offer days</div><div class="mid blue"><?= (int)$e['days'] ?></div></div></div></div>
         <?php endif; ?>
       <?php endforeach; ?>
       </div>
-      <?php if ($editable && $c['allow_extra_todos']): ?><div class="right"><button type="button" class="btn small blue-outline" id="add-extra">+ Add To Do</button></div><template id="extra-tpl"><?= extra_todo_row(0) ?></template><?php endif; ?>
+      <?php if ($editing && $c['allow_extra_todos']): ?><div class="right"><button type="button" class="btn small blue-outline" id="add-extra">+ Add To Do</button></div><template id="extra-tpl"><?= extra_todo_row(0) ?></template><?php endif; ?>
     <?php endif; ?>
     <?php if ($decidable): ?>
     <div class="row between">
@@ -91,18 +92,23 @@ render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $com
     <hr>
     <div class="sums">
       <div><div class="lbl">Offer Price</div>
-        <?php if ($editable): ?><input name="price" id="offer-price" value="<?= h((string)(float)$offer['price']) ?>" inputmode="decimal" <?= $hasSteps ? 'readonly' : '' ?>><?php else: ?><div class="big blue"><?= money($offer['price']) ?></div><?php endif; ?>
+        <?php if ($editing): ?><input name="price" id="offer-price" value="<?= h((string)(float)$offer['price']) ?>" inputmode="decimal" <?= $hasSteps ? 'readonly' : '' ?>><?php else: ?><div class="big blue"><?= money($offer['price']) ?></div><?php endif; ?>
         <div class="cur">RUB</div></div>
       <div class="center"><div class="lbl">Offer days</div>
-        <?php if ($editable): ?><input name="days" id="offer-days" type="number" min="0" value="<?= (int)$offer['days'] ?>" <?= $hasSteps ? 'readonly' : '' ?>><?php else: ?><div class="big blue"><?= (int)$offer['days'] ?></div><?php endif; ?></div>
+        <?php if ($editing): ?><input name="days" id="offer-days" type="number" min="0" value="<?= (int)$offer['days'] ?>" <?= $hasSteps ? 'readonly' : '' ?>><?php else: ?><div class="big blue"><?= (int)$offer['days'] ?></div><?php endif; ?></div>
       <div class="center"><div class="lbl">Offer From</div><a class="blue" href="/user/<?= (int)$offer['user_id'] ?>"><?= h($offer['oname']) ?></a> <?= stars((float)$offer['rating_avg'], (int)$offer['rating_count']) ?></div>
     </div>
     <label class="small">Notes
-      <?php if ($editable): ?><textarea name="notes" rows="4"><?= h($offer['notes']) ?></textarea><?php else: ?><div class="note-box"><?= nl2br(h($offer['notes'])) ?></div><?php endif; ?>
+      <?php if ($editing): ?><textarea name="notes" rows="4"><?= h($offer['notes']) ?></textarea><?php else: ?><div class="note-box"><?= nl2br(h($offer['notes'])) ?></div><?php endif; ?>
     </label>
-    <?php if ($editable): ?>
+    <?php if ($editing): ?>
     <div class="row right gap">
-      <button class="btn" type="submit">Edit Offer</button>
+      <button class="btn green" type="submit">Save Offer</button>
+      <a class="btn" href="/offer/<?= (int)$offer['id'] ?>">Cancel</a>
+    </div>
+    <?php elseif ($editable): ?>
+    <div class="row right gap">
+      <a class="btn" href="/offer/<?= (int)$offer['id'] ?>?edit=1">Edit Offer</a>
       <button class="btn red" type="submit" formaction="/offer/<?= (int)$offer['id'] ?>/delete" formnovalidate onclick="return confirm('Delete your offer?')">Delete My Offer</button>
     </div>
     <?php endif; ?>
