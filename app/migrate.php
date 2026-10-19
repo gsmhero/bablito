@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const SCHEMA_VERSION = 11;
+const SCHEMA_VERSION = 12;
 const ADMIN_EMAIL = 'admin@bablito.ru';
 
 function migrate_if_needed(): void
@@ -113,6 +113,10 @@ function migrate_if_needed(): void
   PRIMARY KEY (user_id, field_id),
   FOREIGN KEY (field_id) REFERENCES profile_fields(id) ON DELETE CASCADE
 ) $t");
+        }
+        if ($cur < 12 && !column_exists($pdo, 'offers', 'seen_at')) {
+            $pdo->exec("ALTER TABLE offers ADD COLUMN seen_at DATETIME NULL");
+            $pdo->exec("UPDATE offers SET seen_at = created_at");
         }
         $pdo->exec('REPLACE INTO schema_meta (id, version) VALUES (1, ' . SCHEMA_VERSION . ')');
         ensure_admin();

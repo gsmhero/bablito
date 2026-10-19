@@ -20,6 +20,9 @@ $tot = contract_totals((int)$c['id']);
 $comments = comments_for("cm.scope = 'offer' AND cm.offer_id = ?", [$offer['id']]);
 $editable = $isOfferer && $offer['status'] === 'pending' && $c['status'] === 'published';
 $editing = $editable && isset($_GET['edit']);
+if ($isOwner && !$offer['seen_at']) {
+    q('UPDATE offers SET seen_at = NOW() WHERE id = ? AND seen_at IS NULL', [$offer['id']]);
+}
 $decidable = $isOwner && $offer['status'] === 'pending' && $c['status'] === 'published';
 $extras = rows('SELECT * FROM offer_extra_todos WHERE offer_id = ? ORDER BY position, id', [$offer['id']]);
 $hasSteps = $extras || (bool)array_filter($todos, fn($t) => $t['o_price'] !== null);

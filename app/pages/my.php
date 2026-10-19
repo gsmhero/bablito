@@ -12,6 +12,7 @@ function listing_sel_my(): string
 {
     return 'SELECT c.*, cat.name AS category, t.total_price, COALESCE(t.steps,0) AS steps,
         (SELECT COUNT(*) FROM offers o WHERE o.contract_id = c.id) AS offer_count,
+        (SELECT COUNT(*) FROM offers o WHERE o.contract_id = c.id AND o.status = 'pending' AND o.seen_at IS NULL) AS new_offers,
         (SELECT COUNT(*) FROM todos x WHERE x.contract_id = c.id AND x.accepted_at IS NOT NULL) AS accepted_steps
         FROM contracts c
         LEFT JOIN categories cat ON cat.id = c.category_id
@@ -41,7 +42,7 @@ render('My contracts', function () use ($list, $tab, $u) {
       [$lbl, $cls] = status_label($c['status']);
       $offers = ($tab === 'posted' && $isMine) ? rows('SELECT o.*, COALESCE(NULLIF(x.name,\'\'), CONCAT(\'User #\', x.id)) AS oname, x.rating_avg, x.rating_count FROM offers o JOIN users x ON x.id = o.user_id WHERE o.contract_id = ? ORDER BY o.price', [$c['id']]) : []; ?>
     <article class="card my-card <?= $tab === 'archive' ? 'faded' : '' ?>">
-      <h3><a href="/contract/<?= (int)$c['id'] ?>"><?= h($c['title']) ?></a></h3>
+      <h3><a href="/contract/<?= (int)$c['id'] ?>"><?= h($c['title']) ?></a><?php if ($isMine && (int)$c['new_offers'] > 0): ?> <span class="new-badge" title="Offers you have not opened yet"><?= (int)$c['new_offers'] ?> new <?= (int)$c['new_offers'] === 1 ? 'offer' : 'offers' ?></span><?php endif; ?></h3>
       <div class="row gap small muted">
         <span class="pill <?= h($cls) ?>"><?= h($lbl) ?></span>
         <span><?= h(fdate($c['created_at'])) ?></span>
@@ -62,7 +63,7 @@ render('My contracts', function () use ($list, $tab, $u) {
         <table class="offers">
           <?php foreach ($offers as $o): ?>
             <tr>
-              <td><a class="blue" href="/user/<?= (int)$o['user_id'] ?>"><?= h($o['oname']) ?></a> <?= stars((float)$o['rating_avg'], (int)$o['rating_count'], false) ?></td>
+              <td><a class="blue" href="/user/<?= (int)$o['user_id'] ?>"><?= h($o['oname']) ?></a><?php if (!$o['seen_at'] && $o['status'] === 'pending'): ?> <span class="new-badge">new</span><?php endif; ?> <?= stars((float)$o['rating_avg'], (int)$o['rating_count'], false) ?></td>
               <td><a class="offer-link" href="/offer/<?= (int)$o['id'] ?>"><b class="mid blue"><?= money($o['price']) ?></b> <?= h(cur_code($c)) ?></a></td>
               <td><a class="offer-link" href="/offer/<?= (int)$o['id'] ?>"><b class="mid blue"><?= (int)$o['days'] ?></b> days</a></td>
               <td><a class="btn small" href="/offer/<?= (int)$o['id'] ?>"><?= h(ucfirst($o['status'])) ?></a></td>
