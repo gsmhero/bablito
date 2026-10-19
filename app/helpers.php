@@ -409,7 +409,7 @@ function render(string $title, callable $body, array $opts = []): void
           <?php endif; ?>
         </div>
       </div>
-      <a href="/" class="logo"><img src="/assets/logo.svg" alt="bablito" height="44"></a>
+      <a href="/home" class="logo"><img src="/assets/logo.svg" alt="bablito" height="44"></a>
     </div>
   </div>
 </header>
