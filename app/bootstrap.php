@@ -114,3 +114,4 @@ session_start();
 require ROOT . '/app/migrate.php';
 migrate_if_needed();
 require ROOT . '/app/helpers.php';
+require ROOT . '/app/extras.php';

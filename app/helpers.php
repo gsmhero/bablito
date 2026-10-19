@@ -397,10 +397,11 @@ function render(string $title, callable $body, array $opts = []): void
         </button>
         <div class="menu-pop" id="menu-pop" hidden>
           <?php if ($u): ?>
+            <a href="/dashboard">Dashboard</a>
             <a href="/profile">Profile</a>
             <a href="/my">My Contracts</a>
             <a href="/contract/new">Create Contract</a>
-            <?php if ($u['role'] === 'admin'): ?><a href="/admin" class="green">Admin mode</a><?php endif; ?>
+            <?php if ($u['role'] === 'admin'): ?><a href="/admin" class="green">Admin mode</a><a href="/home">Homepage</a><?php endif; ?>
             <form method="post" action="/logout"><?= csrf_field() ?><button type="submit" class="linkbtn">Log out</button></form>
           <?php else: ?>
             <a href="/login">Login</a>

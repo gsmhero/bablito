@@ -30,6 +30,10 @@ $active = $c['status'] === 'active';
 $canUpload = in_array($c['status'], ['active', 'paused'], true) && ($isOwner || $isContractor);
 $myReview = ($c['status'] === 'fulfilled' && $u) ? row('SELECT id FROM reviews WHERE contract_id = ? AND reviewer_id = ?', [$id, $u['id']]) : null;
 $other = $isOwner ? $contractor : $author;
+if ($u && ($isOwner || $isContractor)) {
+    $maxC = (int)val("SELECT COALESCE(MAX(id), 0) FROM comments WHERE contract_id = ? AND scope IN ('work','todo')", [$id]);
+    q('REPLACE INTO comment_reads (user_id, contract_id, last_id) VALUES (?,?,?)', [$u['id'], $id, $maxC]);
+}
 $timer = row('SELECT timer_seconds + IF(timer_started_at IS NULL, 0, TIMESTAMPDIFF(SECOND, timer_started_at, NOW())) AS s, timer_started_at IS NOT NULL AS running FROM contracts WHERE id = ?', [$id]);
 
 render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $offer, $comments, $todoComments, $accepted, $acceptedSum, $n, $overdue, $tillDate, $active, $canUpload, $isOwner, $isContractor, $myReview, $other, $u, $timer) { ?>

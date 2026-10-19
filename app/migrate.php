@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const SCHEMA_VERSION = 7;
+const SCHEMA_VERSION = 8;
 const ADMIN_EMAIL = 'admin@bablito.ru';
 
 function migrate_if_needed(): void
@@ -62,6 +62,18 @@ function migrate_if_needed(): void
         }
         if ($cur < 7 && !column_exists($pdo, 'contracts', 'currency')) {
             $pdo->exec("ALTER TABLE contracts ADD COLUMN currency CHAR(3) NOT NULL DEFAULT 'RUB'");
+        }
+        if ($cur < 8) {
+            if (!column_exists($pdo, 'users', 'timezone')) {
+                $pdo->exec("ALTER TABLE users ADD COLUMN timezone VARCHAR(64) NULL");
+            }
+            $pdo->exec("CREATE TABLE IF NOT EXISTS comment_reads (
+  user_id INT UNSIGNED NOT NULL,
+  contract_id INT UNSIGNED NOT NULL,
+  last_id INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (user_id, contract_id),
+  FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
         }
         $pdo->exec('REPLACE INTO schema_meta (id, version) VALUES (1, ' . SCHEMA_VERSION . ')');
         ensure_admin();

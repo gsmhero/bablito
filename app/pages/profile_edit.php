@@ -22,10 +22,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $fields[] = ['label' => mb_substr($k, 0, 60), 'value' => mb_substr($v, 0, 190), 'public' => empty($e['public']) ? 0 : 1];
             }
         }
-        q('UPDATE users SET name=?, about=?, contact_phone=?, contact_email=?, show_name=?, show_phone=?, show_email=?, extra_fields=? WHERE id=?', [
+        q('UPDATE users SET name=?, about=?, contact_phone=?, contact_email=?, show_name=?, show_phone=?, show_email=?, extra_fields=?, timezone=? WHERE id=?', [
             $name, mb_substr(trim((string)($_POST['about'] ?? '')), 0, 4000), mb_substr(trim((string)($_POST['contact_phone'] ?? '')), 0, 60), $email,
             empty($_POST['show_name']) ? 0 : 1, empty($_POST['show_phone']) ? 0 : 1, empty($_POST['show_email']) ? 0 : 1,
-            json_encode($fields, JSON_UNESCAPED_UNICODE), $u['id'],
+            json_encode($fields, JSON_UNESCAPED_UNICODE), valid_timezone((string)($_POST['timezone'] ?? '')), $u['id'],
         ]);
         flash('Profile saved.');
         redirect('/profile');
@@ -40,6 +40,7 @@ render('Edit profile', function () use ($u, $extra, $error) { ?>
   <?php if ($error): ?><div class="flash err"><?= h($error) ?></div><?php endif; ?>
   <div class="field-row"><label>Your name <input name="name" value="<?= h($u['name']) ?>" maxlength="120" required></label>
     <label class="check"><input type="checkbox" name="show_name" value="1" <?= $u['show_name'] ? 'checked' : '' ?>> Show in Public</label></div>
+  <label>Time zone <select name="timezone"><option value="">Not set</option><?php $cur = valid_timezone($u['timezone'] ?? null); $zones = common_timezones(); if ($cur && !in_array($cur, $zones, true)) { $zones[] = $cur; } foreach ($zones as $z): ?><option value="<?= h($z) ?>" <?= $cur === $z ? 'selected' : '' ?>><?= h($z) ?></option><?php endforeach; ?></select></label>
   <label>About me <textarea name="about" rows="4"><?= h($u['about']) ?></textarea></label>
   <div class="field-row"><label>Contact Phone <input name="contact_phone" value="<?= h($u['contact_phone']) ?>" maxlength="60"></label>
     <label class="check"><input type="checkbox" name="show_phone" value="1" <?= $u['show_phone'] ? 'checked' : '' ?>> Show in Public</label></div>

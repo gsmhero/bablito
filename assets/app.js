@@ -261,3 +261,43 @@
   var sel = document.getElementById('currency-select'), out = document.getElementById('sum-cur');
   if (sel && out) { sel.addEventListener('change', function () { out.textContent = sel.value; }); }
 })();
+
+(function () {
+  'use strict';
+  // ---- Dashboard: own clock, world time cards, LIVE ticker ----
+  function parts(tz) {
+    var o = { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+    if (tz) { o.timeZone = tz; }
+    var p = {};
+    try { new Intl.DateTimeFormat('en-GB', o).formatToParts(new Date()).forEach(function (x) { p[x.type] = x.value; }); } catch (e) { return null; }
+    if (p.hour === '24') { p.hour = '00'; }
+    return p;
+  }
+  function setK(root, k, v) { var el = root.querySelector('[data-k="' + k + '"]'); if (el) { el.textContent = v; } }
+  var clocks = document.querySelectorAll('#dash-clock, .wclock[data-tz]');
+  if (clocks.length) {
+    var tickAll = function () {
+      clocks.forEach(function (c) {
+        var p = parts(c.dataset.tz || '');
+        if (!p) { return; }
+        setK(c, 'wd', p.weekday); setK(c, 'date', p.day + '.' + p.month + '.' + p.year);
+        setK(c, 'time', p.hour + ':' + p.minute + ':' + p.second); setK(c, 'hh', p.hour); setK(c, 'mm', p.minute);
+      });
+    };
+    tickAll(); setInterval(tickAll, 1000);
+  }
+  var feed = document.getElementById('live-feed');
+  if (feed) {
+    var firstId = function () { var a = feed.querySelector('.live-item'); return a ? a.getAttribute('data-id') : ''; };
+    setInterval(function () {
+      if (document.hidden) { return; }
+      fetch(feed.dataset.url, { credentials: 'same-origin', cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : null; }).then(function (html) {
+        if (html === null) { return; }
+        var before = firstId();
+        feed.innerHTML = html;
+        var a = feed.querySelector('.live-item');
+        if (a && a.getAttribute('data-id') !== before && before !== '') { a.classList.add('live-new'); }
+      }).catch(function () {});
+    }, 15000);
+  }
+})();

@@ -1,6 +1,10 @@
 <?php
 declare(strict_types=1);
 
+if (user() && (string)parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) === '/') {
+    redirect('/dashboard');
+}
+
 $title = setting('home_title', 'Control Your Missions and Money');
 $blocks = rows('SELECT * FROM home_blocks ORDER BY position, id');
 

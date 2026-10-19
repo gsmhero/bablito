@@ -9,6 +9,8 @@ $method = $_SERVER['REQUEST_METHOD'];
 $routes = [
     ['GET',  '#^/$#',                              'home'],
     ['GET',  '#^/contracts$#',                     'contracts'],
+    ['GET',  '#^/dashboard(?:/(live))?$#',        'dashboard'],
+    ['GET',  '#^/home$#',                         'home'],
     ['GET',  '#^/contract/new$#',                  'contract_edit'],
     ['POST', '#^/contract/new$#',                  'contract_edit'],
     ['GET',  '#^/contract/(\d+)/edit$#',           'contract_edit'],
