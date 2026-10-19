@@ -47,7 +47,7 @@ render('My contracts', function () use ($list, $tab, $u) {
         <span><?= h(fdate($c['created_at'])) ?></span>
         <?php if ($c['category']): ?><span class="chip"><?= h($c['category']) ?></span><?php endif; ?>
         <span><?= h($c['location']) ?></span>
-        <span class="grow right">Deadline <?= h(fdate($dead)) ?></span>
+        <?php if ($c['agreed_deadline']): ?><span class="grow right">Deadline <?= h(fdate($dead)) ?></span><?php endif; ?>
       </div>
       <p class="desc small"><?= h(mb_strimwidth((string)$c['description'], 0, 220, '…')) ?></p>
       <?php if (in_array($c['status'], ['active', 'paused', 'fulfilled'], true)): $pct = $c['steps'] ? round($c['accepted_steps'] / $c['steps'] * 100) : 0; ?>

@@ -211,3 +211,4 @@ a.offer-link{color:inherit}a.offer-link:hover{text-decoration:underline}
 .main-nav{gap:8px}
 .title-input{margin-bottom:0}
 .title-input+.row{margin-top:6px}
+.sums.two{grid-template-columns:1fr 1fr}

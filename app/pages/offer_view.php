@@ -84,10 +84,9 @@ render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $com
     <h3>Files</h3>
     <ul class="files"><?php foreach ($files as $f): if ($f['kind'] !== 'file') { continue; } ?><li><a href="/uploads/<?= h($f['stored_name']) ?>" download="<?= h($f['original_name']) ?>"><?= h($f['original_name']) ?></a></li><?php endforeach; ?></ul>
     <hr>
-    <div class="sums">
+    <div class="sums two">
       <div><div class="lbl">Price</div><div class="big green"><?= money($tot['price']) ?></div><div class="cur"><?= h(cur_code($c)) ?></div></div>
       <div class="center"><div class="lbl">Time days</div><div class="big green"><?= $tot['days'] ?></div></div>
-      <div class="center"><div class="lbl">Till Date</div><div class="big green sm"><?= h(fdate($c['deadline'])) ?></div></div>
     </div>
     <hr>
     <div class="sums">
