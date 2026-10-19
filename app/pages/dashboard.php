@@ -61,8 +61,8 @@ render('Dashboard', function () use ($list, $totals, $myTz, $u) { ?>
             <div class="row gap small">
               <span class="pill <?= $c['status'] === 'paused' ? 'orange' : 'blue' ?>"><?= $c['status'] === 'paused' ? 'Paused' : 'Active' ?></span>
               <?php if ($running): ?><span class="pill blue">running</span><?php endif; ?>
-              <span class="<?= $isAuthor ? 'green' : 'muted' ?>" title="Contract author"><?= h(public_name(['id' => $c['user_id'], 'name' => $c['a_name'], 'show_name' => $c['a_show']])) ?></span>
-              <span class="<?= $isAuthor ? 'muted' : 'blue' ?>" title="Contractor"><?= h(public_name(['id' => $c['contractor_id'], 'name' => $c['k_name'], 'show_name' => $c['k_show']])) ?></span>
+              <?php $other = $isAuthor ? ['id' => $c['contractor_id'], 'name' => $c['k_name'], 'show_name' => $c['k_show']] : ['id' => $c['user_id'], 'name' => $c['a_name'], 'show_name' => $c['a_show']]; ?>
+              <span class="<?= $isAuthor ? 'blue' : 'green' ?>" title="<?= $isAuthor ? 'Contractor' : 'Client (contract author)' ?>"><?= h(public_name($other)) ?></span>
             </div>
             <div class="progress"><span style="width:<?= $pct ?>%"></span></div>
             <div class="row between">
