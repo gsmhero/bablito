@@ -130,7 +130,7 @@ function accept_offer_terms(array $contract, array $offer): void
     q("UPDATE contracts SET status = 'active', contractor_id = ?, accepted_offer_id = ?, agreed_price = ?, agreed_days = ?, started_at = NOW(), agreed_deadline = DATE_ADD(CURDATE(), INTERVAL ? DAY) WHERE id = ?",
         [$offer['user_id'], $offer['id'], $offer['price'], $offer['days'], $offer['days'], $contract['id']]);
     q("UPDATE offers SET status = 'accepted' WHERE id = ?", [$offer['id']]);
-    q("UPDATE offers SET status = 'rejected' WHERE contract_id = ? AND id <> ? AND status = 'pending'", [$contract['id'], $offer['id']]);
+    delete_offers("contract_id = ? AND id <> ? AND status = 'pending'", [$contract['id'], $offer['id']]);
 }
 
 /** Offer form rows for the offerer's own extra steps (shared by contract and offer pages). */
@@ -142,4 +142,16 @@ function extra_todo_row(int $i, array $e = []): string
         . '<label class="tiny">Days <input class="num o-days" form="offer-form" type="number" min="0" name="extra[' . $i . '][days]" value="' . h(isset($e['days']) ? (string)(int)$e['days'] : '') . '"></label>'
         . '<button type="button" class="linkbtn red remove-extra">Remove</button></div>'
         . '<label class="tiny">Description <textarea form="offer-form" name="extra[' . $i . '][description]" rows="2">' . h($e['description'] ?? '') . '</textarea></label></div>';
+}
+
+/** Removes offers (rejected ones disappear everywhere) together with their private discussion. */
+function delete_offers(string $where, array $params): void
+{
+    $ids = array_column(rows("SELECT id FROM offers WHERE $where", $params), 'id');
+    if (!$ids) {
+        return;
+    }
+    $in = implode(',', array_map('intval', $ids));
+    q("DELETE FROM comments WHERE scope = 'offer' AND offer_id IN ($in)");
+    q("DELETE FROM offers WHERE id IN ($in)");
 }

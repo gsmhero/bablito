@@ -36,15 +36,15 @@ switch ($args[1]) {
         if (!$isOwner || $offer['status'] !== 'pending') {
             forbidden();
         }
-        q("UPDATE offers SET status = 'rejected' WHERE id = ?", [$offer['id']]);
-        flash('Offer rejected.');
+        delete_offers('id = ?', [$offer['id']]);
+        flash('Offer rejected and deleted.');
         redirect('/contract/' . $c['id']);
 
     case 'delete':
         if (!$isOfferer || $offer['status'] === 'accepted') {
             forbidden();
         }
-        q('DELETE FROM offers WHERE id = ?', [$offer['id']]);
+        delete_offers('id = ?', [$offer['id']]);
         flash('Your offer was deleted.');
         redirect('/contract/' . $c['id']);
 
