@@ -391,11 +391,18 @@ function render(string $title, callable $body, array $opts = []): void
       <a href="/watchlater" class="icon-btn" title="Watch later" aria-label="Watch later">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
       </a>
+      <?php if (!empty($opts['filters'])): ?><button class="icon-btn m-filter" type="button" id="filter-btn" aria-label="Filters" aria-expanded="false"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 3v18M12 3v18M18 3v18"/><rect x="3.5" y="14" width="5" height="3.2" rx="1" fill="currentColor"/><rect x="9.5" y="6" width="5" height="3.2" rx="1" fill="currentColor"/><rect x="15.5" y="12" width="5" height="3.2" rx="1" fill="currentColor"/></svg></button><?php endif; ?>
       <div class="menu">
         <button class="icon-btn" type="button" id="menu-btn" aria-label="Menu" aria-expanded="false">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="5" width="18" height="2.4"/><rect x="3" y="10.8" width="18" height="2.4"/><rect x="3" y="16.6" width="18" height="2.4"/></svg>
         </button>
         <div class="menu-pop" id="menu-pop" hidden>
+          <div class="m-only m-top">
+            <?php if ($u): ?><span class="m-user"><?= h(display_name($u)) ?></span><?php else: ?><span class="m-user"><a href="/login">Login</a> | <a href="/register">Register</a></span><?php endif; ?>
+            <a href="/contracts">CONTRACTS</a>
+            <a href="/contract/new">CREATE CONTRACT</a>
+            <a href="/watchlater"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> WATCH LATER</a>
+          </div>
           <?php if ($u): ?>
             <?php if ($u['role'] === 'admin'): ?><a href="/admin" class="green">Admin mode</a><a href="/home">Homepage</a><?php endif; ?>
             <a href="/dashboard">Dashboard</a>
@@ -405,8 +412,8 @@ function render(string $title, callable $body, array $opts = []): void
             <a href="/contract/new">Create Contract</a>
             <form method="post" action="/logout"><?= csrf_field() ?><button type="submit" class="linkbtn">Log out</button></form>
           <?php else: ?>
-            <a href="/login">Login</a>
-            <a href="/register">Register</a>
+            <a href="/login" class="d-only">Login</a>
+            <a href="/register" class="d-only">Register</a>
           <?php endif; ?>
         </div>
       </div>

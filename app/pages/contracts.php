@@ -31,23 +31,23 @@ $total = (int)val('SELECT COUNT(*) FROM contracts c LEFT JOIN ' . TOTALS_SQL . '
 $uid = user()['id'] ?? null;
 
 render('Contracts', function () use ($list, $sort, $cat, $from, $to, $uid, $total, $page, $per) { ?>
-<div class="wrap">
+<div class="wrap rel">
   <form class="filters" method="get">
-    <label>Sort by
+    <label class="f-sort">Sort by
       <select name="sort" onchange="this.form.submit()">
         <option value="date" <?= $sort === 'date' ? 'selected' : '' ?>>Date</option>
         <option value="price" <?= $sort === 'price' ? 'selected' : '' ?>>Price</option>
       </select>
     </label>
-    <label>Category
+    <label class="f-cat">Category
       <select name="category" onchange="this.form.submit()">
         <option value="0">Select</option>
         <?php foreach (categories() as $c): ?><option value="<?= (int)$c['id'] ?>" <?= $cat === (int)$c['id'] ? 'selected' : '' ?>><?= h($c['name']) ?></option><?php endforeach; ?>
       </select>
     </label>
-    <label>Price from <input name="from" inputmode="numeric" value="<?= h($from) ?>"></label>
-    <label>to <input name="to" inputmode="numeric" value="<?= h($to) ?>"></label>
-    <button class="btn" type="submit">Apply</button>
+    <label class="f-from">Price from <input name="from" inputmode="numeric" value="<?= h($from) ?>"></label>
+    <label class="f-to">to <input name="to" inputmode="numeric" value="<?= h($to) ?>"></label>
+    <button class="btn f-apply" type="submit">Apply</button>
   </form>
 
   <?php if (!$list): ?><p class="muted">No contracts found.</p><?php endif; ?>
@@ -61,4 +61,4 @@ render('Contracts', function () use ($list, $sort, $cat, $from, $to, $uid, $tota
   </div>
   <?php endif; ?>
 </div>
-<?php });
+<?php }, ['filters' => true]);

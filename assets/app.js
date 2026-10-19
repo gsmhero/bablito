@@ -349,3 +349,13 @@
     document.querySelectorAll('.modal[id]:not([hidden])').forEach(function (m) { m.hidden = true; document.body.classList.remove('lb-open'); });
   });
 })();
+
+(function () {
+  'use strict';
+  // mobile: the filter icon in the header opens the filter panel of the contracts page
+  var fb = document.getElementById('filter-btn'), panel = document.querySelector('.filters');
+  if (fb && panel) {
+    fb.addEventListener('click', function (e) { e.stopPropagation(); panel.classList.toggle('open'); fb.setAttribute('aria-expanded', String(panel.classList.contains('open'))); });
+    document.addEventListener('click', function (e) { if (!panel.contains(e.target) && e.target !== fb && !fb.contains(e.target)) { panel.classList.remove('open'); } });
+  }
+})();
