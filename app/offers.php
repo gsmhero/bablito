@@ -26,6 +26,7 @@ function parse_offer_input(array $todos, bool $allowExtras = false): array|strin
     }
 
     $extras = [];
+    $extraHasDays = false;
     if ($allowExtras) {
         foreach ((array)($_POST['extra'] ?? []) as $e) {
             $name = trim((string)($e['name'] ?? ''));
@@ -34,10 +35,13 @@ function parse_offer_input(array $todos, bool $allowExtras = false): array|strin
             if ($name === '' && $p === '' && $d === '') {
                 continue;
             }
-            if ($name === '' || mb_strlen($name) > 190 || $p === '' || num($p) < 0 || num($p) > 999999999 || $d === '' || (int)$d < 0 || (int)$d > 3650) {
+            if ($name === '' || mb_strlen($name) > 190 || $p === '' || num($p) < 0 || num($p) > 999999999 || ($d !== '' && ((int)$d < 0 || (int)$d > 3650))) {
                 return 'Check the name, price and days of your added To Dos.';
             }
-            $extras[] = ['name' => $name, 'description' => mb_substr(trim((string)($e['description'] ?? '')), 0, 4000), 'price' => num($p), 'days' => (int)$d];
+            $extras[] = ['name' => $name, 'description' => mb_substr(trim((string)($e['description'] ?? '')), 0, 4000), 'price' => num($p), 'days' => $d === '' ? 0 : (int)$d];
+            if ($d !== '') {
+                $extraHasDays = true;
+            }
             if (count($extras) >= 30) {
                 break;
             }
@@ -55,17 +59,29 @@ function parse_offer_input(array $todos, bool $allowExtras = false): array|strin
         $out = [];
         $price = 0.0;
         $days = 0;
+        $anyDays = $extraHasDays;
         foreach ($steps as $tid => [$p, $d]) {
-            if ($p === '' || $d === '' || num($p) < 0 || (int)$d < 0) {
-                return 'Fill in offer price and days for every To Do, or clear them all and enter a total.';
+            if ($p === '' || num($p) < 0 || ($d !== '' && (int)$d < 0)) {
+                return 'Fill in the offer price for every To Do, or clear them all and enter a total.';
             }
-            $out[$tid] = [num($p), (int)$d];
+            if ($d !== '') {
+                $anyDays = true;
+            }
+            $out[$tid] = [num($p), $d === '' ? 0 : (int)$d];
             $price += num($p);
-            $days += (int)$d;
+            $days += $d === '' ? 0 : (int)$d;
         }
         foreach ($extras as $e) {
             $price += $e['price'];
             $days += $e['days'];
+        }
+        if (!$anyDays) {
+            // no days on any To Do: the total "Time days" field decides (e.g. everything is done in one day)
+            $dRaw = trim((string)($_POST['days'] ?? ''));
+            $days = (int)$dRaw;
+            if ($dRaw === '' || $days < 1 || $days > 3650) {
+                return 'Enter Time days (1 or more), or fill the days of the To Dos.';
+            }
         }
     } else {
         $out = [];
@@ -104,6 +120,7 @@ function accept_offer_terms(array $contract, array $offer): void
         $per[(int)$r['todo_id']] = $r;
     }
     $n = count($todos);
+    $perDays = array_sum(array_map(fn($r) => (int)$r['days'], $per));
     $sumP = array_sum(array_map(fn($t) => (float)$t['price'], $todos));
     $leftP = (float)$offer['price'];
     $leftD = (int)$offer['days'];
@@ -111,6 +128,9 @@ function accept_offer_terms(array $contract, array $offer): void
         if (isset($per[(int)$t['id']])) {
             $p = (float)$per[(int)$t['id']]['price'];
             $d = (int)$per[(int)$t['id']]['days'];
+            if ($perDays === 0 && $i === 0 && (int)$offer['days'] > 0) {
+                $d = (int)$offer['days']; // whole time on the first step: every step is due at the final date
+            }
         } elseif ($i === $n - 1) {
             $p = max(0.0, $leftP);
             $d = max(0, $leftD);

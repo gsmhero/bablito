@@ -42,10 +42,11 @@
   var op = $('#offer-price'), od = $('#offer-days');
   if (op && od) {
     var sync = function () {
-      var P = $$('.o-price'), D = $$('.o-days'), any = false, sp = 0, sd = 0;
-      P.forEach(function (el, i) { if (el.value.trim() !== '' || D[i].value.trim() !== '') { any = true; } sp += num(el.value); sd += parseInt(D[i].value, 10) || 0; });
-      op.readOnly = od.readOnly = any;
-      if (any) { op.value = sp || ''; od.value = sd || ''; }
+      var P = $$('.o-price'), D = $$('.o-days'), anyP = false, anyD = false, sp = 0, sd = 0;
+      P.forEach(function (el, i) { if (el.value.trim() !== '' || D[i].value.trim() !== '') { anyP = true; } if (D[i].value.trim() !== '') { anyD = true; } sp += num(el.value); sd += parseInt(D[i].value, 10) || 0; });
+      op.readOnly = anyP; od.readOnly = anyD;
+      if (anyP) { op.value = sp || ''; }
+      if (anyD) { od.value = sd; }
     };
     $$('.o-price, .o-days').forEach(function (el) { el.addEventListener('input', sync); });
   }
@@ -112,10 +113,11 @@
     box.addEventListener('input', function () {
       var op = document.getElementById('offer-price'), od = document.getElementById('offer-days');
       if (!op || !od) { return; }
-      var P = document.querySelectorAll('.o-price'), D = document.querySelectorAll('.o-days'), any = false, sp = 0, sd = 0;
-      P.forEach(function (el, i) { if (el.value.trim() !== '' || D[i].value.trim() !== '') { any = true; } sp += parseFloat(String(el.value).replace(/\s/g, '').replace(',', '.')) || 0; sd += parseInt(D[i].value, 10) || 0; });
-      op.readOnly = od.readOnly = any;
-      if (any) { op.value = sp || ''; od.value = sd; }
+      var P = document.querySelectorAll('.o-price'), D = document.querySelectorAll('.o-days'), anyP = false, anyD = false, sp = 0, sd = 0;
+      P.forEach(function (el, i) { if (el.value.trim() !== '' || D[i].value.trim() !== '') { anyP = true; } if (D[i].value.trim() !== '') { anyD = true; } sp += parseFloat(String(el.value).replace(/\s/g, '').replace(',', '.')) || 0; sd += parseInt(D[i].value, 10) || 0; });
+      op.readOnly = anyP; od.readOnly = anyD;
+      if (anyP) { op.value = sp || ''; }
+      if (anyD) { od.value = sd; }
     });
   }
 })();

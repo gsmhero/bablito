@@ -26,8 +26,9 @@ if ($isOwner && !$offer['seen_at']) {
 $decidable = $isOwner && $offer['status'] === 'pending' && $c['status'] === 'published';
 $extras = rows('SELECT * FROM offer_extra_todos WHERE offer_id = ? ORDER BY position, id', [$offer['id']]);
 $hasSteps = $extras || (bool)array_filter($todos, fn($t) => $t['o_price'] !== null);
+$hasDays = (bool)array_filter($extras, fn($e) => (int)$e['days'] > 0) || (bool)array_filter($todos, fn($t) => (int)($t['o_days'] ?? 0) > 0);
 
-render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $comments, $editable, $editing, $decidable, $hasSteps, $isOwner, $extras) { ?>
+render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $comments, $editable, $editing, $decidable, $hasSteps, $hasDays, $isOwner, $extras) { ?>
 <form method="post" action="/offer/<?= (int)$offer['id'] ?>/edit" class="wrap two-col" id="offer-form">
   <?= csrf_field() ?>
   <div class="col">
@@ -98,7 +99,7 @@ render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $com
         <?php if ($editing): ?><input name="price" id="offer-price" value="<?= h((string)(float)$offer['price']) ?>" inputmode="decimal" <?= $hasSteps ? 'readonly' : '' ?>><?php else: ?><div class="big blue"><?= money($offer['price']) ?></div><?php endif; ?>
         <div class="cur"><?= h(cur_code($c)) ?></div></div>
       <div class="center"><div class="lbl">Offer days</div>
-        <?php if ($editing): ?><input name="days" id="offer-days" type="number" min="0" value="<?= (int)$offer['days'] ?>" <?= $hasSteps ? 'readonly' : '' ?>><?php else: ?><div class="big blue"><?= (int)$offer['days'] ?></div><?php endif; ?></div>
+        <?php if ($editing): ?><input name="days" id="offer-days" type="number" min="0" value="<?= (int)$offer['days'] ?>" <?= $hasDays ? 'readonly' : '' ?>><?php else: ?><div class="big blue"><?= (int)$offer['days'] ?></div><?php endif; ?></div>
       <div class="center"><div class="lbl">Offer From</div><a class="blue" href="/user/<?= (int)$offer['user_id'] ?>"><?= h($offer['oname']) ?></a> <?= stars((float)$offer['rating_avg'], (int)$offer['rating_count']) ?></div>
     </div>
     <div class="small pay-type"><b>Payment for the contract</b>
