@@ -212,3 +212,4 @@ a.offer-link{color:inherit}a.offer-link:hover{text-decoration:underline}
 .title-input{margin-bottom:0}
 .title-input+.row{margin-top:6px}
 .sums.two{grid-template-columns:1fr 1fr}
+.pref-date{font-size:1rem;color:#aaa;font-weight:400;line-height:2.9}

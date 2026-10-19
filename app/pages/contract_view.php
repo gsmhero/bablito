@@ -102,7 +102,7 @@ render($c['title'], function () use ($c, $author, $todos, $files, $tot, $offers,
     <div class="sums<?= $c['deadline'] ? '' : ' two' ?>">
       <div><div class="lbl">Price</div><div class="big green"><?= money($tot['price']) ?></div><div class="cur"><?= h(cur_code($c)) ?></div></div>
       <div class="center"><div class="lbl">Time days</div><div class="big green"><?= $tot['days'] ?></div></div>
-      <?php if ($c['deadline']): ?><div class="center"><div class="lbl">Preferred till date</div><div class="big green sm"><?= h(fdate($c['deadline'])) ?></div></div><?php endif; ?>
+      <?php if ($c['deadline']): ?><div class="center"><div class="lbl">Preferred till date</div><div class="pref-date"><?= h(fdate($c['deadline'])) ?></div></div><?php endif; ?>
     </div>
     <hr>
     <?php if ($canOffer): ?>
