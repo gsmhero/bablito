@@ -46,6 +46,9 @@ render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $
   <div class="col">
     <h1><?= h($c['title']) ?></h1>
     <?php [$lbl, $cls] = status_label($c['status']); ?>
+    <?php if ($isOwner && in_array($c['status'], ['fulfilled', 'terminated'], true)): ?>
+      <form method="post" action="/contract/<?= (int)$c['id'] ?>/repeat" class="repeat-form" onsubmit="return confirm('Create a new draft from this contract? Comments and the contractor\x27s files are not copied.')"><?= csrf_field() ?><button class="btn green" type="submit">Repeat Contract</button></form>
+    <?php endif; ?>
     <div class="pills">
     <span class="pill <?= h($overdue ? 'red' : $cls) ?>"><?= h($overdue ? 'Overdue' : $lbl) ?></span>
     <?php if ($c['prepay_required']): ?><span class="pill blue"><?= $c['prepaid_at'] ? 'Prepayd' : 'Prepayment pending' ?></span><?php endif; ?>

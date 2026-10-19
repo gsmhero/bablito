@@ -123,6 +123,34 @@ switch ($action) {
         flash('Prepayment marked as paid. Payments are settled directly between you and the contractor.');
         redirect($back);
 
+    case 'repeat':
+        if (!$isOwner || !in_array($c['status'], ['fulfilled', 'terminated'], true)) {
+            forbidden();
+        }
+        // A fresh draft (new ID) with the author's own content only: no comments, offers,
+        // invoices, stopwatch data or anything uploaded by the contractor.
+        $pdo = db();
+        $pdo->beginTransaction();
+        q("INSERT INTO contracts (user_id, title, category_id, location, description, status, allow_extra_todos, prepay_required, currency)
+           VALUES (?,?,?,?,?, 'draft', ?,?,?)",
+            [$u['id'], $c['title'], $c['category_id'], $c['location'], $c['description'], $c['allow_extra_todos'], $c['prepay_required'], cur_code($c)]);
+        $newId = (int)$pdo->lastInsertId();
+        foreach (rows('SELECT * FROM todos WHERE contract_id = ? ORDER BY position, id', [$id]) as $t) {
+            q('INSERT INTO todos (contract_id, position, name, description, price, days) VALUES (?,?,?,?,?,?)', [$newId, $t['position'], $t['name'], $t['description'], $t['price'], $t['days']]);
+        }
+        $copied = [];
+        foreach (rows('SELECT * FROM files WHERE contract_id = ? AND by_contractor = 0 ORDER BY id', [$id]) as $f) {
+            $ext = strtolower(pathinfo($f['stored_name'], PATHINFO_EXTENSION));
+            $name = bin2hex(random_bytes(12)) . '.' . $ext;
+            if (is_file(ROOT . '/uploads/' . $f['stored_name']) && @copy(ROOT . '/uploads/' . $f['stored_name'], ROOT . '/uploads/' . $name)) {
+                q('INSERT INTO files (contract_id, user_id, kind, stored_name, original_name, by_contractor) VALUES (?,?,?,?,?,0)', [$newId, $u['id'], $f['kind'], $name, $f['original_name']]);
+                $copied[] = $name;
+            }
+        }
+        $pdo->commit();
+        flash('A new draft was created from the archived contract. Review it, set the preferred date and publish.');
+        redirect('/contract/' . $newId . '/edit');
+
     case 'delete':
         if (!$isOwner && !is_admin()) {
             forbidden();

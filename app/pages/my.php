@@ -57,6 +57,7 @@ render('My contracts', function () use ($list, $tab, $u) {
       <div class="row between">
         <span><b class="mid <?= in_array($c['status'], ['active', 'paused'], true) ? 'blue' : 'green' ?>"><?= money($c['agreed_price'] ?? $c['total_price']) ?></b> <span class="small"><?= h(cur_code($c)) ?></span> &nbsp; <b class="mid"><?= (int)$c['steps'] ?></b> <span class="tiny">STEPS</span></span>
         <span class="tiny muted"><?= (int)$c['views'] ?> views · <?= (int)$c['offer_count'] ?> offers</span>
+        <?php if ($tab === 'archive' && $isMine): ?><form method="post" action="/contract/<?= (int)$c['id'] ?>/repeat" class="inline" onsubmit="return confirm('Create a new draft from this contract?')"><?= csrf_field() ?><button class="btn small green" type="submit">Repeat Contract</button></form><?php endif; ?>
       </div>
     </article>
   <?php endforeach; ?>

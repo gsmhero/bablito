@@ -254,3 +254,4 @@ input[type=checkbox]:disabled{cursor:default;opacity:.55}
 .pill.inv-waiting{background:#e08a00}.pill.inv-pending{background:var(--blue)}.pill.inv-paid{background:var(--green)}
 .pay-type{margin:10px 0}.pay-type label{margin:4px 0}.pay-type-val{display:inline-block;margin-top:4px;padding:3px 12px;border-radius:12px;background:#e8f1fb;color:var(--blue);font-weight:500}
 .pay-type-line{margin-top:6px}
+.repeat-form{margin:8px 0}
