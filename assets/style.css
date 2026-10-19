@@ -236,3 +236,4 @@ input[type=checkbox]:checked::after{transform:scale(1)}
 input[type=checkbox]:focus-visible{outline:2px solid #12ad0066;outline-offset:2px}
 input[type=checkbox]:disabled{cursor:default;opacity:.55}
 .picked-grid input[type=checkbox]{width:18px!important;height:18px!important}
+.row.gap.end{align-items:center}
