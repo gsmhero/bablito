@@ -31,6 +31,7 @@ $routes = [
     ['GET',  '#^/setup-admin$#',                   'setup_admin'],
     ['POST', '#^/setup-admin$#',                   'setup_admin'],
     ['POST', '#^/logout$#',                        'logout'],
+    ['GET',  '#^/contract/(\d+)/(timelog|timer\.json)$#', 'contract_info'],
     ['GET',  '#^/page/([a-z0-9-]+)$#',             'static_page'],
     ['GET',  '#^/admin(?:/(users|contracts|home|pages))?$#', 'admin'],
     ['POST', '#^/admin/(users|contracts|home|pages)$#',     'admin'],

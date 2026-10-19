@@ -397,5 +397,6 @@ function clock_icon(int $size = 16): string
 /** Adds the running time to the stopwatch total and stops it. */
 function stop_timer(int $contractId): void
 {
+    q('UPDATE timer_log SET stopped_at = NOW(), seconds = TIMESTAMPDIFF(SECOND, started_at, NOW()) WHERE contract_id = ? AND stopped_at IS NULL', [$contractId]);
     q('UPDATE contracts SET timer_seconds = timer_seconds + TIMESTAMPDIFF(SECOND, timer_started_at, NOW()), timer_started_at = NULL WHERE id = ? AND timer_started_at IS NOT NULL', [$contractId]);
 }

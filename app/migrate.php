@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const SCHEMA_VERSION = 4;
+const SCHEMA_VERSION = 5;
 const ADMIN_EMAIL = 'admin@bablito.ru';
 
 function migrate_if_needed(): void
@@ -34,6 +34,20 @@ function migrate_if_needed(): void
             if (!column_exists($pdo, 'contracts', 'timer_seconds')) {
                 $pdo->exec('ALTER TABLE contracts ADD COLUMN timer_seconds INT UNSIGNED NOT NULL DEFAULT 0, ADD COLUMN timer_started_at DATETIME NULL');
             }
+        }
+        if ($cur < 5) {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS timer_log (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  contract_id INT UNSIGNED NOT NULL,
+  user_id INT UNSIGNED NOT NULL,
+  todo_id INT UNSIGNED NULL,
+  todo_name VARCHAR(190) NOT NULL DEFAULT '',
+  started_at DATETIME NOT NULL,
+  stopped_at DATETIME NULL,
+  seconds INT UNSIGNED NOT NULL DEFAULT 0,
+  INDEX (contract_id),
+  FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
         }
         $pdo->exec('REPLACE INTO schema_meta (id, version) VALUES (1, ' . SCHEMA_VERSION . ')');
         ensure_admin();

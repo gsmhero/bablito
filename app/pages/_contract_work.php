@@ -90,10 +90,12 @@ render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $
     <?php $ts = (int)$timer['s']; $running = $timer['running'] && $active; ?>
     <div class="row end gap">
       <span class="tiny muted">Stopwatch</span>
-      <span class="stopwatch" id="stopwatch" data-seconds="<?= $ts ?>" data-running="<?= $running ? 1 : 0 ?>"><?= h(sprintf('%02d:%02d:%02d:%02d', intdiv($ts, 86400), intdiv($ts % 86400, 3600), intdiv($ts % 3600, 60), $ts % 60)) ?></span>
+      <span class="run-state <?= $running ? 'on' : '' ?>" id="run-state"><?= $running ? 'Started' : 'Stopped' ?></span>
+      <span class="stopwatch" id="stopwatch" data-poll="/contract/<?= (int)$c['id'] ?>/timer.json" data-seconds="<?= $ts ?>" data-running="<?= $running ? 1 : 0 ?>"><?= h(sprintf('%02d:%02d:%02d:%02d', intdiv($ts, 86400), intdiv($ts % 86400, 3600), intdiv($ts % 3600, 60), $ts % 60)) ?></span>
       <?php if ($isContractor && $active): ?>
         <form method="post" action="/contract/<?= (int)$c['id'] ?>/timer" class="inline"><?= csrf_field() ?><button class="btn small <?= $timer['running'] ? 'red' : 'green' ?>" type="submit"><?= $timer['running'] ? 'Stop' : 'Start' ?></button></form>
       <?php endif; ?>
+      <a class="btn small" href="/contract/<?= (int)$c['id'] ?>/timelog" data-modal>Log</a>
     </div>
     <hr>
     <?php if ($canUpload): ?>

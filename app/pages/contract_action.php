@@ -100,7 +100,9 @@ switch ($action) {
         if ($c['timer_started_at']) {
             stop_timer($id);
         } else {
+            $cur = row('SELECT id, name FROM todos WHERE contract_id = ? AND accepted_at IS NULL ORDER BY (done_at IS NOT NULL), position, id LIMIT 1', [$id]);
             q('UPDATE contracts SET timer_started_at = NOW() WHERE id = ?', [$id]);
+            q('INSERT INTO timer_log (contract_id, user_id, todo_id, todo_name, started_at) VALUES (?,?,?,?,NOW())', [$id, $u['id'], $cur['id'] ?? null, $cur['name'] ?? '']);
         }
         redirect($back);
 

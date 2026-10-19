@@ -161,3 +161,7 @@ a.offer-link{color:inherit}a.offer-link:hover{text-decoration:underline}
 /* file names: owner's files dark grey, contractor's files blue */
 .files a{color:#555}
 .files li.by-contractor a{color:var(--blue)}
+
+/* stopwatch state + log */
+.run-state{font-size:.8rem;border-radius:10px;padding:1px 10px;background:#999;color:#fff}.run-state.on{background:var(--green)}
+.timelog h2{margin:.2em 0}.timelog .admin-table{margin-top:10px}
