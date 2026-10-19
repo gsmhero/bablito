@@ -11,14 +11,14 @@ if (($args[0] ?? '') === 'live') {
 
 require_once ROOT . '/app/card.php';
 
-$st = db()->prepare("SELECT c.*, cat.name AS category,
+$st = db()->prepare("SELECT c.*, cat.name AS category, au.name AS a_name, au.show_name AS a_show, ct.name AS k_name, ct.show_name AS k_show,
         (SELECT COUNT(*) FROM todos t WHERE t.contract_id = c.id) AS steps,
         (SELECT COUNT(*) FROM todos t WHERE t.contract_id = c.id AND t.accepted_at IS NOT NULL) AS accepted_steps,
         (SELECT COUNT(*) FROM comments cm WHERE cm.contract_id = c.id AND cm.scope IN ('work','todo') AND cm.user_id <> :me
             AND cm.id > COALESCE((SELECT r.last_id FROM comment_reads r WHERE r.user_id = :me AND r.contract_id = c.id), 0)) AS unread,
         (SELECT cc.timezone FROM contract_clocks cc WHERE cc.user_id = :me AND cc.contract_id = c.id) AS my_clock_tz,
         (SELECT o.timezone FROM users o WHERE o.id = IF(c.user_id = :me, c.contractor_id, c.user_id)) AS other_tz
-    FROM contracts c LEFT JOIN categories cat ON cat.id = c.category_id
+    FROM contracts c LEFT JOIN categories cat ON cat.id = c.category_id JOIN users au ON au.id = c.user_id LEFT JOIN users ct ON ct.id = c.contractor_id
     WHERE (c.user_id = :me OR c.contractor_id = :me) AND c.status IN ('active','paused')
     ORDER BY COALESCE(c.agreed_deadline, c.deadline) IS NULL, COALESCE(c.agreed_deadline, c.deadline), c.id");
 $st->execute(['me' => $u['id']]);
@@ -61,8 +61,8 @@ render('Dashboard', function () use ($list, $totals, $myTz, $u) { ?>
             <div class="row gap small">
               <span class="pill <?= $c['status'] === 'paused' ? 'orange' : 'blue' ?>"><?= $c['status'] === 'paused' ? 'Paused' : 'Active' ?></span>
               <?php if ($running): ?><span class="pill blue">running</span><?php endif; ?>
-              <span class="<?= $isAuthor ? 'green' : 'muted' ?>">Contract Author</span>
-              <span class="<?= $isAuthor ? 'muted' : 'blue' ?>">Contractor</span>
+              <span class="<?= $isAuthor ? 'green' : 'muted' ?>" title="Contract author"><?= h(public_name(['id' => $c['user_id'], 'name' => $c['a_name'], 'show_name' => $c['a_show']])) ?></span>
+              <span class="<?= $isAuthor ? 'muted' : 'blue' ?>" title="Contractor"><?= h(public_name(['id' => $c['contractor_id'], 'name' => $c['k_name'], 'show_name' => $c['k_show']])) ?></span>
             </div>
             <div class="progress"><span style="width:<?= $pct ?>%"></span></div>
             <div class="row between">
