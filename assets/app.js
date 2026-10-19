@@ -106,13 +106,93 @@
       if (any) { op.value = sp || ''; od.value = sd; }
     });
   }
-  // show picked file names in the contract editor (files are sent with "Save Contract")
-  document.querySelectorAll('.file-btn input[type=file]').forEach(function (inp) {
-    if (inp.form && inp.form.id !== 'contract-form') { return; }
-    var info = document.createElement('div'); info.className = 'picked';
-    inp.closest('.file-btn').insertAdjacentElement('afterend', info);
-    inp.addEventListener('change', function () {
-      info.textContent = Array.prototype.map.call(inp.files, function (f) { return f.name; }).join(', ') + (inp.files.length ? ' - will be uploaded when you press Save Contract' : '');
+})();
+
+(function () {
+  'use strict';
+
+  // ---- Contract editor: thumbnails / file names of picked files before saving ----
+  var form = document.getElementById('contract-form');
+  if (form) {
+    var canDT = typeof DataTransfer !== 'undefined';
+    form.querySelectorAll('input[type=file]').forEach(function (inp) {
+      var isImg = inp.name === 'images[]';
+      var list = document.createElement('div');
+      list.className = isImg ? 'picked-grid' : 'picked-files';
+      inp.closest('.file-btn').insertAdjacentElement('afterend', list);
+      var store = canDT ? new DataTransfer() : null;
+      var render = function () {
+        list.innerHTML = '';
+        Array.prototype.forEach.call(inp.files, function (f, idx) {
+          var item = document.createElement('div');
+          item.className = isImg ? 'picked-img' : 'picked-file';
+          if (isImg && f.type.indexOf('image/') === 0) {
+            var im = document.createElement('img'); im.src = URL.createObjectURL(f); im.alt = ''; item.appendChild(im);
+          }
+          var nm = document.createElement('span'); nm.textContent = f.name + ' (' + Math.max(1, Math.round(f.size / 1024)) + ' KB)'; item.appendChild(nm);
+          if (store) {
+            var rm = document.createElement('button'); rm.type = 'button'; rm.className = 'picked-x'; rm.textContent = '×'; rm.title = 'Remove';
+            rm.addEventListener('click', function () {
+              var next = new DataTransfer();
+              Array.prototype.forEach.call(inp.files, function (g, j) { if (j !== idx) { next.items.add(g); } });
+              store = next; inp.files = store.files; render();
+            });
+            item.appendChild(rm);
+          }
+          list.appendChild(item);
+        });
+        if (inp.files.length) {
+          var hint = document.createElement('div'); hint.className = 'picked-hint'; hint.textContent = 'Not saved yet. Press Save Contract to upload.'; list.appendChild(hint);
+        }
+      };
+      inp.addEventListener('change', function () {
+        if (store) { // keep earlier picks and add the new ones
+          var next = new DataTransfer();
+          Array.prototype.forEach.call(store.files, function (g) { next.items.add(g); });
+          Array.prototype.forEach.call(inp.files, function (g) { next.items.add(g); });
+          store = next; inp.files = store.files;
+        }
+        render();
+      });
     });
+  }
+
+  // ---- Lightbox for image galleries ----
+  var box = null, imgs = [], cur = 0;
+  function build() {
+    box = document.createElement('div'); box.className = 'lb'; box.hidden = true;
+    box.innerHTML = '<button type="button" class="lb-close" aria-label="Close">×</button><button type="button" class="lb-prev" aria-label="Previous">‹</button><img class="lb-img" alt=""><button type="button" class="lb-next" aria-label="Next">›</button><div class="lb-count"></div>';
+    document.body.appendChild(box);
+    box.addEventListener('click', function (e) {
+      if (e.target.classList.contains('lb-prev')) { show(cur - 1); }
+      else if (e.target.classList.contains('lb-next')) { show(cur + 1); }
+      else if (!e.target.classList.contains('lb-img')) { close(); }
+    });
+    var x0 = null;
+    box.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+    box.addEventListener('touchend', function (e) { if (x0 === null) { return; } var d = e.changedTouches[0].clientX - x0; if (Math.abs(d) > 40) { show(cur + (d < 0 ? 1 : -1)); } x0 = null; });
+  }
+  function show(i) {
+    cur = (i + imgs.length) % imgs.length;
+    box.querySelector('.lb-img').src = imgs[cur];
+    box.querySelector('.lb-count').textContent = (cur + 1) + ' / ' + imgs.length;
+    var many = imgs.length > 1;
+    box.querySelector('.lb-prev').style.display = box.querySelector('.lb-next').style.display = many ? '' : 'none';
+  }
+  function open(list, i) {
+    if (!box) { build(); }
+    imgs = list; box.hidden = false; document.body.classList.add('lb-open'); show(i);
+  }
+  function close() { box.hidden = true; document.body.classList.remove('lb-open'); box.querySelector('.lb-img').removeAttribute('src'); }
+  document.addEventListener('click', function (e) {
+    var im = e.target.closest ? e.target.closest('.gallery img') : null;
+    if (!im) { return; }
+    e.preventDefault();
+    var g = im.closest('.gallery'), all = Array.prototype.slice.call(g.querySelectorAll('img'));
+    open(all.map(function (x) { var a = x.closest('a'); return a ? a.getAttribute('href') : x.getAttribute('src'); }), all.indexOf(im));
+  });
+  document.addEventListener('keydown', function (e) {
+    if (!box || box.hidden) { return; }
+    if (e.key === 'Escape') { close(); } else if (e.key === 'ArrowLeft') { show(cur - 1); } else if (e.key === 'ArrowRight') { show(cur + 1); }
   });
 })();

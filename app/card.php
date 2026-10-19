@@ -33,11 +33,11 @@ function listing_card(array $c, ?int $watchUserId = null): void
     </div>
     <div class="row between tiny muted">
       <span><?= (int)$c['views'] ?> views</span>
-      <span>
+      <span class="listing-meta">
         <?php if ($watchUserId): ?>
           <form method="post" action="/contract/<?= (int)$c['id'] ?>/watch" class="inline"><?= csrf_field() ?><button class="linkbtn green watch" type="submit"><?= clock_icon() ?> <?= $watched ? 'Remove from watch later' : 'Watch later' ?></button></form>
         <?php endif; ?>
-        · Contract ID: <?= str_pad((string)$c['id'], 3, '0', STR_PAD_LEFT) ?>
+        <span>·</span> <span>Contract ID: <?= str_pad((string)$c['id'], 3, '0', STR_PAD_LEFT) ?></span>
       </span>
     </div>
   </div>
