@@ -247,3 +247,10 @@ input[type=checkbox]:disabled{cursor:default;opacity:.55}
 .pay-table{width:100%;border-collapse:collapse;margin:10px 0 16px}.pay-table td{padding:6px 0;border-bottom:1px solid var(--line);font-size:.95rem}.pay-table td:last-child{text-align:right;font-weight:500}
 .pay-total td{font-size:1.4rem;color:var(--green);border-bottom:0}
 .pay-actions .btn{min-width:130px;text-align:center}
+
+/* invoices */
+.inv-table th,.inv-table td{white-space:nowrap}.table-wrap{overflow-x:auto}
+.pay-link{color:var(--green);font-weight:500}
+.pill.inv-waiting{background:#e08a00}.pill.inv-pending{background:var(--blue)}.pill.inv-paid{background:var(--green)}
+.pay-type{margin:10px 0}.pay-type label{margin:4px 0}.pay-type-val{display:inline-block;margin-top:4px;padding:3px 12px;border-radius:12px;background:#e8f1fb;color:var(--blue);font-weight:500}
+.pay-type-line{margin-top:6px}

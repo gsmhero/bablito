@@ -79,7 +79,8 @@ function parse_offer_input(array $todos, bool $allowExtras = false): array|strin
     if ($price <= 0 || $price > 999999999) {
         return 'Enter a valid offer price.';
     }
-    return ['price' => $price, 'days' => $days, 'notes' => $notes, 'steps' => $out, 'extras' => $extras];
+    $pt = ((string)($_POST['payment_type'] ?? '')) === 'step' ? 'step' : 'finish';
+    return ['price' => $price, 'days' => $days, 'notes' => $notes, 'steps' => $out, 'extras' => $extras, 'payment_type' => $pt];
 }
 
 function save_offer_steps(int $offerId, array $steps, array $extras = []): void
@@ -127,8 +128,8 @@ function accept_offer_terms(array $contract, array $offer): void
         q('INSERT INTO todos (contract_id, position, name, description, price, days, agreed_price, agreed_days) VALUES (?,?,?,?,?,?,?,?)',
             [$contract['id'], $pos++, $e['name'], $e['description'], $e['price'], $e['days'], $e['price'], $e['days']]);
     }
-    q("UPDATE contracts SET status = 'active', contractor_id = ?, accepted_offer_id = ?, agreed_price = ?, agreed_days = ?, started_at = NOW(), agreed_deadline = DATE_ADD(CURDATE(), INTERVAL ? DAY) WHERE id = ?",
-        [$offer['user_id'], $offer['id'], $offer['price'], $offer['days'], $offer['days'], $contract['id']]);
+    q("UPDATE contracts SET status = 'active', contractor_id = ?, accepted_offer_id = ?, payment_type = ?, agreed_price = ?, agreed_days = ?, started_at = NOW(), agreed_deadline = DATE_ADD(CURDATE(), INTERVAL ? DAY) WHERE id = ?",
+        [$offer['user_id'], $offer['id'], $offer['payment_type'] ?? 'finish', $offer['price'], $offer['days'], $offer['days'], $contract['id']]);
     q("UPDATE offers SET status = 'accepted' WHERE id = ?", [$offer['id']]);
     delete_offers("contract_id = ? AND id <> ? AND status = 'pending'", [$contract['id'], $offer['id']]);
 }

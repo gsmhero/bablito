@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const SCHEMA_VERSION = 12;
+const SCHEMA_VERSION = 13;
 const ADMIN_EMAIL = 'admin@bablito.ru';
 
 function migrate_if_needed(): void
@@ -117,6 +117,28 @@ function migrate_if_needed(): void
         if ($cur < 12 && !column_exists($pdo, 'offers', 'seen_at')) {
             $pdo->exec("ALTER TABLE offers ADD COLUMN seen_at DATETIME NULL");
             $pdo->exec("UPDATE offers SET seen_at = created_at");
+        }
+        if ($cur < 13) {
+            if (!column_exists($pdo, 'offers', 'payment_type')) {
+                $pdo->exec("ALTER TABLE offers ADD COLUMN payment_type VARCHAR(10) NOT NULL DEFAULT 'finish'");
+            }
+            if (!column_exists($pdo, 'contracts', 'payment_type')) {
+                $pdo->exec("ALTER TABLE contracts ADD COLUMN payment_type VARCHAR(10) NOT NULL DEFAULT 'finish'");
+            }
+            $pdo->exec("CREATE TABLE IF NOT EXISTS invoices (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  contract_id INT UNSIGNED NOT NULL,
+  todo_id INT UNSIGNED NULL,
+  payer_id INT UNSIGNED NOT NULL,
+  payee_id INT UNSIGNED NOT NULL,
+  amount DECIMAL(12,2) NOT NULL,
+  currency CHAR(3) NOT NULL DEFAULT 'RUB',
+  status VARCHAR(10) NOT NULL DEFAULT 'waiting',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  paid_at DATETIME NULL,
+  INDEX (payer_id, status), INDEX (payee_id, status), INDEX (todo_id),
+  FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
         }
         $pdo->exec('REPLACE INTO schema_meta (id, version) VALUES (1, ' . SCHEMA_VERSION . ')');
         ensure_admin();

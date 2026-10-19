@@ -112,6 +112,10 @@ render($c['title'], function () use ($c, $author, $todos, $files, $tot, $offers,
         <label class="tiny">Time days <input form="offer-form" name="days" id="offer-days" class="num" type="number" min="0"></label>
         <button form="offer-form" class="btn green-outline" type="submit">Make Offer</button>
       </div>
+      <div class="small pay-type"><b>Payment for the contract</b>
+        <label class="check"><input type="radio" form="offer-form" name="payment_type" value="finish" checked> When Contract Finished</label>
+        <label class="check"><input type="radio" form="offer-form" name="payment_type" value="step"> Step by Step</label>
+      </div>
       <label class="small">Notes <textarea form="offer-form" name="notes" rows="4"></textarea></label>
       <p class="tiny muted">Either fill an offer price and days for every To Do, or enter one total price and days. 0 days means the same day.</p>
     <?php elseif ($myOffer): ?>

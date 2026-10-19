@@ -34,9 +34,14 @@ if ($u && ($isOwner || $isContractor)) {
     $maxC = (int)val("SELECT COALESCE(MAX(id), 0) FROM comments WHERE contract_id = ? AND scope IN ('work','todo')", [$id]);
     q('REPLACE INTO comment_reads (user_id, contract_id, last_id) VALUES (?,?,?)', [$u['id'], $id, $maxC]);
 }
+$isStep = ($c['payment_type'] ?? 'finish') === 'step';
+$payInv = null;
+if ($u && $isOwner && isset($_GET['pay'])) {
+    $payInv = row("SELECT i.*, c.title AS contract_title, t.name AS todo_name FROM invoices i JOIN contracts c ON c.id = i.contract_id LEFT JOIN todos t ON t.id = i.todo_id WHERE i.id = ? AND i.contract_id = ? AND i.payer_id = ? AND i.status = 'waiting'", [(int)$_GET['pay'], $id, $u['id']]);
+}
 $timer = row('SELECT timer_seconds + IF(timer_started_at IS NULL, 0, TIMESTAMPDIFF(SECOND, timer_started_at, NOW())) AS s, timer_started_at IS NOT NULL AS running FROM contracts WHERE id = ?', [$id]);
 
-render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $offer, $comments, $todoComments, $accepted, $acceptedSum, $n, $overdue, $tillDate, $active, $canUpload, $isOwner, $isContractor, $myReview, $other, $u, $timer) { ?>
+render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $offer, $comments, $todoComments, $accepted, $acceptedSum, $n, $overdue, $tillDate, $active, $canUpload, $isOwner, $isContractor, $myReview, $other, $u, $timer, $isStep, $payInv) { ?>
 <div class="wrap two-col">
   <div class="col">
     <h1><?= h($c['title']) ?></h1>
@@ -50,6 +55,7 @@ render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $
       <span class="small muted">Creation Date <?= h(fdate($c['created_at'])) ?> <?php if ($c['category']): ?><span class="chip"><?= h($c['category']) ?></span><?php endif; ?></span>
     </div>
     <div class="row between client-row"><div class="small">Client:<br><a class="green big-link" href="/user/<?= (int)$author['id'] ?>"><?= h(public_name($author)) ?></a></div><?php if (($rate = hour_rate($c)) !== null): ?><div class="rate" title="Agreed price / (agreed days x 8 hours)"><?= h(cur_symbol($c)) ?> <?= h(money($rate)) ?>/ hour</div><?php endif; ?></div>
+    <div class="small muted pay-type-line">Payment: <b><?= h(payment_type_label($c['payment_type'] ?? null)) ?></b></div>
     <hr>
     <h3>Description</h3>
     <p><?= nl2br(h($c['description'])) ?></p>
@@ -69,8 +75,9 @@ render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $
             <form method="post" action="/todo/<?= (int)$t['id'] ?>/done" class="inline"><?= csrf_field() ?>
               <label class="check"><input type="checkbox" <?= $done ? 'checked' : '' ?> <?= ($isContractor && $active && !$acc) ? 'onchange="this.form.submit()"' : 'disabled' ?>> Contractor Done</label>
             </form>
-            <form method="post" action="/todo/<?= (int)$t['id'] ?>/accept" class="inline"><?= csrf_field() ?>
-              <label class="check"><input type="checkbox" class="accept-box" <?= $acc ? 'checked' : '' ?> <?= ($isOwner && $active && $done) ? 'onchange="this.form.submit()"' : 'disabled' ?>> Accepted</label>
+            <form method="post" id="accept-form-<?= (int)$t['id'] ?>" action="/todo/<?= (int)$t['id'] ?>/accept" class="inline"><?= csrf_field() ?>
+              <?php $viaDialog = $isStep && !$acc; ?>
+              <label class="check"><input type="checkbox" class="accept-box" <?= $acc ? 'checked' : '' ?> <?= ($isOwner && $active && $done) ? ($viaDialog ? 'onchange="this.checked=false;document.getElementById(\x27acc-' . (int)$t['id'] . '\x27).hidden=false;document.body.classList.add(\x27lb-open\x27)"' : 'onchange="this.form.submit()"') : 'disabled' ?>> Accepted</label>
             </form>
           </div>
         </div>
@@ -157,4 +164,23 @@ render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $
     </div>
   </div>
 </div>
+<?php if ($isStep && $isOwner && $active): foreach ($todos as $t): if (!$t['done_at'] || $t['accepted_at']) { continue; } ?>
+<div class="modal" id="acc-<?= (int)$t['id'] ?>" hidden>
+  <div class="modal-card pay-card" role="dialog" aria-modal="true">
+    <h2>Task Done</h2>
+    <p class="small">The contract payment type is &ldquo;Step&#8209;by&#8209;Step&rdquo;. The invoice for the completed step is located in the <a href="/invoices">Invoices</a> section. Contract execution will continue after payment.</p>
+    <table class="pay-table">
+      <tr><td>Todo</td><td><?= h($t['name']) ?></td></tr>
+      <tr><td>Contract</td><td><?= h($c['title']) ?></td></tr>
+      <tr class="pay-total"><td>Price</td><td><?= h(cur_symbol($c)) ?>&nbsp;<?= money($t['agreed_price'] ?? $t['price']) ?></td></tr>
+      <tr><td>Contractor</td><td><?= $contractor ? h(public_name($contractor)) : '-' ?></td></tr>
+    </table>
+    <div class="row between pay-actions">
+      <button type="submit" form="accept-form-<?= (int)$t['id'] ?>" name="pay" value="now" class="btn green">Pay now</button>
+      <button type="submit" form="accept-form-<?= (int)$t['id'] ?>" name="pay" value="later" class="btn">Later</button>
+    </div>
+  </div>
+</div>
+<?php endforeach; endif; ?>
+<?php if ($payInv) { echo payment_dialog_html($payInv, 'pay-dialog', true, '/contract/' . (int)$c['id']); } ?>
 <?php });

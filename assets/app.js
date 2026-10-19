@@ -331,6 +331,7 @@
     var d;
     if (t && t.hasAttribute('data-open')) {
       d = document.getElementById(t.getAttribute('data-open'));
+      e.preventDefault();
       if (d) { d.hidden = false; document.body.classList.add('lb-open'); }
       return;
     }

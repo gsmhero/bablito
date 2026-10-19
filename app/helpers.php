@@ -398,6 +398,7 @@ function render(string $title, callable $body, array $opts = []): void
         <div class="menu-pop" id="menu-pop" hidden>
           <?php if ($u): ?>
             <a href="/dashboard">Dashboard</a>
+            <a href="/invoices">Invoices</a>
             <a href="/profile">Profile</a>
             <a href="/my">My Contracts</a>
             <a href="/contract/new">Create Contract</a>

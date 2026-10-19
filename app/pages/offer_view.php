@@ -101,6 +101,14 @@ render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $com
         <?php if ($editing): ?><input name="days" id="offer-days" type="number" min="0" value="<?= (int)$offer['days'] ?>" <?= $hasSteps ? 'readonly' : '' ?>><?php else: ?><div class="big blue"><?= (int)$offer['days'] ?></div><?php endif; ?></div>
       <div class="center"><div class="lbl">Offer From</div><a class="blue" href="/user/<?= (int)$offer['user_id'] ?>"><?= h($offer['oname']) ?></a> <?= stars((float)$offer['rating_avg'], (int)$offer['rating_count']) ?></div>
     </div>
+    <div class="small pay-type"><b>Payment for the contract</b>
+      <?php if ($editing): ?>
+        <label class="check"><input type="radio" name="payment_type" value="finish" <?= ($offer['payment_type'] ?? 'finish') === 'finish' ? 'checked' : '' ?>> When Contract Finished</label>
+        <label class="check"><input type="radio" name="payment_type" value="step" <?= ($offer['payment_type'] ?? 'finish') === 'step' ? 'checked' : '' ?>> Step by Step</label>
+      <?php else: ?>
+        <div class="pay-type-val"><?= h(payment_type_label($offer['payment_type'] ?? null)) ?></div>
+      <?php endif; ?>
+    </div>
     <label class="small">Notes
       <?php if ($editing): ?><textarea name="notes" rows="4"><?= h($offer['notes']) ?></textarea><?php else: ?><div class="note-box"><?= nl2br(h($offer['notes'])) ?></div><?php endif; ?>
     </label>

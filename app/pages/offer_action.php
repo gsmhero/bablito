@@ -61,7 +61,7 @@ switch ($args[1]) {
         $pdo = db();
         $pdo->beginTransaction();
         q('UPDATE offers SET seen_at = NULL WHERE id = ?', [$offer['id']]);
-        q('UPDATE offers SET price = ?, days = ?, notes = ? WHERE id = ?', [$o['price'], $o['days'], $o['notes'], $offer['id']]);
+        q('UPDATE offers SET price = ?, days = ?, notes = ?, payment_type = ? WHERE id = ?', [$o['price'], $o['days'], $o['notes'], $o['payment_type'], $offer['id']]);
         save_offer_steps((int)$offer['id'], $o['steps'], $o['extras']);
         $pdo->commit();
         flash('Offer updated.');
