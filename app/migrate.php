@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const SCHEMA_VERSION = 5;
+const SCHEMA_VERSION = 6;
 const ADMIN_EMAIL = 'admin@bablito.ru';
 
 function migrate_if_needed(): void
@@ -47,6 +47,17 @@ function migrate_if_needed(): void
   seconds INT UNSIGNED NOT NULL DEFAULT 0,
   INDEX (contract_id),
   FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        }
+        if ($cur < 6) {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS comment_files (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  comment_id INT UNSIGNED NOT NULL,
+  kind ENUM('image','file') NOT NULL,
+  stored_name VARCHAR(80) NOT NULL,
+  original_name VARCHAR(190) NOT NULL,
+  INDEX (comment_id),
+  FOREIGN KEY (comment_id) REFERENCES comments(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
         }
         $pdo->exec('REPLACE INTO schema_meta (id, version) VALUES (1, ' . SCHEMA_VERSION . ')');

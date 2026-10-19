@@ -245,10 +245,41 @@ function log_comment(int $contractId, string $scope, ?int $offerId, ?int $todoId
 {
     $u = user();
     $body = trim($body);
-    if ($body === '' || mb_strlen($body) > 4000) {
+    $hasFiles = !empty($_FILES['attach']['name'][0] ?? '');
+    if (($body === '' && !$hasFiles) || mb_strlen($body) > 4000) {
         return;
     }
     q('INSERT INTO comments (contract_id, scope, offer_id, todo_id, thread_user_id, user_id, body) VALUES (?,?,?,?,?,?,?)', [$contractId, $scope, $offerId, $todoId, $threadUserId, $u['id'], $body]);
+    if ($hasFiles) {
+        save_comment_files((int)db()->lastInsertId());
+    }
+}
+
+/** Stores files attached to a comment (up to 5, images or documents). */
+function save_comment_files(int $commentId): void
+{
+    $f = $_FILES['attach'];
+    $errors = [];
+    for ($i = 0, $n = min(count($f['name']), 5); $i < $n; $i++) {
+        $one = ['name' => $f['name'][$i], 'tmp_name' => $f['tmp_name'][$i], 'size' => $f['size'][$i], 'error' => $f['error'][$i]];
+        if ($one['error'] === UPLOAD_ERR_NO_FILE) {
+            continue;
+        }
+        $res = store_upload($one, 'auto');
+        if (is_string($res)) {
+            $errors[] = $one['name'] . ': ' . $res;
+            continue;
+        }
+        q('INSERT INTO comment_files (comment_id, kind, stored_name, original_name) VALUES (?,?,?,?)', [$commentId, $res[0], $res[1], $res[2]]);
+    }
+    if ($errors) {
+        flash(implode(' ', $errors), 'err');
+    }
+}
+
+function attach_button(): string
+{
+    return '<label class="btn small file-btn attach-btn" title="Attach images or files"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.5l-8.6 8.6a5.5 5.5 0 01-7.8-7.8l9.2-9.2a3.7 3.7 0 015.2 5.2l-9.2 9.2a1.8 1.8 0 01-2.6-2.6l8.5-8.5"/></svg><input type="file" name="attach[]" multiple hidden></label>';
 }
 
 function render_comments(array $list, int $authorId, bool $bubbles = false): void
@@ -260,13 +291,23 @@ function render_comments(array $list, int $authorId, bool $bubbles = false): voi
     foreach ($list as $cm) {
         $mine = (int)$cm['user_id'] === $authorId;
         $cls = $bubbles ? ($mine ? 'bubble client' : 'bubble contractor') : 'bubble plain';
-        echo '<div class="' . $cls . '"><div class="meta"><a href="/user/' . (int)$cm['user_id'] . '">' . h($cm['uname']) . '</a> · ' . h(fdatetime($cm['created_at'])) . '</div>' . nl2br(h($cm['body'])) . '</div>';
+        echo '<div class="' . $cls . '"><div class="meta"><a href="/user/' . (int)$cm['user_id'] . '">' . h($cm['uname']) . '</a> · ' . h(fdatetime($cm['created_at'])) . '</div>' . nl2br(h($cm['body'])) . comment_attachments($cm['files'] ?? []) . '</div>';
     }
 }
 
 function comments_for(string $where, array $params): array
 {
-    return rows("SELECT cm.*, COALESCE(NULLIF(u.name,''), CONCAT('User #', u.id)) AS uname FROM comments cm JOIN users u ON u.id = cm.user_id WHERE $where ORDER BY cm.id", $params);
+    $list = rows("SELECT cm.*, COALESCE(NULLIF(u.name,''), CONCAT('User #', u.id)) AS uname FROM comments cm JOIN users u ON u.id = cm.user_id WHERE $where ORDER BY cm.id", $params);
+    if ($list) {
+        $by = [];
+        foreach (rows('SELECT * FROM comment_files WHERE comment_id IN (' . implode(',', array_map('intval', array_column($list, 'id'))) . ') ORDER BY id') as $f) {
+            $by[(int)$f['comment_id']][] = $f;
+        }
+        foreach ($list as $i => $cm) {
+            $list[$i]['files'] = $by[(int)$cm['id']] ?? [];
+        }
+    }
+    return $list;
 }
 
 /* ---------- uploads ---------- */
@@ -290,6 +331,9 @@ function store_upload(array $f, string $want): array|string
         return 'File is larger than 10 MB.';
     }
     $ext = strtolower(pathinfo($f['name'], PATHINFO_EXTENSION));
+    if ($want === 'auto') {
+        $want = isset(IMAGE_EXT[$ext]) ? 'image' : 'file';
+    }
     if ($want === 'image') {
         if (!isset(IMAGE_EXT[$ext]) || @getimagesize($f['tmp_name']) === false) {
             return 'Only JPG, PNG, GIF or WEBP images are allowed.';
@@ -399,4 +443,22 @@ function stop_timer(int $contractId): void
 {
     q('UPDATE timer_log SET stopped_at = NOW(), seconds = TIMESTAMPDIFF(SECOND, started_at, NOW()) WHERE contract_id = ? AND stopped_at IS NULL', [$contractId]);
     q('UPDATE contracts SET timer_seconds = timer_seconds + TIMESTAMPDIFF(SECOND, timer_started_at, NOW()), timer_started_at = NULL WHERE id = ? AND timer_started_at IS NOT NULL', [$contractId]);
+}
+
+function comment_attachments(array $files): string
+{
+    if (!$files) {
+        return '';
+    }
+    $imgs = '';
+    $docs = '';
+    foreach ($files as $f) {
+        $url = '/uploads/' . h($f['stored_name']);
+        if ($f['kind'] === 'image') {
+            $imgs .= '<figure><a href="' . $url . '" target="_blank"><img src="' . $url . '" alt="" loading="lazy"></a></figure>';
+        } else {
+            $docs .= '<li><a href="' . $url . '" download="' . h($f['original_name']) . '">' . h($f['original_name']) . '</a></li>';
+        }
+    }
+    return ($imgs ? '<div class="gallery c-gallery">' . $imgs . '</div>' : '') . ($docs ? '<ul class="files c-files">' . $docs . '</ul>' : '');
 }

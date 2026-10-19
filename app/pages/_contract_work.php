@@ -71,8 +71,9 @@ render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $
         <div class="tiny muted">Comments</div>
         <div class="comment-box">
           <?php render_comments($todoComments[(int)$t['id']] ?? [], (int)$c['user_id'], true); ?>
-          <form method="post" action="/todo/<?= (int)$t['id'] ?>/comment" class="comment-form"><?= csrf_field() ?>
-            <input name="body" maxlength="4000" required placeholder="Comment on this step">
+          <form method="post" action="/todo/<?= (int)$t['id'] ?>/comment" class="comment-form" enctype="multipart/form-data"><?= csrf_field() ?>
+            <input name="body" maxlength="4000" placeholder="Comment on this step">
+            <?= attach_button() ?>
             <button class="btn small" type="submit">Post Comment</button>
           </form>
         </div>
@@ -141,8 +142,9 @@ render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $
       <h3>Comments</h3>
       <?php render_comments($comments, (int)$c['user_id'], true); ?>
       <?php if ($isOwner || $isContractor): ?>
-      <form method="post" action="/contract/<?= (int)$c['id'] ?>/comment" class="comment-form"><?= csrf_field() ?>
-        <input name="body" maxlength="4000" required placeholder="Write a comment">
+      <form method="post" action="/contract/<?= (int)$c['id'] ?>/comment" class="comment-form" enctype="multipart/form-data"><?= csrf_field() ?>
+        <input name="body" maxlength="4000" placeholder="Write a comment">
+        <?= attach_button() ?>
         <button class="btn small" type="submit">Post Comment</button>
       </form>
       <?php endif; ?>

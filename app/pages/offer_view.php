@@ -118,9 +118,10 @@ render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $com
 <div class="wrap" id="comments">
   <h3>Comments</h3>
   <?php render_comments($comments, (int)$c['user_id'], true); ?>
-  <form method="post" action="/offer/<?= (int)$offer['id'] ?>/comment" class="comment-form">
+  <form method="post" action="/offer/<?= (int)$offer['id'] ?>/comment" class="comment-form" enctype="multipart/form-data">
     <?= csrf_field() ?>
-    <input name="body" maxlength="4000" required placeholder="Write a comment">
+    <input name="body" maxlength="4000" placeholder="Write a comment">
+    <?= attach_button() ?>
     <button class="btn small" type="submit">Post Comment</button>
   </form>
 </div>

@@ -124,21 +124,21 @@
   'use strict';
 
   // ---- Contract editor: thumbnails / file names of picked files before saving ----
-  var form = document.getElementById('contract-form');
-  if (form) {
+  document.querySelectorAll('#contract-form, .comment-form').forEach(function (form) {
     var canDT = typeof DataTransfer !== 'undefined';
     form.querySelectorAll('input[type=file]').forEach(function (inp) {
-      var isImg = inp.name === 'images[]';
+      var isImg = inp.name === 'images[]', isAtt = inp.name === 'attach[]';
       var list = document.createElement('div');
-      list.className = isImg ? 'picked-grid' : 'picked-files';
-      inp.closest('.file-btn').insertAdjacentElement('afterend', list);
+      list.className = (isImg || isAtt) ? 'picked-grid' : 'picked-files';
+      (isAtt ? inp.closest('form').appendChild(list) : inp.closest('.file-btn').insertAdjacentElement('afterend', list));
       var store = canDT ? new DataTransfer() : null;
       var render = function () {
         list.innerHTML = '';
         Array.prototype.forEach.call(inp.files, function (f, idx) {
           var item = document.createElement('div');
-          item.className = isImg ? 'picked-img' : 'picked-file';
-          if (isImg && f.type.indexOf('image/') === 0) {
+          var thumb = (isImg || isAtt) && f.type.indexOf('image/') === 0;
+          item.className = thumb ? 'picked-img' : 'picked-file';
+          if (thumb) {
             var im = document.createElement('img'); im.src = URL.createObjectURL(f); im.alt = ''; item.appendChild(im);
           }
           var nm = document.createElement('span'); nm.textContent = f.name + ' (' + Math.max(1, Math.round(f.size / 1024)) + ' KB)'; item.appendChild(nm);
@@ -154,7 +154,7 @@
           list.appendChild(item);
         });
         if (inp.files.length) {
-          var hint = document.createElement('div'); hint.className = 'picked-hint'; hint.textContent = 'Not saved yet. Press Save Contract to upload.'; list.appendChild(hint);
+          var hint = document.createElement('div'); hint.className = 'picked-hint'; hint.textContent = isAtt ? 'Will be sent with your comment.' : 'Not saved yet. Press Save Contract to upload.'; list.appendChild(hint);
         }
       };
       inp.addEventListener('change', function () {
@@ -167,7 +167,7 @@
         render();
       });
     });
-  }
+  });
 
   // ---- Lightbox for image galleries ----
   var box = null, imgs = [], cur = 0;

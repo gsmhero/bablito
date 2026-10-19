@@ -149,10 +149,11 @@ render($c['title'], function () use ($c, $author, $todos, $files, $tot, $offers,
       <?php endif; ?>
       <?php if (!$authorSide || $threadId): ?>
         <?php render_comments($comments, (int)$c['user_id'], true); ?>
-        <form method="post" action="/contract/<?= (int)$c['id'] ?>/comment" class="comment-form">
+        <form method="post" action="/contract/<?= (int)$c['id'] ?>/comment" class="comment-form" enctype="multipart/form-data">
           <?= csrf_field() ?>
           <?php if ($authorSide): ?><input type="hidden" name="thread" value="<?= $threadId ?>"><?php endif; ?>
-          <input name="body" maxlength="4000" required placeholder="<?= $isOwner ? 'Reply' : 'Ask the author' ?>">
+          <input name="body" maxlength="4000" placeholder="<?= $isOwner ? 'Reply' : 'Ask the author' ?>">
+          <?= attach_button() ?>
           <button class="btn small" type="submit">Post Comment</button>
         </form>
       <?php endif; ?>
