@@ -74,7 +74,7 @@ render($c['title'], function () use ($c, $author, $todos, $files, $tot, $offers,
         <h4><?= h($t['name']) ?></h4>
         <p class="small"><?= nl2br(h($t['description'])) ?></p>
         <div class="todo-fields">
-          <div><div class="tiny">Price</div><div class="mid green"><?= money($t['price']) ?></div></div>
+          <div><div class="tiny">Price</div><div class="mid green"><?= h(cur_symbol($c)) ?>&nbsp;<?= money($t['price']) ?></div></div>
           <div><div class="tiny">Days</div><div class="mid grey"><?= (int)$t['days'] ?></div></div>
           <?php if ($canOffer): ?>
             <label class="tiny">Offer price <input form="offer-form" name="otodo[<?= (int)$t['id'] ?>][price]" class="num o-price" inputmode="decimal"></label>

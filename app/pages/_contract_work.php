@@ -60,7 +60,7 @@ render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $
         <h4><?= h($t['name']) ?></h4>
         <p class="small"><?= nl2br(h($t['description'])) ?></p>
         <div class="row between">
-          <div><div class="tiny">Price</div><div class="mid <?= $acc ? 'grey' : 'blue' ?>"><?= money($t['agreed_price']) ?></div></div>
+          <div><div class="tiny">Price</div><div class="mid <?= $acc ? 'grey' : 'blue' ?>"><?= h(cur_symbol($c)) ?>&nbsp;<?= money($t['agreed_price']) ?></div></div>
           <div><div class="tiny">Deadline</div><div class="mid <?= (!$acc && $t['deadline'] < date('Y-m-d')) ? 'red' : 'blue' ?>"><?= h(fdate($t['deadline'])) ?></div></div>
           <div>
             <div class="tiny">Mark as Done</div>

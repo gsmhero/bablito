@@ -45,13 +45,13 @@ render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $com
         <h4><?= h($t['name']) ?></h4>
         <p class="small"><?= nl2br(h($t['description'])) ?></p>
         <div class="todo-fields">
-          <div><div class="tiny">Price</div><div class="mid green"><?= money($t['price']) ?></div></div>
+          <div><div class="tiny">Price</div><div class="mid green"><?= h(cur_symbol($c)) ?>&nbsp;<?= money($t['price']) ?></div></div>
           <div><div class="tiny">Days</div><div class="mid grey"><?= (int)$t['days'] ?></div></div>
           <?php if ($editing): ?>
             <label class="tiny">Offer price <input name="otodo[<?= (int)$t['id'] ?>][price]" value="<?= $t['o_price'] === null ? '' : h((string)(float)$t['o_price']) ?>" class="num o-price" inputmode="decimal"></label>
             <label class="tiny">Offer days <input name="otodo[<?= (int)$t['id'] ?>][days]" value="<?= $t['o_days'] === null ? '' : (int)$t['o_days'] ?>" class="num o-days" type="number" min="0"></label>
           <?php elseif ($t['o_price'] !== null): ?>
-            <div><div class="tiny">Offer price</div><div class="mid blue"><?= money($t['o_price']) ?></div></div>
+            <div><div class="tiny">Offer price</div><div class="mid blue"><?= h(cur_symbol($c)) ?>&nbsp;<?= money($t['o_price']) ?></div></div>
             <div><div class="tiny">Offer days</div><div class="mid blue"><?= (int)$t['o_days'] ?></div></div>
           <?php endif; ?>
         </div>
@@ -63,7 +63,7 @@ render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $com
       <?php foreach ($extras as $i => $e): ?>
         <?php if ($editing): echo extra_todo_row($i, $e); else: ?>
         <div class="card todo-view"><h4><?= h($e['name']) ?></h4><p class="small"><?= nl2br(h($e['description'])) ?></p>
-          <div class="todo-fields"><div><div class="tiny">Offer price</div><div class="mid blue"><?= money($e['price']) ?></div></div><div><div class="tiny">Offer days</div><div class="mid blue"><?= (int)$e['days'] ?></div></div></div></div>
+          <div class="todo-fields"><div><div class="tiny">Offer price</div><div class="mid blue"><?= h(cur_symbol($c)) ?>&nbsp;<?= money($e['price']) ?></div></div><div><div class="tiny">Offer days</div><div class="mid blue"><?= (int)$e['days'] ?></div></div></div></div>
         <?php endif; ?>
       <?php endforeach; ?>
       </div>
