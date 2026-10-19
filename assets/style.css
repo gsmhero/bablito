@@ -228,3 +228,11 @@ a.offer-link{color:inherit}a.offer-link:hover{text-decoration:underline}
 .cat-img{width:150px;aspect-ratio:3/2;background:var(--img);border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#8aa;flex:none}
 .cat-img img{width:100%;height:100%;object-fit:cover}.cat-fields{flex:1;min-width:240px}
 .pf-title{margin:18px 0 6px;font-size:1.1rem;color:#555}.pe-section{background:#fff}.pe-field{border-top:1px solid #eee;margin-top:10px;padding-top:8px}.pe-new{background:#fafafa;border-radius:8px;padding:8px}
+
+/* checkbox: white box with a grey outline, filled green square when checked */
+input[type=checkbox]{appearance:none;-webkit-appearance:none;width:22px!important;height:22px!important;flex:none;margin:0;border:1px solid #777;border-radius:7px;background:#fff;display:inline-grid;place-content:center;cursor:pointer;vertical-align:middle}
+input[type=checkbox]::after{content:"";width:14px;height:14px;border-radius:5px;background:#12ad00;transform:scale(0);transition:transform .1s ease}
+input[type=checkbox]:checked::after{transform:scale(1)}
+input[type=checkbox]:focus-visible{outline:2px solid #12ad0066;outline-offset:2px}
+input[type=checkbox]:disabled{cursor:default;opacity:.55}
+.picked-grid input[type=checkbox]{width:18px!important;height:18px!important}
