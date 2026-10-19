@@ -370,7 +370,7 @@ function render(string $title, callable $body, array $opts = []): void
 </header>
 <main>
 <?php if ((string)parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) !== '/'): ?>
-<div class="wrap"><a href="/contracts" class="back-link" data-back><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg> Back</a></div>
+<div class="wrap"><a href="<?= h($opts['back'] ?? '/contracts') ?>" class="back-link"<?= isset($opts['back']) ? '' : ' data-back' ?>><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg> Back</a></div>
 <?php endif; ?>
 <?php if ($f): ?><div class="wrap"><div class="flash <?= $f[1] === 'err' ? 'err' : 'ok' ?>"><?= h($f[0]) ?></div></div><?php endif; ?>
 <?php $body(); ?>

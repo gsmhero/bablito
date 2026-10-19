@@ -124,4 +124,4 @@ render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $com
     <button class="btn small" type="submit">Post Comment</button>
   </form>
 </div>
-<?php });
+<?php }, ['back' => '/contract/' . (int)$c['id']]);
