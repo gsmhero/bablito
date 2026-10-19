@@ -74,7 +74,7 @@ render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $com
     <?php endif; ?>
     <?php if ($decidable): ?>
     <div class="row between">
-      <button class="btn green" type="submit" formaction="/offer/<?= (int)$offer['id'] ?>/accept" formnovalidate onclick="return confirm('Accept this offer? Other offers will be rejected.')">Accept Offer</button>
+      <button class="btn green" type="button" data-open="accept-dialog">Accept Offer</button>
       <button class="btn red" type="submit" formaction="/offer/<?= (int)$offer['id'] ?>/reject" formnovalidate>Reject Offer</button>
     </div>
     <?php endif; ?>
@@ -117,6 +117,37 @@ render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $com
     <?php endif; ?>
   </div>
 </form>
+
+<?php if ($decidable): ?>
+<form id="accept-form" method="post" action="/offer/<?= (int)$offer['id'] ?>/accept"><?= csrf_field() ?></form>
+<div class="modal" id="accept-dialog" hidden>
+  <div class="modal-card pay-card" role="dialog" aria-modal="true" aria-labelledby="pay-title">
+    <!-- TEMPORARY DUMMY CONTENT: the payment window will be replaced later -->
+    <div class="pay-art">
+      <svg viewBox="0 0 320 190" role="img" aria-label="Payment card illustration">
+        <rect x="6" y="6" width="308" height="178" rx="16" fill="#12ad00"/>
+        <rect x="6" y="46" width="308" height="34" fill="#0b7d00"/>
+        <rect x="26" y="108" width="80" height="26" rx="5" fill="#fff" opacity=".9"/>
+        <rect x="26" y="148" width="150" height="10" rx="5" fill="#fff" opacity=".7"/>
+        <circle cx="262" cy="146" r="18" fill="#fff" opacity=".85"/><circle cx="240" cy="146" r="18" fill="#fff" opacity=".55"/>
+      </svg>
+    </div>
+    <h2 id="pay-title">Payment</h2>
+    <p class="muted small">Demo payment window. No real money is charged.</p>
+    <table class="pay-table">
+      <tr><td>Contract</td><td><?= h($c['title']) ?></td></tr>
+      <tr><td>Contractor</td><td><?= h($offer['oname']) ?></td></tr>
+      <tr><td>Offer days</td><td><?= (int)$offer['days'] ?></td></tr>
+      <tr><td>Payment method</td><td>Card &bull;&bull;&bull;&bull; 4242</td></tr>
+      <tr class="pay-total"><td>Amount</td><td><?= h(cur_symbol($c)) ?>&nbsp;<?= money($offer['price']) ?></td></tr>
+    </table>
+    <div class="row between pay-actions">
+      <button type="submit" form="accept-form" class="btn green" data-close="accept-dialog">Proceed</button>
+      <button type="button" class="btn" data-close="accept-dialog">Cancel</button>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
 
 <div class="wrap" id="comments">
   <h3>Comments</h3>

@@ -322,3 +322,27 @@
     if (q !== '' && first) { first.selected = true; }
   });
 })();
+
+(function () {
+  'use strict';
+  // generic dialogs: [data-open="id"] shows it, [data-close="id"], Esc and a click on the backdrop close it
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest ? e.target.closest('[data-open],[data-close]') : null;
+    var d;
+    if (t && t.hasAttribute('data-open')) {
+      d = document.getElementById(t.getAttribute('data-open'));
+      if (d) { d.hidden = false; document.body.classList.add('lb-open'); }
+      return;
+    }
+    if (t && t.hasAttribute('data-close')) {
+      d = document.getElementById(t.getAttribute('data-close'));
+      if (d) { d.hidden = true; document.body.classList.remove('lb-open'); }
+      return;
+    }
+    if (e.target.classList && e.target.classList.contains('modal') && e.target.id) { e.target.hidden = true; document.body.classList.remove('lb-open'); }
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') { return; }
+    document.querySelectorAll('.modal[id]:not([hidden])').forEach(function (m) { m.hidden = true; document.body.classList.remove('lb-open'); });
+  });
+})();

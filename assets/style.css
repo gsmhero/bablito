@@ -239,3 +239,11 @@ input[type=checkbox]:disabled{cursor:default;opacity:.55}
 .row.gap.end{align-items:center}
 .new-badge{display:inline-block;background:var(--green);color:#fff;border-radius:10px;padding:0 9px;font-size:.75rem;font-weight:500;vertical-align:middle;line-height:1.6;margin-left:6px}
 .new-circle{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 6px;border-radius:12px;background:var(--green);color:#fff;font-size:.8rem;font-weight:500;vertical-align:middle;margin-left:8px;box-sizing:border-box}
+
+/* payment dialog (temporary demo content) */
+.pay-card{max-width:440px;margin:auto}
+.pay-art svg{display:block;width:100%;max-width:300px;margin:0 auto 12px}
+.pay-card h2{margin:.2em 0}
+.pay-table{width:100%;border-collapse:collapse;margin:10px 0 16px}.pay-table td{padding:6px 0;border-bottom:1px solid var(--line);font-size:.95rem}.pay-table td:last-child{text-align:right;font-weight:500}
+.pay-total td{font-size:1.4rem;color:var(--green);border-bottom:0}
+.pay-actions .btn{min-width:130px;text-align:center}
