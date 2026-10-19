@@ -256,3 +256,8 @@
     load('/user/' + m[1], true);
   });
 })();
+
+(function () {
+  var sel = document.getElementById('currency-select'), out = document.getElementById('sum-cur');
+  if (sel && out) { sel.addEventListener('change', function () { out.textContent = sel.value; }); }
+})();

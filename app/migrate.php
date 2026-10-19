@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const SCHEMA_VERSION = 6;
+const SCHEMA_VERSION = 7;
 const ADMIN_EMAIL = 'admin@bablito.ru';
 
 function migrate_if_needed(): void
@@ -59,6 +59,9 @@ function migrate_if_needed(): void
   INDEX (comment_id),
   FOREIGN KEY (comment_id) REFERENCES comments(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        }
+        if ($cur < 7 && !column_exists($pdo, 'contracts', 'currency')) {
+            $pdo->exec("ALTER TABLE contracts ADD COLUMN currency CHAR(3) NOT NULL DEFAULT 'RUB'");
         }
         $pdo->exec('REPLACE INTO schema_meta (id, version) VALUES (1, ' . SCHEMA_VERSION . ')');
         ensure_admin();

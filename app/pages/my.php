@@ -55,7 +55,7 @@ render('My contracts', function () use ($list, $tab, $u) {
         <div class="blue small"><b><?= (int)$c['accepted_steps'] ?>/<?= (int)$c['steps'] ?></b></div>
       <?php endif; ?>
       <div class="row between">
-        <span><b class="mid <?= in_array($c['status'], ['active', 'paused'], true) ? 'blue' : 'green' ?>"><?= money($c['agreed_price'] ?? $c['total_price']) ?></b> <span class="small">RUB</span> &nbsp; <b class="mid"><?= (int)$c['steps'] ?></b> <span class="tiny">STEPS</span></span>
+        <span><b class="mid <?= in_array($c['status'], ['active', 'paused'], true) ? 'blue' : 'green' ?>"><?= money($c['agreed_price'] ?? $c['total_price']) ?></b> <span class="small"><?= h(cur_code($c)) ?></span> &nbsp; <b class="mid"><?= (int)$c['steps'] ?></b> <span class="tiny">STEPS</span></span>
         <span class="tiny muted"><?= (int)$c['views'] ?> views · <?= (int)$c['offer_count'] ?> offers</span>
       </div>
       <?php if ($offers): ?>
@@ -63,7 +63,7 @@ render('My contracts', function () use ($list, $tab, $u) {
           <?php foreach ($offers as $o): ?>
             <tr>
               <td><a class="blue" href="/user/<?= (int)$o['user_id'] ?>"><?= h($o['oname']) ?></a> <?= stars((float)$o['rating_avg'], (int)$o['rating_count'], false) ?></td>
-              <td><a class="offer-link" href="/offer/<?= (int)$o['id'] ?>"><b class="mid blue"><?= money($o['price']) ?></b> RUB</a></td>
+              <td><a class="offer-link" href="/offer/<?= (int)$o['id'] ?>"><b class="mid blue"><?= money($o['price']) ?></b> <?= h(cur_code($c)) ?></a></td>
               <td><a class="offer-link" href="/offer/<?= (int)$o['id'] ?>"><b class="mid blue"><?= (int)$o['days'] ?></b> days</a></td>
               <td><a class="btn small" href="/offer/<?= (int)$o['id'] ?>"><?= h(ucfirst($o['status'])) ?></a></td>
             </tr>

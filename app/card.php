@@ -28,7 +28,7 @@ function listing_card(array $c, ?int $watchUserId = null): void
       <div class="steps"><b><?= (int)$c['steps'] ?></b><span class="small">Steps</span></div>
       <div class="price-box">
         <?php if ($c['prepay_required']): ?><span class="pill blue">Prepaid</span><?php endif; ?>
-        <div class="price"><?= money($c['total_price']) ?></div><div class="cur">RUB</div>
+        <div class="price"><?= money($c['total_price']) ?></div><div class="cur"><?= h(cur_code($c)) ?></div>
       </div>
     </div>
     <div class="row between tiny muted">

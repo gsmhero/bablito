@@ -43,7 +43,7 @@ render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $
       <span class="small">Contractor<br><?php if ($contractor): ?><a class="blue big-link" href="/user/<?= (int)$contractor['id'] ?>"><?= h(public_name($contractor)) ?></a> <?= stars((float)$contractor['rating_avg'], (int)$contractor['rating_count']) ?><?php endif; ?></span>
       <span class="small muted">Creation Date <?= h(fdate($c['created_at'])) ?> <?php if ($c['category']): ?><span class="chip"><?= h($c['category']) ?></span><?php endif; ?></span>
     </div>
-    <div class="small">Client: <a class="green" href="/user/<?= (int)$author['id'] ?>"><?= h(public_name($author)) ?></a></div>
+    <div class="row between"><div class="small">Client: <a class="green" href="/user/<?= (int)$author['id'] ?>"><?= h(public_name($author)) ?></a></div><?php if (($rate = hour_rate($c)) !== null): ?><div class="rate" title="Agreed price / (agreed days x 8 hours)"><?= h(cur_symbol($c)) ?> <?= h(money($rate)) ?>/ hour</div><?php endif; ?></div>
     <hr>
     <h3>Description</h3>
     <p><?= nl2br(h($c['description'])) ?></p>
@@ -117,12 +117,12 @@ render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $
     <ul class="files"><?php foreach ($files as $f): if ($f['kind'] !== 'file') { continue; } ?><li class="<?= $f['by_contractor'] ? 'by-contractor' : '' ?>"><a href="/uploads/<?= h($f['stored_name']) ?>" download="<?= h($f['original_name']) ?>"><?= h($f['original_name']) ?></a></li><?php endforeach; ?></ul>
     <hr>
     <div class="sums">
-      <div><div class="lbl">Price</div><div class="big blue"><?= money($c['agreed_price']) ?></div><div class="cur">RUB</div></div>
+      <div><div class="lbl">Price</div><div class="big blue"><?= money($c['agreed_price']) ?></div><div class="cur"><?= h(cur_code($c)) ?></div></div>
       <div class="center"><div class="lbl">Time days</div><div class="big blue"><?= (int)$c['agreed_days'] ?></div></div>
       <div class="center"><div class="lbl">Till Date</div><div class="big <?= $overdue ? 'red' : 'blue' ?> sm"><?= h(fdate($tillDate)) ?></div><?php if ($overdue): ?><span class="pill red">Overdue</span><?php endif; ?></div>
     </div>
     <div class="progress"><span style="width:<?= $n ? round($accepted / $n * 100) : 0 ?>%"></span></div>
-    <div class="row between blue small"><b><?= $accepted ?>/<?= $n ?></b><span><b><?= money($acceptedSum) ?></b> RUB accepted</span></div>
+    <div class="row between blue small"><b><?= $accepted ?>/<?= $n ?></b><span><b><?= money($acceptedSum) ?></b> <?= h(cur_code($c)) ?> accepted</span></div>
     <?php if ($offer && $offer['notes']): ?><div class="small"><b>Notes</b><div class="note-box"><?= nl2br(h($offer['notes'])) ?></div></div><?php endif; ?>
 
     <?php if ($c['prepay_required']): ?>

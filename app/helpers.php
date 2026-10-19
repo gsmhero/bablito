@@ -462,3 +462,30 @@ function comment_attachments(array $files): string
     }
     return ($imgs ? '<div class="gallery c-gallery">' . $imgs . '</div>' : '') . ($docs ? '<ul class="files c-files">' . $docs . '</ul>' : '');
 }
+
+const CURRENCIES = ['RUB' => ['₽', '₽ РУБ'], 'USD' => ['$', '$ USD'], 'EUR' => ['€', '€ EUR']];
+
+function cur_code(array $c): string
+{
+    $k = $c['currency'] ?? 'RUB';
+    return isset(CURRENCIES[$k]) ? $k : 'RUB';
+}
+
+function cur_symbol(array $c): string
+{
+    return CURRENCIES[cur_code($c)][0];
+}
+
+/** Planned cost of one work hour: agreed price over agreed working days (8 h each, at least one day). */
+function hour_rate(array $c): ?float
+{
+    if (($c['agreed_price'] ?? null) === null) {
+        return null;
+    }
+    return (float)$c['agreed_price'] / (max(1, (int)($c['agreed_days'] ?? 0)) * 8);
+}
+
+function money2($n): string
+{
+    return number_format((float)$n, 2, '.', "\u{00A0}");
+}

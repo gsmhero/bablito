@@ -26,6 +26,7 @@ $form = [
     'prepay_required' => (int)($c['prepay_required'] ?? 0),
     'deadline' => $c['deadline'] ?? '',
     'publish' => ($c['status'] ?? 'draft') === 'published' ? 1 : 0,
+    'currency' => cur_code($c ?? []),
 ];
 $todos = $id ? rows('SELECT * FROM todos WHERE contract_id = ? ORDER BY position, id', [$id]) : [];
 if (!$todos) {
@@ -41,6 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $form['prepay_required'] = empty($_POST['prepay_required']) ? 0 : 1;
     $form['deadline'] = trim((string)($_POST['deadline'] ?? ''));
     $form['publish'] = empty($_POST['publish']) ? 0 : 1;
+    $form['currency'] = isset(CURRENCIES[(string)($_POST['currency'] ?? '')]) ? (string)$_POST['currency'] : 'RUB';
 
     if ($form['title'] === '' || mb_strlen($form['title']) > 190) {
         $errors[] = 'Contract name is required (up to 190 characters).';
@@ -91,6 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 q('INSERT INTO contracts (title, category_id, location, description, allow_extra_todos, prepay_required, deadline, status, user_id) VALUES (?,?,?,?,?,?,?,?,?)', [...$vals, $u['id']]);
                 $id = (int)$pdo->lastInsertId();
             }
+            q('UPDATE contracts SET currency = ? WHERE id = ?', [$form['currency'], $id]);
             if (!$hasOffers) {
                 $keep = [];
                 foreach ($todos as $pos => $t) {
@@ -172,6 +175,7 @@ render($id ? 'Edit contract' : 'New contract', function () use ($id, $c, $form, 
     <label class="small">Description <textarea name="description" rows="6"><?= h($form['description']) ?></textarea></label>
 
     <div class="row between"><h3>Contract</h3>
+      <label class="inline-label">Currency <select name="currency" id="currency-select"><?php foreach (CURRENCIES as $code => $cur): ?><option value="<?= $code ?>" data-code="<?= $code ?>" <?= $form['currency'] === $code ? 'selected' : '' ?>><?= h($cur[1]) ?></option><?php endforeach; ?></select></label>
       <label class="check"><input type="checkbox" name="allow_extra_todos" value="1" <?= $form['allow_extra_todos'] ? 'checked' : '' ?>> Make Me Offer</label>
     </div>
     <?php if ($hasOffers): ?><p class="muted small">Offers already exist, so the steps can no longer be changed.</p><?php endif; ?>
@@ -211,7 +215,7 @@ render($id ? 'Edit contract' : 'New contract', function () use ($id, $c, $form, 
     </ul>
     <hr>
     <div class="sums">
-      <div><div class="lbl">Price</div><div class="big green" id="sum-price"><?= money($sumP) ?></div><div class="cur">RUB</div></div>
+      <div><div class="lbl">Price</div><div class="big green" id="sum-price"><?= money($sumP) ?></div><div class="cur" id="sum-cur"><?= h(cur_code($form)) ?></div></div>
       <div class="center"><div class="lbl">Time days</div><div class="big green" id="sum-days"><?= $sumD ?></div></div>
       <div class="center"><div class="lbl">Till Date</div><input type="date" name="deadline" value="<?= h($form['deadline']) ?>"></div>
     </div>

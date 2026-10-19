@@ -85,7 +85,7 @@ render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $com
     <ul class="files"><?php foreach ($files as $f): if ($f['kind'] !== 'file') { continue; } ?><li><a href="/uploads/<?= h($f['stored_name']) ?>" download="<?= h($f['original_name']) ?>"><?= h($f['original_name']) ?></a></li><?php endforeach; ?></ul>
     <hr>
     <div class="sums">
-      <div><div class="lbl">Price</div><div class="big green"><?= money($tot['price']) ?></div><div class="cur">RUB</div></div>
+      <div><div class="lbl">Price</div><div class="big green"><?= money($tot['price']) ?></div><div class="cur"><?= h(cur_code($c)) ?></div></div>
       <div class="center"><div class="lbl">Time days</div><div class="big green"><?= $tot['days'] ?></div></div>
       <div class="center"><div class="lbl">Till Date</div><div class="big green sm"><?= h(fdate($c['deadline'])) ?></div></div>
     </div>
@@ -93,7 +93,7 @@ render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $com
     <div class="sums">
       <div><div class="lbl">Offer Price</div>
         <?php if ($editing): ?><input name="price" id="offer-price" value="<?= h((string)(float)$offer['price']) ?>" inputmode="decimal" <?= $hasSteps ? 'readonly' : '' ?>><?php else: ?><div class="big blue"><?= money($offer['price']) ?></div><?php endif; ?>
-        <div class="cur">RUB</div></div>
+        <div class="cur"><?= h(cur_code($c)) ?></div></div>
       <div class="center"><div class="lbl">Offer days</div>
         <?php if ($editing): ?><input name="days" id="offer-days" type="number" min="0" value="<?= (int)$offer['days'] ?>" <?= $hasSteps ? 'readonly' : '' ?>><?php else: ?><div class="big blue"><?= (int)$offer['days'] ?></div><?php endif; ?></div>
       <div class="center"><div class="lbl">Offer From</div><a class="blue" href="/user/<?= (int)$offer['user_id'] ?>"><?= h($offer['oname']) ?></a> <?= stars((float)$offer['rating_avg'], (int)$offer['rating_count']) ?></div>

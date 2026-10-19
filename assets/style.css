@@ -172,3 +172,4 @@ a.offer-link{color:inherit}a.offer-link:hover{text-decoration:underline}
 .comment-form .picked-grid{flex-basis:100%}
 .c-gallery{margin:6px 0 0}.c-gallery figure{width:90px;min-width:0;aspect-ratio:1}
 .c-files{margin:6px 0 0}.bubble .files a{color:var(--blue)}
+.rate{color:var(--green);font-size:1.5rem;font-weight:700;font-family:"Fira Sans Extra Condensed","Fira Sans",sans-serif}
