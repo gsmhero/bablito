@@ -214,9 +214,10 @@ render($id ? 'Edit contract' : 'New contract', function () use ($id, $c, $form, 
       <?php endforeach; ?>
     </ul>
     <hr>
-    <div class="sums two">
+    <div class="sums">
       <div><div class="lbl">Price</div><div class="big green" id="sum-price"><?= money($sumP) ?></div><div class="cur" id="sum-cur"><?= h(cur_code($form)) ?></div></div>
       <div class="center"><div class="lbl">Time days</div><div class="big green" id="sum-days"><?= $sumD ?></div></div>
+      <div class="center"><div class="lbl">Preferred till date</div><input type="date" name="deadline" value="<?= h($form['deadline']) ?>"></div>
     </div>
     <hr>
     <div class="row between">
