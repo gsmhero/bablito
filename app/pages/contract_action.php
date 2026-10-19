@@ -84,6 +84,7 @@ switch ($action) {
             forbidden();
         }
         if ($c['status'] === 'active') {
+            stop_timer($id);
             q("UPDATE contracts SET status = 'paused' WHERE id = ?", [$id]);
             flash('Contract paused.');
         } elseif ($c['status'] === 'paused') {
@@ -92,11 +93,23 @@ switch ($action) {
         }
         redirect($back);
 
+    case 'timer':
+        if (!$isContractor || $c['status'] !== 'active') {
+            forbidden();
+        }
+        if ($c['timer_started_at']) {
+            stop_timer($id);
+        } else {
+            q('UPDATE contracts SET timer_started_at = NOW() WHERE id = ?', [$id]);
+        }
+        redirect($back);
+
     case 'fire':
         if (!$isOwner || !in_array($c['status'], ['active', 'paused'], true)) {
             forbidden();
         }
         q("UPDATE contracts SET status = 'terminated' WHERE id = ?", [$id]);
+        stop_timer($id);
         flash('The contractor was dismissed and the contract moved to the archive.');
         redirect('/my');
 

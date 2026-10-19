@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 const ADMIN_EMAIL = 'admin@bablito.ru';
 
 function migrate_if_needed(): void
@@ -29,6 +29,11 @@ function migrate_if_needed(): void
             // Rejected offers are no longer kept anywhere.
             $pdo->exec("DELETE cm FROM comments cm JOIN offers o ON o.id = cm.offer_id WHERE cm.scope = 'offer' AND o.status = 'rejected'");
             $pdo->exec("DELETE FROM offers WHERE status = 'rejected'");
+        }
+        if ($cur < 4) {
+            if (!column_exists($pdo, 'contracts', 'timer_seconds')) {
+                $pdo->exec('ALTER TABLE contracts ADD COLUMN timer_seconds INT UNSIGNED NOT NULL DEFAULT 0, ADD COLUMN timer_started_at DATETIME NULL');
+            }
         }
         $pdo->exec('REPLACE INTO schema_meta (id, version) VALUES (1, ' . SCHEMA_VERSION . ')');
         ensure_admin();

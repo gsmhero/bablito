@@ -393,3 +393,9 @@ function clock_icon(int $size = 16): string
 {
     return '<svg class="clock" width="' . $size . '" height="' . $size . '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
 }
+
+/** Adds the running time to the stopwatch total and stops it. */
+function stop_timer(int $contractId): void
+{
+    q('UPDATE contracts SET timer_seconds = timer_seconds + TIMESTAMPDIFF(SECOND, timer_started_at, NOW()), timer_started_at = NULL WHERE id = ? AND timer_started_at IS NOT NULL', [$contractId]);
+}

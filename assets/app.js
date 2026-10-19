@@ -70,17 +70,17 @@
     });
   }
 
-  // stopwatch: time left until the agreed deadline (d:h:m:s)
+  // stopwatch: tracked working time (d:h:m:s), starts from 00:00:00:00 on the first Start
   var sw = $('#stopwatch');
   if (sw) {
-    var p = sw.dataset.until.split('-'), end = new Date(+p[0], +p[1] - 1, +p[2], 23, 59, 59).getTime();
+    var base = parseInt(sw.dataset.seconds, 10) || 0, t0 = Date.now();
     var two = function (n) { return (n < 10 ? '0' : '') + n; };
     var tick = function () {
-      var s = Math.floor((end - Date.now()) / 1000), neg = s < 0; s = Math.abs(s);
-      sw.textContent = (neg ? '-' : '') + two(Math.floor(s / 86400)) + ':' + two(Math.floor(s % 86400 / 3600)) + ':' + two(Math.floor(s % 3600 / 60)) + ':' + two(s % 60);
+      var s = base + (sw.dataset.running === '1' ? Math.floor((Date.now() - t0) / 1000) : 0);
+      sw.textContent = two(Math.floor(s / 86400)) + ':' + two(Math.floor(s % 86400 / 3600)) + ':' + two(Math.floor(s % 3600 / 60)) + ':' + two(s % 60);
     };
     tick();
-    if (sw.dataset.paused !== '1') { setInterval(tick, 1000); }
+    if (sw.dataset.running === '1') { setInterval(tick, 1000); }
   }
 })();
 

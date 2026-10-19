@@ -157,3 +157,7 @@ a.offer-link{color:inherit}a.offer-link:hover{text-decoration:underline}
 .modal-card{position:relative;background:#fff;border-radius:12px;width:100%;max-width:640px;padding:8px 8px 16px;box-shadow:0 10px 40px rgba(0,0,0,.3)}
 .modal-x{position:absolute;top:6px;right:10px;border:0;background:none;font-size:2rem;line-height:1;cursor:pointer;color:#666;z-index:1}
 .modal .narrow{margin:0;max-width:none}.modal .profile{border:0;box-shadow:none}
+
+/* file names: owner's files dark grey, contractor's files blue */
+.files a{color:#555}
+.files li.by-contractor a{color:var(--blue)}

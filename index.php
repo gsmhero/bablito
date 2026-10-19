@@ -14,7 +14,7 @@ $routes = [
     ['GET',  '#^/contract/(\d+)/edit$#',           'contract_edit'],
     ['POST', '#^/contract/(\d+)/edit$#',           'contract_edit'],
     ['GET',  '#^/contract/(\d+)$#',                'contract_view'],
-    ['POST', '#^/contract/(\d+)/(offer|comment|upload|pause|fire|prepay|delete|watch)$#', 'contract_action'],
+    ['POST', '#^/contract/(\d+)/(offer|comment|upload|pause|fire|prepay|delete|watch|timer)$#', 'contract_action'],
     ['POST', '#^/todo/(\d+)/(done|accept|comment)$#', 'todo_action'],
     ['GET',  '#^/offer/(\d+)$#',                   'offer_view'],
     ['POST', '#^/offer/(\d+)/(accept|reject|delete|edit|comment)$#', 'offer_action'],

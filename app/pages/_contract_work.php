@@ -30,8 +30,9 @@ $active = $c['status'] === 'active';
 $canUpload = in_array($c['status'], ['active', 'paused'], true) && ($isOwner || $isContractor);
 $myReview = ($c['status'] === 'fulfilled' && $u) ? row('SELECT id FROM reviews WHERE contract_id = ? AND reviewer_id = ?', [$id, $u['id']]) : null;
 $other = $isOwner ? $contractor : $author;
+$timer = row('SELECT timer_seconds + IF(timer_started_at IS NULL, 0, TIMESTAMPDIFF(SECOND, timer_started_at, NOW())) AS s, timer_started_at IS NOT NULL AS running FROM contracts WHERE id = ?', [$id]);
 
-render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $offer, $comments, $todoComments, $accepted, $acceptedSum, $n, $overdue, $tillDate, $active, $canUpload, $isOwner, $isContractor, $myReview, $other, $u) { ?>
+render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $offer, $comments, $todoComments, $accepted, $acceptedSum, $n, $overdue, $tillDate, $active, $canUpload, $isOwner, $isContractor, $myReview, $other, $u, $timer) { ?>
 <div class="wrap two-col">
   <div class="col">
     <h1><?= h($c['title']) ?></h1>
@@ -86,9 +87,14 @@ render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $
   </div>
 
   <div class="col">
-    <?php if ($active || $c['status'] === 'paused'): ?>
-      <div class="row end gap"><span class="tiny muted">Stopwatch</span><span class="stopwatch <?= $overdue ? 'late' : '' ?>" id="stopwatch" data-until="<?= h($tillDate) ?>" data-paused="<?= $c['status'] === 'paused' ? 1 : 0 ?>">--:--:--:--</span></div>
-    <?php endif; ?>
+    <?php $ts = (int)$timer['s']; $running = $timer['running'] && $active; ?>
+    <div class="row end gap">
+      <span class="tiny muted">Stopwatch</span>
+      <span class="stopwatch" id="stopwatch" data-seconds="<?= $ts ?>" data-running="<?= $running ? 1 : 0 ?>"><?= h(sprintf('%02d:%02d:%02d:%02d', intdiv($ts, 86400), intdiv($ts % 86400, 3600), intdiv($ts % 3600, 60), $ts % 60)) ?></span>
+      <?php if ($isContractor && $active): ?>
+        <form method="post" action="/contract/<?= (int)$c['id'] ?>/timer" class="inline"><?= csrf_field() ?><button class="btn small <?= $timer['running'] ? 'red' : 'green' ?>" type="submit"><?= $timer['running'] ? 'Stop' : 'Start' ?></button></form>
+      <?php endif; ?>
+    </div>
     <hr>
     <?php if ($canUpload): ?>
       <div class="row gap">

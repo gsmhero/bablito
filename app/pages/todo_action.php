@@ -33,6 +33,7 @@ switch ($args[1]) {
         q('UPDATE todos SET accepted_at = ' . ($todo['accepted_at'] ? 'NULL' : 'NOW()') . ' WHERE id = ?', [$todo['id']]);
         $left = (int)val('SELECT COUNT(*) FROM todos WHERE contract_id = ? AND accepted_at IS NULL', [$c['id']]);
         if ($left === 0) {
+            stop_timer((int)$c['id']);
             q("UPDATE contracts SET status = 'fulfilled' WHERE id = ?", [$c['id']]);
             flash('All steps accepted. The contract is fulfilled. Please leave a review for the contractor.');
         }
