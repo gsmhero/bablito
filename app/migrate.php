@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const SCHEMA_VERSION = 8;
+const SCHEMA_VERSION = 9;
 const ADMIN_EMAIL = 'admin@bablito.ru';
 
 function migrate_if_needed(): void
@@ -71,6 +71,15 @@ function migrate_if_needed(): void
   user_id INT UNSIGNED NOT NULL,
   contract_id INT UNSIGNED NOT NULL,
   last_id INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (user_id, contract_id),
+  FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        }
+        if ($cur < 9) {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS contract_clocks (
+  user_id INT UNSIGNED NOT NULL,
+  contract_id INT UNSIGNED NOT NULL,
+  timezone VARCHAR(64) NOT NULL,
   PRIMARY KEY (user_id, contract_id),
   FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");

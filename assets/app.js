@@ -234,7 +234,10 @@
       body.addEventListener('submit', function (e) {
         var f = e.target; if (!f.action) { return; }
         e.preventDefault();
-        fetch(f.action, { method: 'POST', body: new FormData(f), credentials: 'same-origin' }).then(function () { load(currentUrl); });
+        var fd = new FormData(f);
+        if (e.submitter && e.submitter.name) { fd.set(e.submitter.name, e.submitter.value); }
+        var reload = f.hasAttribute('data-reload');
+        fetch(f.action, { method: 'POST', body: fd, credentials: 'same-origin' }).then(function () { if (reload) { location.reload(); } else { load(currentUrl); } });
       });
     }
     currentUrl = url;
@@ -300,4 +303,22 @@
       }).catch(function () {});
     }, 15000);
   }
+})();
+
+(function () {
+  'use strict';
+  // search box above a <select>: hides options that do not match (city picker)
+  document.addEventListener('input', function (e) {
+    var inp = e.target;
+    if (!inp.matches || !inp.matches('input[data-filter-select]')) { return; }
+    var sel = document.getElementById(inp.getAttribute('data-filter-select')), q = inp.value.trim().toLowerCase().replace(/\s+/g, '_');
+    if (!sel) { return; }
+    var first = null;
+    Array.prototype.forEach.call(sel.options, function (o) {
+      var show = q === '' || o.value.toLowerCase().indexOf(q) !== -1 || o.text.toLowerCase().indexOf(inp.value.trim().toLowerCase()) !== -1;
+      o.hidden = !show; o.disabled = !show;
+      if (show && !first) { first = o; }
+    });
+    if (q !== '' && first) { first.selected = true; }
+  });
 })();

@@ -16,7 +16,8 @@ $st = db()->prepare("SELECT c.*, cat.name AS category,
         (SELECT COUNT(*) FROM todos t WHERE t.contract_id = c.id AND t.accepted_at IS NOT NULL) AS accepted_steps,
         (SELECT COUNT(*) FROM comments cm WHERE cm.contract_id = c.id AND cm.scope IN ('work','todo') AND cm.user_id <> :me
             AND cm.id > COALESCE((SELECT r.last_id FROM comment_reads r WHERE r.user_id = :me AND r.contract_id = c.id), 0)) AS unread,
-        (SELECT o.timezone FROM users o WHERE o.id = c.user_id) AS other_tz
+        (SELECT cc.timezone FROM contract_clocks cc WHERE cc.user_id = :me AND cc.contract_id = c.id) AS my_clock_tz,
+        (SELECT o.timezone FROM users o WHERE o.id = IF(c.user_id = :me, c.contractor_id, c.user_id)) AS other_tz
     FROM contracts c LEFT JOIN categories cat ON cat.id = c.category_id
     WHERE (c.user_id = :me OR c.contractor_id = :me) AND c.status IN ('active','paused')
     ORDER BY COALESCE(c.agreed_deadline, c.deadline) IS NULL, COALESCE(c.agreed_deadline, c.deadline), c.id");
@@ -50,8 +51,8 @@ render('Dashboard', function () use ($list, $totals, $myTz, $u) { ?>
           $dead = $c['agreed_deadline'] ?: $c['deadline'];
           $pct = $c['steps'] ? round($c['accepted_steps'] / $c['steps'] * 100) : 0;
           $running = $c['status'] === 'active' && $c['timer_started_at'];
-          $tz = valid_timezone($c['other_tz'] ?? null); ?>
-        <div class="dash-row<?= $isAuthor ? ' no-clock' : '' ?>">
+          $tz = valid_timezone($c['my_clock_tz'] ?? null) ?? valid_timezone($c['other_tz'] ?? null); ?>
+        <div class="dash-row">
           <a class="card dash-card" href="/contract/<?= (int)$c['id'] ?>">
             <div class="row between">
               <h3><?= h($c['title']) ?></h3>
@@ -70,15 +71,18 @@ render('Dashboard', function () use ($list, $totals, $myTz, $u) { ?>
               <b class="blue"><?= (int)$c['accepted_steps'] ?>/<?= (int)$c['steps'] ?></b>
             </div>
           </a>
-          <?php if ($isAuthor): ?>
-          <?php elseif ($tz): ?>
+          <?php if ($tz): ?>
             <div class="card wclock" data-tz="<?= h($tz) ?>">
+              <a class="gear" href="/contract/<?= (int)$c['id'] ?>/clock" data-modal title="Set city" aria-label="Set city"><?= gear_icon() ?></a>
               <div class="row between tiny"><span data-k="wd"></span><span data-k="date"></span></div>
               <div class="wtime"><span data-k="hh"></span><span class="colon">:</span><span data-k="mm"></span></div>
               <div class="wcity"><?= h(tz_label($tz)) ?></div>
             </div>
           <?php else: ?>
-            <div class="card wclock empty"><div class="tiny muted">The contract author has not set a time zone</div></div>
+            <div class="card wclock empty">
+              <a class="gear" href="/contract/<?= (int)$c['id'] ?>/clock" data-modal title="Set city" aria-label="Set city"><?= gear_icon() ?></a>
+              <div class="tiny muted">Where is the other side? Click the gear to choose a city.</div>
+            </div>
           <?php endif; ?>
         </div>
       <?php endforeach; ?>
