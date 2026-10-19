@@ -58,7 +58,7 @@ render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $
       <span class="small muted">Creation Date <?= h(fdate($c['created_at'])) ?> <?php if ($c['category']): ?><span class="chip"><?= h($c['category']) ?></span><?php endif; ?></span>
     </div>
     <div class="row between client-row"><div class="small">Client:<br><a class="green big-link" href="/user/<?= (int)$author['id'] ?>"><?= h(public_name($author)) ?></a></div><?php if (($rate = hour_rate($c)) !== null): ?><div class="rate" title="Agreed price / (agreed days x 8 hours)"><?= h(cur_symbol($c)) ?> <?= h(money($rate)) ?>/ hour</div><?php endif; ?></div>
-    <div class="small muted pay-type-line">Payment: <b><?= h(payment_type_label($c['payment_type'] ?? null)) ?></b></div>
+    <div class="small pay-type-line">Selected payment type: <span class="pay-type-val"><?= h(payment_type_label($c['payment_type'] ?? null)) ?></span></div>
     <hr>
     <h3>Description</h3>
     <p><?= nl2br(h($c['description'])) ?></p>
