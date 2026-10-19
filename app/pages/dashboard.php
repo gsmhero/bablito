@@ -16,7 +16,7 @@ $st = db()->prepare("SELECT c.*, cat.name AS category,
         (SELECT COUNT(*) FROM todos t WHERE t.contract_id = c.id AND t.accepted_at IS NOT NULL) AS accepted_steps,
         (SELECT COUNT(*) FROM comments cm WHERE cm.contract_id = c.id AND cm.scope IN ('work','todo') AND cm.user_id <> :me
             AND cm.id > COALESCE((SELECT r.last_id FROM comment_reads r WHERE r.user_id = :me AND r.contract_id = c.id), 0)) AS unread,
-        (SELECT o.timezone FROM users o WHERE o.id = IF(c.user_id = :me, c.contractor_id, c.user_id)) AS other_tz
+        (SELECT o.timezone FROM users o WHERE o.id = c.contractor_id) AS other_tz
     FROM contracts c LEFT JOIN categories cat ON cat.id = c.category_id
     WHERE (c.user_id = :me OR c.contractor_id = :me) AND c.status IN ('active','paused')
     ORDER BY COALESCE(c.agreed_deadline, c.deadline) IS NULL, COALESCE(c.agreed_deadline, c.deadline), c.id");
@@ -77,7 +77,7 @@ render('Dashboard', function () use ($list, $totals, $myTz, $u) { ?>
               <div class="wcity"><?= h(tz_label($tz)) ?></div>
             </div>
           <?php else: ?>
-            <div class="card wclock empty"><div class="tiny muted">The other side has not set a time zone</div></div>
+            <div class="card wclock empty"><div class="tiny muted">The contractor has not set a time zone</div></div>
           <?php endif; ?>
         </div>
       <?php endforeach; ?>
