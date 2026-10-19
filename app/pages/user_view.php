@@ -23,16 +23,16 @@ if ($me && !$self) {
 $body = function () use ($p, $see, $extra, $reviews, $eligible, $me, $self, $struct, $pvals) { ?>
 <div class="narrow profile">
   <h1 class="green"><?= h(public_name($p)) ?></h1>
-  <div><?= stars((float)$p['rating_avg'], (int)$p['rating_count']) ?></div>
-  <?php if ($p['contact_phone'] && ($p['show_phone'] || $see)): ?><div class="small">Phone &nbsp;<?= h($p['contact_phone']) ?></div><?php endif; ?>
-  <?php if ($p['contact_email'] && ($p['show_email'] || $see)): ?><div class="small">Email &nbsp;<?= h($p['contact_email']) ?></div><?php endif; ?>
-  <?php foreach ($extra as $e): if (!empty($e['public']) || $see): ?><div class="small"><?= h($e['label']) ?> &nbsp;<?= h($e['value']) ?></div><?php endif; endforeach; ?>
+  <div class="pf-rating"><?= stars((float)$p['rating_avg'], (int)$p['rating_count']) ?></div>
+  <?php if ($p['contact_phone'] && ($p['show_phone'] || $see)): ?><div class="small"><span class="pf-label">Phone</span> &nbsp;<?= h($p['contact_phone']) ?></div><?php endif; ?>
+  <?php if ($p['contact_email'] && ($p['show_email'] || $see)): ?><div class="small"><span class="pf-label">Email</span> &nbsp;<?= h($p['contact_email']) ?></div><?php endif; ?>
+  <?php foreach ($extra as $e): if (!empty($e['public']) || $see): ?><div class="small"><span class="pf-label"><?= h($e['label']) ?></span> &nbsp;<?= h($e['value']) ?></div><?php endif; endforeach; ?>
   <?php foreach ($struct as $s):
       $shown = array_filter($s['fields'], fn($f) => isset($pvals[(int)$f['id']]) && ($pvals[(int)$f['id']]['is_public'] || $see));
       if (!$shown) { continue; } ?>
     <h3 class="pf-title"><?= h($s['title']) ?></h3>
     <?php foreach ($shown as $f): $val = (string)$pvals[(int)$f['id']]['value']; ?>
-      <div class="small"><?= h($f['label']) ?> &nbsp;<?= $f['type'] === 'url' ? '<a class="blue" href="' . h($val) . '" target="_blank" rel="noopener nofollow">' . h($val) . '</a>' : nl2br(h($f['type'] === 'date' ? fdate($val) : $val)) ?></div>
+      <div class="small"><span class="pf-label"><?= h($f['label']) ?></span> &nbsp;<?= $f['type'] === 'url' ? '<a class="blue" href="' . h($val) . '" target="_blank" rel="noopener nofollow">' . h($val) . '</a>' : nl2br(h($f['type'] === 'date' ? fdate($val) : $val)) ?></div>
     <?php endforeach; ?>
   <?php endforeach; ?>
   <?php if ($p['about']): ?><div class="note-box"><?= nl2br(h($p['about'])) ?></div><?php endif; ?>
