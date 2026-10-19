@@ -13,6 +13,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Enter your name.';
     } elseif ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = 'Contact email is invalid.';
+    } elseif (($perr = profile_save_values((int)$u['id'], profile_structure(), (array)($_POST['pf'] ?? []))) !== null) {
+        $error = $perr;
     } else {
         $fields = [];
         foreach ((array)($_POST['extra'] ?? []) as $e) {
@@ -33,7 +35,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $u = array_merge($u, ['name' => $name]);
 }
 
-render('Edit profile', function () use ($u, $extra, $error) { ?>
+$struct = profile_structure();
+$pvals = profile_values((int)$u['id']);
+
+render('Edit profile', function () use ($u, $extra, $error, $struct, $pvals) { ?>
 <form method="post" class="narrow card-form wide">
   <?= csrf_field() ?>
   <div class="row between"><h1>Edit Profile</h1><span><a class="small" href="/user/<?= (int)$u['id'] ?>">View public profile</a> <button class="btn small" type="submit">Save Profile</button></span></div>
@@ -46,6 +51,15 @@ render('Edit profile', function () use ($u, $extra, $error) { ?>
     <label class="check"><input type="checkbox" name="show_phone" value="1" <?= $u['show_phone'] ? 'checked' : '' ?>> Show in Public</label></div>
   <div class="field-row"><label>Contact Email <input type="email" name="contact_email" value="<?= h($u['contact_email']) ?>" maxlength="190"></label>
     <label class="check"><input type="checkbox" name="show_email" value="1" <?= $u['show_email'] ? 'checked' : '' ?>> Show in Public</label></div>
+  <?php foreach ($struct as $s): if (!$s['fields']) { continue; } ?>
+    <h3 class="pf-title"><?= h($s['title']) ?></h3>
+    <?php foreach ($s['fields'] as $f): $pv = $pvals[(int)$f['id']] ?? null; ?>
+      <div class="field-row">
+        <label><?= h($f['label']) ?><?= $f['required'] ? ' *' : '' ?> <?= profile_input_html($f, $pv ? (string)$pv['value'] : '') ?></label>
+        <label class="check"><input type="checkbox" name="pf[<?= (int)$f['id'] ?>][public]" value="1" <?= ($pv ? $pv['is_public'] : $f['default_public']) ? 'checked' : '' ?>> Show in Public</label>
+      </div>
+    <?php endforeach; ?>
+  <?php endforeach; ?>
   <div id="extra-fields">
     <?php foreach ($extra as $i => $e): ?>
       <div class="field-row">

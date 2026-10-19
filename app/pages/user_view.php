@@ -11,6 +11,8 @@ $see = $self || is_admin();
 $extra = json_decode((string)$p['extra_fields'], true);
 $extra = is_array($extra) ? $extra : [];
 $reviews = rows('SELECT r.*, COALESCE(NULLIF(u.name,\'\'), CONCAT(\'User #\', u.id)) AS rname FROM reviews r JOIN users u ON u.id = r.reviewer_id WHERE r.reviewed_id = ? ORDER BY r.id DESC LIMIT 100', [$p['id']]);
+$struct = profile_structure();
+$pvals = profile_values((int)$p['id']);
 $eligible = null;
 if ($me && !$self) {
     $eligible = row("SELECT c.id, c.title FROM contracts c WHERE c.status = 'fulfilled'
@@ -18,13 +20,21 @@ if ($me && !$self) {
         AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.contract_id = c.id AND r.reviewer_id = :a) ORDER BY c.id DESC LIMIT 1", ['a' => $me['id'], 'b' => $p['id']]);
 }
 
-$body = function () use ($p, $see, $extra, $reviews, $eligible, $me, $self) { ?>
+$body = function () use ($p, $see, $extra, $reviews, $eligible, $me, $self, $struct, $pvals) { ?>
 <div class="narrow profile">
   <h1 class="green"><?= h(public_name($p)) ?></h1>
   <div><?= stars((float)$p['rating_avg'], (int)$p['rating_count']) ?></div>
   <?php if ($p['contact_phone'] && ($p['show_phone'] || $see)): ?><div class="small">Phone &nbsp;<?= h($p['contact_phone']) ?></div><?php endif; ?>
   <?php if ($p['contact_email'] && ($p['show_email'] || $see)): ?><div class="small">Email &nbsp;<?= h($p['contact_email']) ?></div><?php endif; ?>
   <?php foreach ($extra as $e): if (!empty($e['public']) || $see): ?><div class="small"><?= h($e['label']) ?> &nbsp;<?= h($e['value']) ?></div><?php endif; endforeach; ?>
+  <?php foreach ($struct as $s):
+      $shown = array_filter($s['fields'], fn($f) => isset($pvals[(int)$f['id']]) && ($pvals[(int)$f['id']]['is_public'] || $see));
+      if (!$shown) { continue; } ?>
+    <h3 class="pf-title"><?= h($s['title']) ?></h3>
+    <?php foreach ($shown as $f): $val = (string)$pvals[(int)$f['id']]['value']; ?>
+      <div class="small"><?= h($f['label']) ?> &nbsp;<?= $f['type'] === 'url' ? '<a class="blue" href="' . h($val) . '" target="_blank" rel="noopener nofollow">' . h($val) . '</a>' : nl2br(h($f['type'] === 'date' ? fdate($val) : $val)) ?></div>
+    <?php endforeach; ?>
+  <?php endforeach; ?>
   <?php if ($p['about']): ?><div class="note-box"><?= nl2br(h($p['about'])) ?></div><?php endif; ?>
   <?php if ($self): ?><p><a class="btn small" href="/profile">Edit profile</a></p><?php endif; ?>
 

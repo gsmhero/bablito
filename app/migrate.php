@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const SCHEMA_VERSION = 10;
+const SCHEMA_VERSION = 11;
 const ADMIN_EMAIL = 'admin@bablito.ru';
 
 function migrate_if_needed(): void
@@ -86,6 +86,33 @@ function migrate_if_needed(): void
         }
         if ($cur < 10 && !column_exists($pdo, 'categories', 'image')) {
             $pdo->exec("ALTER TABLE categories ADD COLUMN image VARCHAR(80) NULL");
+        }
+        if ($cur < 11) {
+            $t = 'ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci';
+            $pdo->exec("CREATE TABLE IF NOT EXISTS profile_sections (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(120) NOT NULL,
+  position INT NOT NULL DEFAULT 0
+) $t");
+            $pdo->exec("CREATE TABLE IF NOT EXISTS profile_fields (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  section_id INT UNSIGNED NOT NULL,
+  label VARCHAR(120) NOT NULL,
+  type VARCHAR(20) NOT NULL DEFAULT 'text',
+  options TEXT NULL,
+  required TINYINT(1) NOT NULL DEFAULT 0,
+  default_public TINYINT(1) NOT NULL DEFAULT 1,
+  position INT NOT NULL DEFAULT 0,
+  FOREIGN KEY (section_id) REFERENCES profile_sections(id) ON DELETE CASCADE
+) $t");
+            $pdo->exec("CREATE TABLE IF NOT EXISTS profile_values (
+  user_id INT UNSIGNED NOT NULL,
+  field_id INT UNSIGNED NOT NULL,
+  value TEXT NULL,
+  is_public TINYINT(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (user_id, field_id),
+  FOREIGN KEY (field_id) REFERENCES profile_fields(id) ON DELETE CASCADE
+) $t");
         }
         $pdo->exec('REPLACE INTO schema_meta (id, version) VALUES (1, ' . SCHEMA_VERSION . ')');
         ensure_admin();

@@ -87,6 +87,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 flash('Category saved.');
             }
             break;
+        case 'profile':
+            if ($do === 'add_section') {
+                $title = trim((string)($_POST['new_section'] ?? ''));
+                if ($title !== '' && mb_strlen($title) <= 120) {
+                    q('INSERT INTO profile_sections (title, position) VALUES (?, (SELECT COALESCE(MAX(p.position), 0) + 1 FROM (SELECT position FROM profile_sections) p))', [$title]);
+                    flash('Section added.');
+                } else {
+                    flash('Enter a section title (up to 120 characters).', 'err');
+                }
+            } elseif (str_starts_with($do, 'del_section_')) {
+                q('DELETE FROM profile_sections WHERE id = ?', [(int)substr($do, 12)]);
+                flash('Section deleted together with its fields and the values users entered.');
+            } elseif (str_starts_with($do, 'del_field_')) {
+                q('DELETE FROM profile_fields WHERE id = ?', [(int)substr($do, 10)]);
+                flash('Field deleted.');
+            } else {
+                foreach ((array)($_POST['sections'] ?? []) as $sid => $s) {
+                    q('UPDATE profile_sections SET title = ?, position = ? WHERE id = ?', [mb_substr(trim((string)($s['title'] ?? '')), 0, 120) ?: 'Section', (int)($s['position'] ?? 0), (int)$sid]);
+                }
+                foreach ((array)($_POST['fields'] ?? []) as $fid => $f) {
+                    $type = isset(PROFILE_FIELD_TYPES[$f['type'] ?? '']) ? $f['type'] : 'text';
+                    $label = mb_substr(trim((string)($f['label'] ?? '')), 0, 120);
+                    if ($label === '') {
+                        continue;
+                    }
+                    q('UPDATE profile_fields SET label = ?, type = ?, options = ?, required = ?, default_public = ?, position = ? WHERE id = ?',
+                        [$label, $type, trim((string)($f['options'] ?? '')), empty($f['required']) ? 0 : 1, empty($f['public']) ? 0 : 1, (int)($f['position'] ?? 0), (int)$fid]);
+                }
+                $added = 0;
+                foreach ((array)($_POST['nf'] ?? []) as $sid => $f) {
+                    $label = mb_substr(trim((string)($f['label'] ?? '')), 0, 120);
+                    if ($label === '' || !val('SELECT id FROM profile_sections WHERE id = ?', [(int)$sid])) {
+                        continue;
+                    }
+                    $type = isset(PROFILE_FIELD_TYPES[$f['type'] ?? '']) ? $f['type'] : 'text';
+                    q('INSERT INTO profile_fields (section_id, label, type, options, required, default_public, position) VALUES (?,?,?,?,?,?, (SELECT COALESCE(MAX(p.position), 0) + 1 FROM (SELECT position FROM profile_fields) p))',
+                        [(int)$sid, $label, $type, trim((string)($f['options'] ?? '')), empty($f['required']) ? 0 : 1, empty($f['public']) ? 0 : 1]);
+                    $added++;
+                }
+                flash($added ? 'Saved. ' . $added . ' field(s) added.' : 'Saved.');
+            }
+            break;
         case 'pages':
             foreach ((array)($_POST['pages'] ?? []) as $slug => $p) {
                 q('UPDATE static_pages SET title = ?, body = ? WHERE slug = ?', [mb_substr(trim((string)($p['title'] ?? '')), 0, 190), (string)($p['body'] ?? ''), (string)$slug]);
@@ -98,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 render('Admin', function () use ($tab) {
-    $tabs = ['users' => 'Users', 'contracts' => 'Contracts', 'home' => 'Homepage', 'pages' => 'Pages', 'categories' => 'Categories']; ?>
+    $tabs = ['users' => 'Users', 'contracts' => 'Contracts', 'home' => 'Homepage', 'pages' => 'Pages', 'categories' => 'Categories', 'profile' => 'User Profile Editor']; ?>
 <div class="wrap">
   <h1>Admin mode</h1>
   <div class="tabs"><?php foreach ($tabs as $k => $l): ?><a class="<?= $k === $tab ? 'on' : '' ?>" href="/admin/<?= $k ?>"><?= $l ?></a><?php endforeach; ?></div>
@@ -144,6 +186,52 @@ render('Admin', function () use ($tab) {
         </div>
       <?php endforeach; ?>
       <div class="row between"><button class="btn green" type="submit" name="do" value="save">Save</button><button class="btn" type="submit" name="do" value="add_block">Add Block</button></div>
+    </form>
+  <?php elseif ($tab === 'profile'): $struct = profile_structure(); ?>
+    <p class="small muted">Sections and fields defined here appear on every user's "Edit Profile" page. Users fill them in and choose which ones are public.</p>
+    <form method="post" action="/admin/profile" class="card-form wide pe-form">
+      <?= csrf_field() ?>
+      <?php foreach ($struct as $s): ?>
+        <div class="card pe-section">
+          <div class="row gap end">
+            <label class="tiny grow">Section title <input name="sections[<?= (int)$s['id'] ?>][title]" value="<?= h($s['title']) ?>" maxlength="120"></label>
+            <label class="tiny">Order <input class="short" type="number" name="sections[<?= (int)$s['id'] ?>][position]" value="<?= (int)$s['position'] ?>"></label>
+            <button class="btn small red-outline" type="submit" name="do" value="del_section_<?= (int)$s['id'] ?>" formnovalidate onclick="return confirm('Delete this section with all its fields and user data?')">Delete section</button>
+          </div>
+          <?php foreach ($s['fields'] as $f): ?>
+            <div class="pe-field">
+              <div class="row gap end">
+                <label class="tiny grow">Field name <input name="fields[<?= (int)$f['id'] ?>][label]" value="<?= h($f['label']) ?>" maxlength="120"></label>
+                <label class="tiny">Type <select name="fields[<?= (int)$f['id'] ?>][type]"><?php foreach (PROFILE_FIELD_TYPES as $k => $lbl): ?><option value="<?= h($k) ?>" <?= $f['type'] === $k ? 'selected' : '' ?>><?= h($lbl) ?></option><?php endforeach; ?></select></label>
+                <label class="tiny">Order <input class="short" type="number" name="fields[<?= (int)$f['id'] ?>][position]" value="<?= (int)$f['position'] ?>"></label>
+              </div>
+              <div class="row gap end">
+                <label class="check tiny"><input type="checkbox" name="fields[<?= (int)$f['id'] ?>][required]" value="1" <?= $f['required'] ? 'checked' : '' ?>> Required</label>
+                <label class="check tiny"><input type="checkbox" name="fields[<?= (int)$f['id'] ?>][public]" value="1" <?= $f['default_public'] ? 'checked' : '' ?>> Public by default</label>
+                <button class="linkbtn red tiny" type="submit" name="do" value="del_field_<?= (int)$f['id'] ?>" formnovalidate onclick="return confirm('Delete this field and the values users entered?')">Delete field</button>
+              </div>
+              <?php if ($f['type'] === 'select'): ?><label class="tiny">Choices (one per line) <textarea name="fields[<?= (int)$f['id'] ?>][options]" rows="3"><?= h($f['options']) ?></textarea></label><?php endif; ?>
+            </div>
+          <?php endforeach; ?>
+          <div class="pe-field pe-new">
+            <div class="tiny muted">Add a field to this section</div>
+            <div class="row gap end">
+              <label class="tiny grow">Field name <input name="nf[<?= (int)$s['id'] ?>][label]" maxlength="120"></label>
+              <label class="tiny">Type <select name="nf[<?= (int)$s['id'] ?>][type]"><?php foreach (PROFILE_FIELD_TYPES as $k => $lbl): ?><option value="<?= h($k) ?>"><?= h($lbl) ?></option><?php endforeach; ?></select></label>
+              <label class="check tiny"><input type="checkbox" name="nf[<?= (int)$s['id'] ?>][required]" value="1"> Required</label>
+              <label class="check tiny"><input type="checkbox" name="nf[<?= (int)$s['id'] ?>][public]" value="1" checked> Public</label>
+              <button class="btn small green-outline" type="submit" name="do" value="add_field">+ Add Field</button>
+            </div>
+            <label class="tiny">Choices for a "Choice list" (one per line) <textarea name="nf[<?= (int)$s['id'] ?>][options]" rows="2"></textarea></label>
+          </div>
+        </div>
+      <?php endforeach; ?>
+      <?php if (!$struct): ?><p class="muted">No sections yet. Add the first one below.</p><?php endif; ?>
+      <div class="row between"><button class="btn green" type="submit" name="do" value="save">Save</button></div>
+    </form>
+    <form method="post" action="/admin/profile" class="card row gap end"><?= csrf_field() ?>
+      <label class="tiny grow">New section <input name="new_section" maxlength="120" required></label>
+      <button class="btn green" type="submit" name="do" value="add_section">Add Section</button>
     </form>
   <?php elseif ($tab === 'categories'): $cats = rows('SELECT c.*, (SELECT COUNT(*) FROM contracts x WHERE x.category_id = c.id) AS n FROM categories c ORDER BY c.name'); ?>
     <p class="small muted">The default image is shown on contracts of this category that have no uploaded images.</p>
