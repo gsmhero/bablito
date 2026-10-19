@@ -26,7 +26,7 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 .foot-links a{display:block;font-size:1.05rem}
 /* forms */
 input,select,textarea,button{font:inherit}
-input:not([type=checkbox]):not([type=radio]),select,textarea{width:100%;padding:8px 10px;border:1px solid #aaa;border-radius:8px;background:#fff;color:var(--ink)}
+input:not([type=checkbox]):not([type=radio]),select,textarea{width:100%;padding:8px 10px;border:1px solid #d4d4d4;border-radius:8px;background:#fff;color:var(--ink)}
 label{display:block}
 label.small,label.tiny{margin:8px 0}
 .tiny>input,.tiny>textarea,.tiny>select{margin-top:2px}
@@ -205,3 +205,9 @@ a.offer-link{color:inherit}a.offer-link:hover{text-decoration:underline}
 .wclock .row.tiny{padding-right:22px}
 .wclock.empty{text-align:left;padding-right:34px}
 .clock-setup h2{margin:.1em 0 .3em}.clock-setup select{margin:8px 0 12px}.tz-filter{margin-top:8px}
+
+/* spacing fixes */
+.field-row>.btn{margin-bottom:10px}
+.main-nav{gap:8px}
+.title-input{margin-bottom:0}
+.title-input+.row{margin-top:6px}
