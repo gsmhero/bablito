@@ -44,6 +44,26 @@ jobs:
             done
           } > "$RUNNER_TEMP/dotenv"
 
+      - name: Test FTP login and show the folders (to find the right FTP_PATH)
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_PORT: ${{ secrets.FTP_PORT }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASS: ${{ secrets.FTP_PASS }}
+          FTP_PATH: ${{ secrets.FTP_PATH }}
+        run: |
+          lftp -u "$FTP_USER","$FTP_PASS" -p "${FTP_PORT:-21}" "$FTP_HOST" <<EOF || echo "::warning::FTP login or folder listing failed, see the lines above"
+          set ftp:ssl-allow no
+          set net:timeout 20
+          set net:max-retries 1
+          pwd
+          echo "--- top level ---"
+          ls
+          echo "--- FTP_PATH ---"
+          ls "$FTP_PATH"
+          bye
+          EOF
+
       - name: Deploy over FTP
         env:
           FTP_HOST: ${{ secrets.FTP_HOST }}
@@ -62,7 +82,9 @@ jobs:
           set net:timeout 30
           set ftp:ssl-allow no
           set ftp:passive-mode yes
-          mirror -R --delete --no-perms --parallel=4 --exclude-glob .git/ --exclude-glob .github/ --exclude-glob .env --exclude-glob README.md --exclude-glob uploads/ --exclude-glob storage/ --exclude-glob error.log ./ "$FTP_PATH"
+          set ftp:prefer-epsv no
+          set net:connection-limit 1
+          mirror -R --delete --no-perms --parallel=1 --exclude-glob .git/ --exclude-glob .github/ --exclude-glob .env --exclude-glob README.md --exclude-glob uploads/ --exclude-glob storage/ --exclude-glob error.log ./ "$FTP_PATH"
           put -O "$FTP_PATH" -o .env "$RUNNER_TEMP/dotenv"
           set cmd:fail-exit no
           chmod 600 "$FTP_PATH/.env"
