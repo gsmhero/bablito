@@ -18,6 +18,13 @@ jobs:
       - name: Install sshpass and rsync
         run: sudo apt-get update -qq && sudo apt-get install -y -qq sshpass rsync
 
+      - name: Check that the server SSH port is reachable
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+        run: |
+          if timeout 20 bash -c "exec 3<>/dev/tcp/${SSH_HOST}/${SSH_PORT:-22}"; then echo "SSH port is reachable"; else echo "::error::SSH port of the server is NOT reachable from GitHub (timeout/refused). Check hosting SSH access, firewall or IP blocking."; exit 1; fi
+
       - name: Deploy files via rsync over SSH
         env:
           SSHPASS: ${{ secrets.SSH_PASS }}
@@ -28,7 +35,7 @@ jobs:
         run: |
           PORT="${SSH_PORT:-22}"
           sshpass -e rsync -rlvz --delete \
-            -e "ssh -p ${PORT} -o StrictHostKeyChecking=accept-new" \
+            -e "ssh -p ${PORT} -o StrictHostKeyChecking=accept-new -o ConnectTimeout=30" \
             --exclude='.git' --exclude='.github' --exclude='.env' \
             --exclude='README.md' --exclude='uploads/' --exclude='storage/' --exclude='error.log' \
             ./ "${SSH_USER}@${SSH_HOST}:${DEPLOY_PATH}/"
