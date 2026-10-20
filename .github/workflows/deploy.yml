@@ -44,27 +44,23 @@ jobs:
             done
           } > "$RUNNER_TEMP/dotenv"
 
-      - name: Deploy over FTPS
+      - name: Deploy over FTP
         env:
           FTP_HOST: ${{ secrets.FTP_HOST }}
           FTP_PORT: ${{ secrets.FTP_PORT }}
           FTP_USER: ${{ secrets.FTP_USER }}
           FTP_PASS: ${{ secrets.FTP_PASS }}
           FTP_PATH: ${{ secrets.FTP_PATH }}
-          FTP_VERIFY_CERT: ${{ secrets.FTP_VERIFY_CERT }}
         run: |
           for v in FTP_HOST FTP_USER FTP_PASS FTP_PATH; do
             if [ -z "${!v}" ]; then echo "::error::Repository secret $v is not set"; exit 1; fi
           done
-          # Explicit FTPS (AUTH TLS): login and data are encrypted. The certificate check is off unless
-          # FTP_VERIFY_CERT=yes, because shared hosting certificates often do not match the FTP host name.
+          # Plain FTP (the hosting has no FTPS): login and files are NOT encrypted in transit.
           lftp -u "$FTP_USER","$FTP_PASS" -p "${FTP_PORT:-21}" "$FTP_HOST" <<EOF
           set cmd:fail-exit yes
           set net:max-retries 3
           set net:timeout 30
-          set ftp:ssl-force yes
-          set ftp:ssl-protect-data yes
-          set ssl:verify-certificate ${FTP_VERIFY_CERT:-no}
+          set ftp:ssl-allow no
           set ftp:passive-mode yes
           mirror -R --delete --no-perms --parallel=4 --exclude-glob .git/ --exclude-glob .github/ --exclude-glob .env --exclude-glob README.md --exclude-glob uploads/ --exclude-glob storage/ --exclude-glob error.log ./ "$FTP_PATH"
           put -O "$FTP_PATH" -o .env "$RUNNER_TEMP/dotenv"
