@@ -76,6 +76,10 @@ jobs:
           for v in FTP_HOST FTP_USER FTP_PASS FTP_PATH; do
             if [ -z "${!v}" ]; then echo "::error::Repository secret $v is not set"; exit 1; fi
           done
+          case "$FTP_PATH" in
+            *public_html|*public_html/|*/www|*/www/|*/htdocs|*/htdocs/) ;;
+            *) echo "::error title=Unsafe FTP_PATH::FTP_PATH must point to the web folder itself (it should end with public_html). Refusing to deploy into a parent folder."; exit 1 ;;
+          esac
           # Plain FTP (the hosting has no FTPS): login and files are NOT encrypted in transit.
           cat > "$RUNNER_TEMP/deploy.lftp" <<EOF
           set cmd:fail-exit yes
@@ -87,7 +91,7 @@ jobs:
           set ftp:passive-mode yes
           set ftp:prefer-epsv no
           set net:connection-limit 1
-          mirror -R --delete --no-perms --parallel=1 --exclude-glob .git/ --exclude-glob .github/ --exclude-glob .env --exclude-glob README.md --exclude-glob uploads/ --exclude-glob storage/ --exclude-glob error.log ./ "$FTP_PATH"
+          mirror -R --no-perms --parallel=1 --exclude-glob .git/ --exclude-glob .github/ --exclude-glob .env --exclude-glob README.md --exclude-glob uploads/ --exclude-glob storage/ --exclude-glob error.log ./ "$FTP_PATH"
           put -O "$FTP_PATH" -o .env "$RUNNER_TEMP/dotenv"
           set cmd:fail-exit no
           chmod 600 "$FTP_PATH/.env"
