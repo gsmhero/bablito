@@ -79,8 +79,10 @@ jobs:
           # Plain FTP (the hosting has no FTPS): login and files are NOT encrypted in transit.
           cat > "$RUNNER_TEMP/deploy.lftp" <<EOF
           set cmd:fail-exit yes
-          set net:max-retries 3
+          debug -o "$RUNNER_TEMP/ftp-debug.log" 3
+          set net:max-retries 2
           set net:timeout 30
+          set net:reconnect-interval-base 5
           set ftp:ssl-allow no
           set ftp:passive-mode yes
           set ftp:prefer-epsv no
@@ -94,7 +96,7 @@ jobs:
           if lftp -u "$FTP_USER","$FTP_PASS" -p "${FTP_PORT:-21}" "$FTP_HOST" < "$RUNNER_TEMP/deploy.lftp" > "$RUNNER_TEMP/deploy.log" 2>&1; then
             tail -n 15 "$RUNNER_TEMP/deploy.log"
           else
-            echo "::error title=FTP deploy failed::$(tail -n 25 "$RUNNER_TEMP/deploy.log" | paste -sd'|' - | cut -c1-1500)"
+            echo "::error title=FTP deploy failed::$(tail -n 8 "$RUNNER_TEMP/deploy.log" | paste -sd'|' - | cut -c1-600) || SERVER ANSWERS: $(grep -E '<--- [45][0-9][0-9]' "$RUNNER_TEMP/ftp-debug.log" | tail -n 12 | paste -sd'|' - | cut -c1-1200)"
             cat "$RUNNER_TEMP/deploy.log"
             exit 1
           fi
