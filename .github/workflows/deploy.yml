@@ -15,6 +15,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Show the IP address of this GitHub machine
+        run: |
+          echo "Runner public IP: $(curl -s --max-time 15 https://api.ipify.org || echo unknown)"
+
       - name: Install lftp
         run: sudo apt-get update -qq && sudo apt-get install -y -qq lftp
 
