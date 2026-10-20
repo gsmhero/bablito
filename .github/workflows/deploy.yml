@@ -92,7 +92,7 @@ jobs:
           set ftp:prefer-epsv no
           set net:connection-limit 1
           mirror -R --no-perms --parallel=1 --exclude-glob .git/ --exclude-glob .github/ --exclude-glob .env --exclude-glob README.md --exclude-glob uploads/ --exclude-glob storage/ --exclude-glob error.log ./ "$FTP_PATH"
-          put -O "$FTP_PATH" -o .env "$RUNNER_TEMP/dotenv"
+          put -O "$FTP_PATH" "$RUNNER_TEMP/dotenv" -o .env
           set cmd:fail-exit no
           chmod 600 "$FTP_PATH/.env"
           bye
