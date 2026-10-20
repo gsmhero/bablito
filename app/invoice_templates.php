@@ -72,6 +72,16 @@ function admin_invoices_post(string $do, string $self): void
         flash('Empty template created.');
         redirect($self . '?edit=' . (int)db()->lastInsertId());
     }
+    if (str_starts_with($do, 'clone_')) {
+        $src = row('SELECT * FROM invoice_templates WHERE id = ?', [(int)substr($do, 6)]);
+        if ($src) {
+            q('INSERT INTO invoice_templates (name, from_type, to_type, header_html, footer_html, from_fields, to_fields, content_fields) VALUES (?,?,?,?,?,?,?,?)',
+                [mb_substr($src['name'], 0, 108) . ' (copy)', $src['from_type'], $src['to_type'], $src['header_html'], $src['footer_html'], $src['from_fields'], $src['to_fields'], $src['content_fields']]);
+            flash('Template cloned. Change its type or fields and save.');
+            redirect($self . '?edit=' . (int)db()->lastInsertId());
+        }
+        redirect($self);
+    }
     if (str_starts_with($do, 'delete_')) {
         q('DELETE FROM invoice_templates WHERE id = ?', [(int)substr($do, 7)]);
         flash('Template deleted.');
@@ -118,6 +128,7 @@ function admin_invoices_view(): void
           <td><?= (int)$r['id'] ?></td><td><?= h($r['name']) ?></td><td><?= h(invoice_pair_label($r['from_type'], $r['to_type'])) ?></td><td><?= h(fdate($r['updated_at'])) ?></td>
           <td>
             <a class="btn small" href="/admin/invoices?edit=<?= (int)$r['id'] ?>">Edit Invoice</a>
+            <form method="post" action="/admin/invoices" class="inline"><?= csrf_field() ?><button class="btn small" type="submit" name="do" value="clone_<?= (int)$r['id'] ?>">Clone</button></form>
             <form method="post" action="/admin/invoices" class="inline" onsubmit="return confirm('Delete this template?')"><?= csrf_field() ?><button class="btn small red-outline" type="submit" name="do" value="delete_<?= (int)$r['id'] ?>">Delete Invoice</button></form>
           </td>
         </tr>
@@ -169,7 +180,7 @@ function admin_invoices_view(): void
       <h3>Footer</h3>
       <textarea name="footer_html" rows="4" placeholder="HTML allowed: &lt;h1&gt;, &lt;b&gt;, &lt;i&gt;, &lt;br&gt;"><?= h($t['footer_html']) ?></textarea>
 
-      <div class="row between"><button class="btn green" type="submit" name="do" value="save">Save template</button></div>
+      <div class="row between"><button class="btn green" type="submit" name="do" value="save">Save template</button> <button class="btn" type="submit" name="do" value="clone_<?= (int)$t['id'] ?>" formnovalidate onclick="return confirm('Clone the saved version of this template?')">Clone</button></div>
     </form>
     <template id="fld-tpl"><div class="inv-field-row"><select name="__n__[]"><?= invoice_field_options_html(null) ?></select><button type="button" class="linkbtn red rm-fld">Remove</button></div></template>
 <?php

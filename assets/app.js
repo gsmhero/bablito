@@ -374,3 +374,23 @@
     if (rm) { rm.closest('.inv-field-row').remove(); }
   });
 })();
+
+(function () {
+  'use strict';
+  // accordion: only one section of the User Profile Editor is open at a time (remembered per tab)
+  var items = document.querySelectorAll('details[data-acc]');
+  if (!items.length) { return; }
+  var key = 'pe-open', saved = null;
+  try { saved = sessionStorage.getItem(key); } catch (e) {}
+  items.forEach(function (d) {
+    if (saved && d.getAttribute('data-sid') === saved) { d.open = true; }
+    d.addEventListener('toggle', function () {
+      if (d.open) {
+        items.forEach(function (o) { if (o !== d) { o.open = false; } });
+        try { sessionStorage.setItem(key, d.getAttribute('data-sid')); } catch (e) {}
+      } else {
+        try { if (sessionStorage.getItem(key) === d.getAttribute('data-sid')) { sessionStorage.removeItem(key); } } catch (e) {}
+      }
+    });
+  });
+})();

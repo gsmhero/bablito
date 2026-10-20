@@ -306,3 +306,10 @@ input[type=checkbox]:disabled{cursor:default;opacity:.55}
 .inv-content{border-top:1px solid #ddd;border-bottom:1px solid #ddd;padding:14px 0;margin:16px 0}
 @media(max-width:800px){.inv-matrix,.inv-two{grid-template-columns:1fr}}
 @media print{.top,.foot,.back-link,.btn{display:none!important}.invoice-doc{border:0;margin:0}}
+
+/* profile editor accordion */
+details.pe-section>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 0;font-size:1.05rem}
+details.pe-section>summary::-webkit-details-marker{display:none}
+details.pe-section>summary::after{content:"\25B8";color:#888;transition:transform .15s}
+details.pe-section[open]>summary::after{transform:rotate(90deg)}
+details.pe-section[open]>summary{border-bottom:1px solid #eee;margin-bottom:10px;padding-bottom:8px}

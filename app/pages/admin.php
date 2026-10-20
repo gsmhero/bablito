@@ -195,7 +195,8 @@ render('Admin', function () use ($tab) {
     <form method="post" action="/admin/profile" class="card-form wide pe-form">
       <?= csrf_field() ?>
       <?php foreach ($struct as $s): ?>
-        <div class="card pe-section">
+        <details class="card pe-section" data-acc data-sid="<?= (int)$s['id'] ?>">
+          <summary class="pe-sum"><b><?= h($s['title']) ?></b> <span class="muted tiny">ID #<?= (int)$s['id'] ?> · <?= h(party_label($s['type'] ?? null)) ?> · <?= count($s['fields']) ?> fields</span></summary>
           <div class="row gap end">
             <label class="tiny grow">Section title <input name="sections[<?= (int)$s['id'] ?>][title]" value="<?= h($s['title']) ?>" maxlength="120"></label>
             <label class="tiny">Order <input class="short" type="number" name="sections[<?= (int)$s['id'] ?>][position]" value="<?= (int)$s['position'] ?>"></label>
@@ -232,7 +233,7 @@ render('Admin', function () use ($tab) {
             </div>
             <label class="tiny">Choices for a "Choice list" (one per line) <textarea name="nf[<?= (int)$s['id'] ?>][options]" rows="2"></textarea></label>
           </div>
-        </div>
+        </details>
       <?php endforeach; ?>
       <?php if (!$struct): ?><p class="muted">No sections yet. Add the first one below.</p><?php endif; ?>
       <div class="row between"><button class="btn green" type="submit" name="do" value="save">Save</button></div>
