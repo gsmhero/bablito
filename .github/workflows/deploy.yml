@@ -62,7 +62,7 @@ jobs:
           ls "$FTP_PATH"
           bye
           EOF
-          if lftp -u "$FTP_USER","$FTP_PASS" -p "${FTP_PORT:-21}" "$FTP_HOST" -f "$RUNNER_TEMP/test.lftp" > "$RUNNER_TEMP/test.log" 2>&1; then echo "FTP test OK"; else echo "::error title=FTP test failed::$(tail -n 25 "$RUNNER_TEMP/test.log" | paste -sd'|' - | cut -c1-1500)"; fi
+          if lftp -u "$FTP_USER","$FTP_PASS" -p "${FTP_PORT:-21}" "$FTP_HOST" < "$RUNNER_TEMP/test.lftp" > "$RUNNER_TEMP/test.log" 2>&1; then echo "FTP test OK"; else echo "::error title=FTP test failed::$(tail -n 25 "$RUNNER_TEMP/test.log" | paste -sd'|' - | cut -c1-1500)"; fi
           cat "$RUNNER_TEMP/test.log"
 
       - name: Deploy over FTP
@@ -91,7 +91,7 @@ jobs:
           chmod 600 "$FTP_PATH/.env"
           bye
           EOF
-          if lftp -u "$FTP_USER","$FTP_PASS" -p "${FTP_PORT:-21}" "$FTP_HOST" -f "$RUNNER_TEMP/deploy.lftp" > "$RUNNER_TEMP/deploy.log" 2>&1; then
+          if lftp -u "$FTP_USER","$FTP_PASS" -p "${FTP_PORT:-21}" "$FTP_HOST" < "$RUNNER_TEMP/deploy.lftp" > "$RUNNER_TEMP/deploy.log" 2>&1; then
             tail -n 15 "$RUNNER_TEMP/deploy.log"
           else
             echo "::error title=FTP deploy failed::$(tail -n 25 "$RUNNER_TEMP/deploy.log" | paste -sd'|' - | cut -c1-1500)"
