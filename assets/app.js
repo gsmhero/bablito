@@ -359,3 +359,18 @@
     document.addEventListener('click', function (e) { if (!panel.contains(e.target) && e.target !== fb && !fb.contains(e.target)) { panel.classList.remove('open'); } });
   }
 })();
+
+(function () {
+  'use strict';
+  // Invoice Editor: add / remove field rows in From, To and Content
+  document.addEventListener('click', function (e) {
+    var add = e.target.closest ? e.target.closest('.add-fld') : null;
+    if (add) {
+      var tpl = document.getElementById('fld-tpl'), list = document.getElementById(add.getAttribute('data-list'));
+      if (tpl && list) { list.insertAdjacentHTML('beforeend', tpl.innerHTML.replace(/__n__/g, add.getAttribute('data-name'))); }
+      return;
+    }
+    var rm = e.target.closest ? e.target.closest('.rm-fld') : null;
+    if (rm) { rm.closest('.inv-field-row').remove(); }
+  });
+})();

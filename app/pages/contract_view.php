@@ -56,7 +56,7 @@ render($c['title'], function () use ($c, $author, $todos, $files, $tot, $offers,
     <h1><?= h($c['title']) ?></h1>
     <?php if ($c['status'] === 'draft'): ?><span class="pill grey">Draft</span><?php endif; ?>
     <div class="row between">
-      <span><a class="green big-link" href="/user/<?= (int)$author['id'] ?>"><?= h(public_name($author)) ?></a> <?= stars((float)$author['rating_avg'], (int)$author['rating_count']) ?></span>
+      <span><a class="green big-link" href="/user/<?= (int)$author['id'] ?>"><?= h(public_name($author)) ?></a><?= party_pill($c['author_type'] ?? null) ?> <?= stars((float)$author['rating_avg'], (int)$author['rating_count']) ?></span>
       <span class="small muted">Creation Date <?= h(fdate($c['created_at'])) ?></span>
     </div>
     <div class="row between">
@@ -112,6 +112,7 @@ render($c['title'], function () use ($c, $author, $todos, $files, $tot, $offers,
         <label class="tiny">Time days <input form="offer-form" name="days" id="offer-days" class="num" type="number" min="0"></label>
         <button form="offer-form" class="btn green-outline" type="submit">Make Offer</button>
       </div>
+      <div class="small"><b>Offer as</b> <?= as_select('offerer_type', user_types($u), null, 'offer-form') ?></div>
       <div class="small pay-type"><b>Payment for the contract</b>
         <label class="check"><input type="radio" form="offer-form" name="payment_type" value="finish" checked> When Contract Finished</label>
         <label class="check"><input type="radio" form="offer-form" name="payment_type" value="step"> Step by Step</label>
@@ -129,7 +130,7 @@ render($c['title'], function () use ($c, $author, $todos, $files, $tot, $offers,
       <table class="offers">
         <?php foreach ($offers as $o): ?>
           <tr>
-            <td><a class="blue" href="/user/<?= (int)$o['user_id'] ?>"><?= h($o['oname']) ?></a> <?= stars((float)$o['rating_avg'], (int)$o['rating_count'], false) ?></td>
+            <td><a class="blue" href="/user/<?= (int)$o['user_id'] ?>"><?= h($o['oname']) ?></a><?= party_pill($o['offerer_type'] ?? null) ?> <?= stars((float)$o['rating_avg'], (int)$o['rating_count'], false) ?></td>
             <td><a class="offer-link" href="/offer/<?= (int)$o['id'] ?>"><b class="blue"><?= money($o['price']) ?></b> <?= h(cur_code($c)) ?></a></td>
             <td><a class="offer-link" href="/offer/<?= (int)$o['id'] ?>"><b class="blue"><?= (int)$o['days'] ?></b> days</a></td>
             <td><a class="btn small" href="/offer/<?= (int)$o['id'] ?>"><?= h(ucfirst($o['status'])) ?></a></td>

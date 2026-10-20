@@ -7,6 +7,7 @@ if (user()) {
 $error = '';
 $email = '';
 $name = '';
+$types = $_SERVER['REQUEST_METHOD'] === 'POST' ? types_from_post($_POST['types'] ?? []) : ['personal'];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = mb_strtolower(trim((string)($_POST['email'] ?? '')));
     $name = trim((string)($_POST['name'] ?? ''));
@@ -20,14 +21,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (strcasecmp($email, ADMIN_EMAIL) === 0 || val('SELECT id FROM users WHERE email = ?', [$email])) {
         $error = 'This email is already registered.';
     } else {
-        q('INSERT INTO users (email, pass_hash, name, contact_email, timezone) VALUES (?,?,?,?,?)', [$email, password_hash($pass, PASSWORD_DEFAULT), $name, $email, valid_timezone((string)($_POST['tz'] ?? ''))]);
+        q('INSERT INTO users (email, pass_hash, name, contact_email, timezone, user_types) VALUES (?,?,?,?,?,?)', [$email, password_hash($pass, PASSWORD_DEFAULT), $name, $email, valid_timezone((string)($_POST['tz'] ?? '')), implode(',', types_from_post($_POST['types'] ?? []))]);
         login_user((int)db()->lastInsertId());
         flash('Welcome to bablito!');
         redirect('/dashboard');
     }
 }
 
-render('Register', function () use ($error, $email, $name) { ?>
+render('Register', function () use ($error, $email, $name, $types) { ?>
 <div class="narrow card-form">
   <h1>Register</h1>
   <?php if ($error): ?><div class="flash err"><?= h($error) ?></div><?php endif; ?>
@@ -36,6 +37,7 @@ render('Register', function () use ($error, $email, $name) { ?>
     <input type="hidden" name="tz" id="tz-field">
     <label>Your name <input name="name" value="<?= h($name) ?>" maxlength="120" required autofocus></label>
     <label>Email <input type="email" name="email" value="<?= h($email) ?>" required></label>
+    <div class="small"><b>I register as</b> <span class="muted">(you can choose several)</span><?= party_checkboxes('types', $types) ?></div>
     <label>Password (8+ characters) <input type="password" name="password" minlength="8" required></label>
     <button class="btn green" type="submit">Create account</button>
   </form>

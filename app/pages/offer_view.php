@@ -35,7 +35,7 @@ render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $com
     <h1><a href="/contract/<?= (int)$c['id'] ?>" class="plain"><?= h($c['title']) ?></a></h1>
     <div class="muted"><?= h(ucfirst($offer['status'])) ?> offer</div>
     <div class="row between">
-      <span><a class="green" href="/user/<?= (int)$author['id'] ?>"><?= h(public_name($author)) ?></a> <?= stars((float)$author['rating_avg'], (int)$author['rating_count']) ?></span>
+      <span><a class="green" href="/user/<?= (int)$author['id'] ?>"><?= h(public_name($author)) ?></a><?= party_pill($c['author_type'] ?? null) ?> <?= stars((float)$author['rating_avg'], (int)$author['rating_count']) ?></span>
       <span class="small muted"><?= h(fdate($c['created_at'])) ?> <?php if ($c['category']): ?><span class="chip"><?= h($c['category']) ?></span><?php endif; ?></span>
     </div>
     <div class="muted"><?= h($c['location']) ?></div>
@@ -100,8 +100,9 @@ render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $com
         <div class="cur"><?= h(cur_code($c)) ?></div></div>
       <div class="center"><div class="lbl">Offer days</div>
         <?php if ($editing): ?><input name="days" id="offer-days" type="number" min="0" value="<?= (int)$offer['days'] ?>" <?= $hasDays ? 'readonly' : '' ?>><?php else: ?><div class="big blue"><?= (int)$offer['days'] ?></div><?php endif; ?></div>
-      <div class="center"><div class="lbl">Offer From</div><a class="blue" href="/user/<?= (int)$offer['user_id'] ?>"><?= h($offer['oname']) ?></a> <?= stars((float)$offer['rating_avg'], (int)$offer['rating_count']) ?></div>
+      <div class="center"><div class="lbl">Offer From</div><a class="blue" href="/user/<?= (int)$offer['user_id'] ?>"><?= h($offer['oname']) ?></a><?= party_pill($offer['offerer_type'] ?? null) ?> <?= stars((float)$offer['rating_avg'], (int)$offer['rating_count']) ?></div>
     </div>
+    <?php if ($editing): ?><div class="small"><b>Offer as</b> <?= as_select('offerer_type', user_types(user()), $offer['offerer_type'] ?? null) ?></div><?php endif; ?>
     <div class="small pay-type"><b>Payment for the contract</b>
       <?php if ($editing): ?>
         <label class="check"><input type="radio" name="payment_type" value="finish" <?= ($offer['payment_type'] ?? 'finish') === 'finish' ? 'checked' : '' ?>> When Contract Finished</label>

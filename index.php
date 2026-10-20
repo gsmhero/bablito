@@ -13,6 +13,7 @@ $routes = [
     ['GET',  '#^/home$#',                         'home'],
     ['GET',  '#^/invoices$#',                     'invoices'],
     ['POST', '#^/invoice/(\d+)/(pay|confirm)$#', 'invoice_action'],
+    ['GET',  '#^/invoice/(\d+)$#',               'invoice_view'],
     ['GET',  '#^/contract/(\d+)/clock$#',       'contract_clock'],
     ['POST', '#^/contract/(\d+)/clock$#',       'contract_clock'],
     ['GET',  '#^/contract/new$#',                  'contract_edit'],
@@ -39,8 +40,8 @@ $routes = [
     ['POST', '#^/logout$#',                        'logout'],
     ['GET',  '#^/contract/(\d+)/(timelog|timer\.json)$#', 'contract_info'],
     ['GET',  '#^/page/([a-z0-9-]+)$#',             'static_page'],
-    ['GET',  '#^/admin(?:/(users|contracts|home|pages|categories|profile))?$#', 'admin'],
-    ['POST', '#^/admin/(users|contracts|home|pages|categories|profile)$#',     'admin'],
+    ['GET',  '#^/admin(?:/(users|contracts|home|pages|categories|profile|invoices))?$#', 'admin'],
+    ['POST', '#^/admin/(users|contracts|home|pages|categories|profile|invoices)$#',     'admin'],
 ];
 
 foreach ($routes as [$m, $re, $page]) {

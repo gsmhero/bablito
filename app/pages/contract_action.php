@@ -41,7 +41,7 @@ switch ($action) {
         }
         $pdo = db();
         $pdo->beginTransaction();
-        q('INSERT INTO offers (contract_id, user_id, price, days, notes, payment_type) VALUES (?,?,?,?,?,?)', [$id, $u['id'], $o['price'], $o['days'], $o['notes'], $o['payment_type']]);
+        q('INSERT INTO offers (contract_id, user_id, price, days, notes, payment_type, offerer_type) VALUES (?,?,?,?,?,?,?)', [$id, $u['id'], $o['price'], $o['days'], $o['notes'], $o['payment_type'], $o['offerer_type']]);
         $oid = (int)$pdo->lastInsertId();
         save_offer_steps($oid, $o['steps'], $o['extras']);
         $pdo->commit();

@@ -93,7 +93,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 q('INSERT INTO contracts (title, category_id, location, description, allow_extra_todos, prepay_required, deadline, status, user_id) VALUES (?,?,?,?,?,?,?,?,?)', [...$vals, $u['id']]);
                 $id = (int)$pdo->lastInsertId();
             }
-            q('UPDATE contracts SET currency = ? WHERE id = ?', [$form['currency'], $id]);
+            $at = in_array((string)($_POST['author_type'] ?? ''), user_types($u), true) ? (string)$_POST['author_type'] : user_types($u)[0];
+            q('UPDATE contracts SET currency = ?, author_type = ? WHERE id = ?', [$form['currency'], $at, $id]);
             if (!$hasOffers) {
                 $keep = [];
                 foreach ($todos as $pos => $t) {
@@ -171,6 +172,7 @@ render($id ? 'Edit contract' : 'New contract', function () use ($id, $c, $form, 
         </select>
       </label>
     </div>
+    <label class="small">Contract as <?= as_select('author_type', user_types(user()), $c['author_type'] ?? null) ?></label>
     <label class="small">Location <input name="location" value="<?= h($form['location']) ?>" maxlength="190"></label>
     <label class="small">Description <textarea name="description" rows="6"><?= h($form['description']) ?></textarea></label>
 

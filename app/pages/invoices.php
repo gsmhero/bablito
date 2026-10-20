@@ -31,7 +31,7 @@ render('Invoices', function () use ($list, $tab, $counts, $u) { ?>
       <tr>
         <td><a href="/contract/<?= (int)$i['contract_id'] ?>"><?= h($i['contract_title']) ?></a></td>
         <td><?= (int)$i['steps'] ?></td>
-        <td><?= h($i['todo_name'] ?? 'Whole contract') ?></td>
+        <td><a href="/invoice/<?= (int)$i['id'] ?>" title="View invoice"><?= h($i['todo_name'] ?? 'Whole contract') ?></a></td>
         <td><?= $i['todo_name'] !== null ? (int)$i['todo_pos'] + 1 : '-' ?></td>
         <td class="right"><b><?= h($sym) ?>&nbsp;<?= money($i['amount']) ?></b></td>
         <td>

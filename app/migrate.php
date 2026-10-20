@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const SCHEMA_VERSION = 13;
+const SCHEMA_VERSION = 14;
 const ADMIN_EMAIL = 'admin@bablito.ru';
 
 function migrate_if_needed(): void
@@ -138,6 +138,31 @@ function migrate_if_needed(): void
   paid_at DATETIME NULL,
   INDEX (payer_id, status), INDEX (payee_id, status), INDEX (todo_id),
   FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        }
+        if ($cur < 14) {
+            $add = [
+                ['users', 'user_types', "VARCHAR(40) NOT NULL DEFAULT 'personal'"],
+                ['profile_sections', 'type', "VARCHAR(10) NOT NULL DEFAULT 'personal'"],
+                ['offers', 'offerer_type', "VARCHAR(10) NOT NULL DEFAULT 'personal'"],
+                ['contracts', 'author_type', "VARCHAR(10) NOT NULL DEFAULT 'personal'"],
+            ];
+            foreach ($add as [$tbl, $col, $def]) {
+                if (!column_exists($pdo, $tbl, $col)) {
+                    $pdo->exec("ALTER TABLE $tbl ADD COLUMN $col $def");
+                }
+            }
+            $pdo->exec("CREATE TABLE IF NOT EXISTS invoice_templates (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(120) NOT NULL DEFAULT 'Invoice template',
+  from_type VARCHAR(10) NOT NULL DEFAULT 'personal',
+  to_type VARCHAR(10) NOT NULL DEFAULT 'personal',
+  header_html MEDIUMTEXT NULL,
+  footer_html MEDIUMTEXT NULL,
+  from_fields TEXT NULL,
+  to_fields TEXT NULL,
+  content_fields TEXT NULL,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
         }
         $pdo->exec('REPLACE INTO schema_meta (id, version) VALUES (1, ' . SCHEMA_VERSION . ')');

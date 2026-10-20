@@ -11,7 +11,7 @@ $see = $self || is_admin();
 $extra = json_decode((string)$p['extra_fields'], true);
 $extra = is_array($extra) ? $extra : [];
 $reviews = rows('SELECT r.*, COALESCE(NULLIF(u.name,\'\'), CONCAT(\'User #\', u.id)) AS rname FROM reviews r JOIN users u ON u.id = r.reviewer_id WHERE r.reviewed_id = ? ORDER BY r.id DESC LIMIT 100', [$p['id']]);
-$struct = profile_structure();
+$struct = sections_for(profile_structure(), user_types($p));
 $pvals = profile_values((int)$p['id']);
 $eligible = null;
 if ($me && !$self) {

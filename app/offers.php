@@ -96,7 +96,9 @@ function parse_offer_input(array $todos, bool $allowExtras = false): array|strin
         return 'Enter a valid offer price.';
     }
     $pt = ((string)($_POST['payment_type'] ?? '')) === 'step' ? 'step' : 'finish';
-    return ['price' => $price, 'days' => $days, 'notes' => $notes, 'steps' => $out, 'extras' => $extras, 'payment_type' => $pt];
+    $mine = user_types(user());
+    $ot = in_array((string)($_POST['offerer_type'] ?? ''), $mine, true) ? (string)$_POST['offerer_type'] : $mine[0];
+    return ['price' => $price, 'days' => $days, 'notes' => $notes, 'steps' => $out, 'extras' => $extras, 'payment_type' => $pt, 'offerer_type' => $ot];
 }
 
 function save_offer_steps(int $offerId, array $steps, array $extras = []): void

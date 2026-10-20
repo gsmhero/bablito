@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($do === 'add_section') {
                 $title = trim((string)($_POST['new_section'] ?? ''));
                 if ($title !== '' && mb_strlen($title) <= 120) {
-                    q('INSERT INTO profile_sections (title, position) VALUES (?, (SELECT COALESCE(MAX(p.position), 0) + 1 FROM (SELECT position FROM profile_sections) p))', [$title]);
+                    q('INSERT INTO profile_sections (title, type, position) VALUES (?, ?, (SELECT COALESCE(MAX(p.position), 0) + 1 FROM (SELECT position FROM profile_sections) p))', [$title, isset(PARTY_TYPES[$_POST['new_type'] ?? '']) ? $_POST['new_type'] : 'personal']);
                     flash('Section added.');
                 } else {
                     flash('Enter a section title (up to 120 characters).', 'err');
@@ -104,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 flash('Field deleted.');
             } else {
                 foreach ((array)($_POST['sections'] ?? []) as $sid => $s) {
-                    q('UPDATE profile_sections SET title = ?, position = ? WHERE id = ?', [mb_substr(trim((string)($s['title'] ?? '')), 0, 120) ?: 'Section', (int)($s['position'] ?? 0), (int)$sid]);
+                    q('UPDATE profile_sections SET title = ?, type = ?, position = ? WHERE id = ?', [mb_substr(trim((string)($s['title'] ?? '')), 0, 120) ?: 'Section', isset(PARTY_TYPES[$s['type'] ?? '']) ? $s['type'] : 'personal', (int)($s['position'] ?? 0), (int)$sid]);
                 }
                 foreach ((array)($_POST['fields'] ?? []) as $fid => $f) {
                     $type = isset(PROFILE_FIELD_TYPES[$f['type'] ?? '']) ? $f['type'] : 'text';
@@ -129,6 +129,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 flash($added ? 'Saved. ' . $added . ' field(s) added.' : 'Saved.');
             }
             break;
+        case 'invoices':
+            admin_invoices_post($do, $self);
+            break;
         case 'pages':
             foreach ((array)($_POST['pages'] ?? []) as $slug => $p) {
                 q('UPDATE static_pages SET title = ?, body = ? WHERE slug = ?', [mb_substr(trim((string)($p['title'] ?? '')), 0, 190), (string)($p['body'] ?? ''), (string)$slug]);
@@ -140,7 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 render('Admin', function () use ($tab) {
-    $tabs = ['users' => 'Users', 'contracts' => 'Contracts', 'home' => 'Homepage', 'pages' => 'Pages', 'categories' => 'Categories', 'profile' => 'User Profile Editor']; ?>
+    $tabs = ['users' => 'Users', 'contracts' => 'Contracts', 'home' => 'Homepage', 'pages' => 'Pages', 'categories' => 'Categories', 'profile' => 'User Profile Editor', 'invoices' => 'Invoice Editor']; ?>
 <div class="wrap">
   <h1>Admin mode</h1>
   <div class="tabs"><?php foreach ($tabs as $k => $l): ?><a class="<?= $k === $tab ? 'on' : '' ?>" href="/admin/<?= $k ?>"><?= $l ?></a><?php endforeach; ?></div>
@@ -198,9 +201,14 @@ render('Admin', function () use ($tab) {
             <label class="tiny">Order <input class="short" type="number" name="sections[<?= (int)$s['id'] ?>][position]" value="<?= (int)$s['position'] ?>"></label>
             <button class="btn small red-outline" type="submit" name="do" value="del_section_<?= (int)$s['id'] ?>" formnovalidate onclick="return confirm('Delete this section with all its fields and user data?')">Delete section</button>
           </div>
+          <div class="row gap small pe-types"><b>Section type</b>
+            <?php foreach (PARTY_TYPES as $tk => $tl): ?><label class="check"><input type="radio" name="sections[<?= (int)$s['id'] ?>][type]" value="<?= h($tk) ?>" <?= ($s['type'] ?? 'personal') === $tk ? 'checked' : '' ?>> <?= h($tl) ?></label><?php endforeach; ?>
+            <span class="muted tiny">Section ID #<?= (int)$s['id'] ?></span>
+          </div>
           <?php foreach ($s['fields'] as $f): ?>
             <div class="pe-field">
               <div class="row gap end">
+                <span class="field-id" title="Field ID used in invoice templates">ID #<?= (int)$f['id'] ?></span>
                 <label class="tiny grow">Field name <input name="fields[<?= (int)$f['id'] ?>][label]" value="<?= h($f['label']) ?>" maxlength="120"></label>
                 <label class="tiny">Type <select name="fields[<?= (int)$f['id'] ?>][type]"><?php foreach (PROFILE_FIELD_TYPES as $k => $lbl): ?><option value="<?= h($k) ?>" <?= $f['type'] === $k ? 'selected' : '' ?>><?= h($lbl) ?></option><?php endforeach; ?></select></label>
                 <label class="tiny">Order <input class="short" type="number" name="fields[<?= (int)$f['id'] ?>][position]" value="<?= (int)$f['position'] ?>"></label>
@@ -231,8 +239,12 @@ render('Admin', function () use ($tab) {
     </form>
     <form method="post" action="/admin/profile" class="card row gap end"><?= csrf_field() ?>
       <label class="tiny grow">New section <input name="new_section" maxlength="120" required></label>
+      <div class="row gap small pe-types"><b>Type</b>
+        <?php foreach (PARTY_TYPES as $tk => $tl): ?><label class="check"><input type="radio" name="new_type" value="<?= h($tk) ?>" <?= $tk === 'personal' ? 'checked' : '' ?>> <?= h($tl) ?></label><?php endforeach; ?>
+      </div>
       <button class="btn green" type="submit" name="do" value="add_section">Add Section</button>
     </form>
+  <?php elseif ($tab === 'invoices'): admin_invoices_view(); ?>
   <?php elseif ($tab === 'categories'): $cats = rows('SELECT c.*, (SELECT COUNT(*) FROM contracts x WHERE x.category_id = c.id) AS n FROM categories c ORDER BY c.name'); ?>
     <p class="small muted">The default image is shown on contracts of this category that have no uploaded images.</p>
     <?php foreach ($cats as $cat): ?>
