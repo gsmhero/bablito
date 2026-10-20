@@ -15,38 +15,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install sshpass and rsync
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq sshpass rsync
+      - name: Install lftp
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq lftp
 
-      - name: Check that the server SSH port is reachable
+      - name: Build .env from repository secrets
         env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_PORT: ${{ secrets.SSH_PORT }}
-        run: |
-          if timeout 20 bash -c "exec 3<>/dev/tcp/${SSH_HOST}/${SSH_PORT:-22}"; then echo "SSH port is reachable"; else echo "::error::SSH port of the server is NOT reachable from GitHub (timeout/refused). Check hosting SSH access, firewall or IP blocking."; exit 1; fi
-
-      - name: Deploy files via rsync over SSH
-        env:
-          SSHPASS: ${{ secrets.SSH_PASS }}
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_PORT: ${{ secrets.SSH_PORT }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-        run: |
-          PORT="${SSH_PORT:-22}"
-          sshpass -e rsync -rlvz --delete \
-            -e "ssh -p ${PORT} -o StrictHostKeyChecking=accept-new -o ConnectTimeout=30" \
-            --exclude='.git' --exclude='.github' --exclude='.env' \
-            --exclude='README.md' --exclude='uploads/' --exclude='storage/' --exclude='error.log' \
-            ./ "${SSH_USER}@${SSH_HOST}:${DEPLOY_PATH}/"
-
-      - name: Write .env on server
-        env:
-          SSHPASS: ${{ secrets.SSH_PASS }}
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_PORT: ${{ secrets.SSH_PORT }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_USER: ${{ secrets.DB_USER }}
@@ -58,7 +31,6 @@ jobs:
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
         run: |
-          PORT="${SSH_PORT:-22}"
           {
             for v in DB_HOST DB_NAME DB_USER DB_PASS SITE_URL SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASS SMTP_FROM; do
               val="${!v}"
@@ -66,9 +38,33 @@ jobs:
               val="${val//\"/\\\"}"
               printf '%s="%s"\n' "$v" "$val"
             done
-          } > .env.generated
-          sshpass -e scp -P "${PORT}" -o StrictHostKeyChecking=accept-new \
-            .env.generated "${SSH_USER}@${SSH_HOST}:${DEPLOY_PATH}/.env"
-          sshpass -e ssh -p "${PORT}" -o StrictHostKeyChecking=accept-new \
-            "${SSH_USER}@${SSH_HOST}" "chmod 600 '${DEPLOY_PATH}/.env'"
-          rm -f .env.generated
+          } > "$RUNNER_TEMP/dotenv"
+
+      - name: Deploy over FTPS
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_PORT: ${{ secrets.FTP_PORT }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASS: ${{ secrets.FTP_PASS }}
+          FTP_PATH: ${{ secrets.FTP_PATH }}
+          FTP_VERIFY_CERT: ${{ secrets.FTP_VERIFY_CERT }}
+        run: |
+          for v in FTP_HOST FTP_USER FTP_PASS FTP_PATH; do
+            if [ -z "${!v}" ]; then echo "::error::Repository secret $v is not set"; exit 1; fi
+          done
+          # Explicit FTPS (AUTH TLS): login and data are encrypted. The certificate check is off unless
+          # FTP_VERIFY_CERT=yes, because shared hosting certificates often do not match the FTP host name.
+          lftp -u "$FTP_USER","$FTP_PASS" -p "${FTP_PORT:-21}" "$FTP_HOST" <<EOF
+          set cmd:fail-exit yes
+          set net:max-retries 3
+          set net:timeout 30
+          set ftp:ssl-force yes
+          set ftp:ssl-protect-data yes
+          set ssl:verify-certificate ${FTP_VERIFY_CERT:-no}
+          set ftp:passive-mode yes
+          mirror -R --delete --no-perms --parallel=4 --exclude-glob .git/ --exclude-glob .github/ --exclude-glob .env --exclude-glob README.md --exclude-glob uploads/ --exclude-glob storage/ --exclude-glob error.log ./ "$FTP_PATH"
+          put -O "$FTP_PATH" -o .env "$RUNNER_TEMP/dotenv"
+          set cmd:fail-exit no
+          chmod 600 "$FTP_PATH/.env"
+          bye
+          EOF
