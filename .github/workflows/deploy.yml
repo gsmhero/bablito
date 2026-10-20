@@ -52,17 +52,18 @@ jobs:
           FTP_PASS: ${{ secrets.FTP_PASS }}
           FTP_PATH: ${{ secrets.FTP_PATH }}
         run: |
-          lftp -u "$FTP_USER","$FTP_PASS" -p "${FTP_PORT:-21}" "$FTP_HOST" <<EOF || echo "::warning::FTP login or folder listing failed, see the lines above"
+          cat > "$RUNNER_TEMP/test.lftp" <<EOF
           set ftp:ssl-allow no
           set net:timeout 20
           set net:max-retries 1
+          debug 3
           pwd
-          echo "--- top level ---"
           ls
-          echo "--- FTP_PATH ---"
           ls "$FTP_PATH"
           bye
           EOF
+          if lftp -u "$FTP_USER","$FTP_PASS" -p "${FTP_PORT:-21}" "$FTP_HOST" -f "$RUNNER_TEMP/test.lftp" > "$RUNNER_TEMP/test.log" 2>&1; then echo "FTP test OK"; else echo "::error title=FTP test failed::$(tail -n 25 "$RUNNER_TEMP/test.log" | paste -sd'|' - | cut -c1-1500)"; fi
+          cat "$RUNNER_TEMP/test.log"
 
       - name: Deploy over FTP
         env:
@@ -76,7 +77,7 @@ jobs:
             if [ -z "${!v}" ]; then echo "::error::Repository secret $v is not set"; exit 1; fi
           done
           # Plain FTP (the hosting has no FTPS): login and files are NOT encrypted in transit.
-          lftp -u "$FTP_USER","$FTP_PASS" -p "${FTP_PORT:-21}" "$FTP_HOST" <<EOF
+          cat > "$RUNNER_TEMP/deploy.lftp" <<EOF
           set cmd:fail-exit yes
           set net:max-retries 3
           set net:timeout 30
@@ -90,3 +91,10 @@ jobs:
           chmod 600 "$FTP_PATH/.env"
           bye
           EOF
+          if lftp -u "$FTP_USER","$FTP_PASS" -p "${FTP_PORT:-21}" "$FTP_HOST" -f "$RUNNER_TEMP/deploy.lftp" > "$RUNNER_TEMP/deploy.log" 2>&1; then
+            tail -n 15 "$RUNNER_TEMP/deploy.log"
+          else
+            echo "::error title=FTP deploy failed::$(tail -n 25 "$RUNNER_TEMP/deploy.log" | paste -sd'|' - | cut -c1-1500)"
+            cat "$RUNNER_TEMP/deploy.log"
+            exit 1
+          fi
