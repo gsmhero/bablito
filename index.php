@@ -8,6 +8,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 $routes = [
     ['GET',  '#^/$#',                              'home'],
+    ['GET',  '#^/lang/(ru|en)$#',                'lang'],
     ['GET',  '#^/contracts$#',                     'contracts'],
     ['GET',  '#^/dashboard(?:/(live))?$#',        'dashboard'],
     ['GET',  '#^/home$#',                         'home'],

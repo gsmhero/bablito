@@ -1,3 +1,4 @@
+window.T = function (s) { return (window.I18N && window.I18N[s]) || s; };
 (function () {
   'use strict';
   var $ = function (s, r) { return (r || document).querySelector(s); };
@@ -89,7 +90,7 @@
         fetch(sw.dataset.poll, { credentials: 'same-origin', cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
           if (!d) { return; }
           base = d.s; t0 = Date.now(); sw.dataset.running = d.running ? '1' : '0'; tick();
-          if (badge) { badge.textContent = d.running ? 'Started' : 'Stopped'; badge.classList.toggle('on', d.running); }
+          if (badge) { badge.textContent = d.running ? T('Started') : T('Stopped'); badge.classList.toggle('on', d.running); }
         }).catch(function () {});
       };
       setInterval(poll, 8000);
@@ -145,7 +146,7 @@
           }
           var nm = document.createElement('span'); nm.textContent = f.name + ' (' + Math.max(1, Math.round(f.size / 1024)) + ' KB)'; item.appendChild(nm);
           if (store) {
-            var rm = document.createElement('button'); rm.type = 'button'; rm.className = 'picked-x'; rm.textContent = '×'; rm.title = 'Remove';
+            var rm = document.createElement('button'); rm.type = 'button'; rm.className = 'picked-x'; rm.textContent = '×'; rm.title = T('Remove');
             rm.addEventListener('click', function () {
               var next = new DataTransfer();
               Array.prototype.forEach.call(inp.files, function (g, j) { if (j !== idx) { next.items.add(g); } });
@@ -156,7 +157,7 @@
           list.appendChild(item);
         });
         if (inp.files.length) {
-          var hint = document.createElement('div'); hint.className = 'picked-hint'; hint.textContent = isAtt ? 'Will be sent with your comment.' : 'Not saved yet. Press Save Contract to upload.'; list.appendChild(hint);
+          var hint = document.createElement('div'); hint.className = 'picked-hint'; hint.textContent = isAtt ? T('Will be sent with your comment.') : T('Not saved yet. Press Save Contract to upload.'); list.appendChild(hint);
         }
       };
       inp.addEventListener('change', function () {
@@ -175,7 +176,7 @@
   var box = null, imgs = [], cur = 0;
   function build() {
     box = document.createElement('div'); box.className = 'lb'; box.hidden = true;
-    box.innerHTML = '<button type="button" class="lb-close" aria-label="Close">×</button><button type="button" class="lb-prev" aria-label="Previous">‹</button><img class="lb-img" alt=""><button type="button" class="lb-next" aria-label="Next">›</button><div class="lb-count"></div>';
+    box.innerHTML = '<button type="button" class="lb-close" aria-label="' + T('Close') + '">×</button><button type="button" class="lb-prev" aria-label="' + T('Previous') + '">‹</button><img class="lb-img" alt=""><button type="button" class="lb-next" aria-label="' + T('Next') + '">›</button><div class="lb-count"></div>';
     document.body.appendChild(box);
     box.addEventListener('click', function (e) {
       if (e.target.classList.contains('lb-prev')) { show(cur - 1); }
@@ -228,7 +229,7 @@
   function load(url, fallbackNav) {
     if (!dlg) {
       dlg = document.createElement('div'); dlg.className = 'modal'; dlg.hidden = true;
-      dlg.innerHTML = '<div class="modal-card" role="dialog" aria-modal="true"><button type="button" class="modal-x" aria-label="Close">×</button><div class="modal-body"></div></div>';
+      dlg.innerHTML = '<div class="modal-card" role="dialog" aria-modal="true"><button type="button" class="modal-x" aria-label="' + T('Close') + '">×</button><div class="modal-body"></div></div>';
       document.body.appendChild(dlg);
       body = dlg.querySelector('.modal-body');
       dlg.addEventListener('click', function (e) { if (e.target === dlg || e.target.classList.contains('modal-x')) { closeDlg(); } });
@@ -274,7 +275,7 @@
     var o = { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
     if (tz) { o.timeZone = tz; }
     var p = {};
-    try { new Intl.DateTimeFormat('en-GB', o).formatToParts(new Date()).forEach(function (x) { p[x.type] = x.value; }); } catch (e) { return null; }
+    try { new Intl.DateTimeFormat(window.LANG === 'ru' ? 'ru-RU' : 'en-GB', o).formatToParts(new Date()).forEach(function (x) { p[x.type] = x.value; }); } catch (e) { return null; }
     if (p.hour === '24') { p.hour = '00'; }
     return p;
   }
@@ -285,7 +286,7 @@
       clocks.forEach(function (c) {
         var p = parts(c.dataset.tz || '');
         if (!p) { return; }
-        setK(c, 'wd', p.weekday); setK(c, 'date', p.day + '.' + p.month + '.' + p.year);
+        setK(c, 'wd', p.weekday.charAt(0).toUpperCase() + p.weekday.slice(1)); setK(c, 'date', p.day + '.' + p.month + '.' + p.year);
         setK(c, 'time', p.hour + ':' + p.minute + ':' + p.second); setK(c, 'hh', p.hour); setK(c, 'mm', p.minute);
       });
     };
@@ -412,9 +413,9 @@
       note.textContent = '';
       if (!d) { return; }
       var head = document.createElement('div');
-      head.appendChild(document.createTextNode('Fields of the "'));
+      head.appendChild(document.createTextNode(T('Fields of the "')));
       var b = document.createElement('b'); b.textContent = d.label; head.appendChild(b);
-      head.appendChild(document.createTextNode('" sections of the User Profile Editor are used:'));
+      head.appendChild(document.createTextNode(T('" sections of the User Profile Editor are used:')));
       note.appendChild(head);
       var ul = document.createElement('ul');
       d.fields.forEach(function (f) { var li = document.createElement('li'); li.textContent = f; ul.appendChild(li); });

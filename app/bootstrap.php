@@ -111,6 +111,11 @@ session_set_cookie_params([
 ]);
 session_start();
 
+require ROOT . '/app/i18n.php';
+if (current_lang() === 'ru') {
+    ob_start('i18n_filter');
+}
+
 require ROOT . '/app/migrate.php';
 migrate_if_needed();
 require ROOT . '/app/helpers.php';

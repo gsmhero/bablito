@@ -364,7 +364,7 @@ function render(string $title, callable $body, array $opts = []): void
     $f = flash();
     $pages = rows('SELECT slug, title FROM static_pages ORDER BY FIELD(slug, "about", "privacy", "disclaimer", "offer"), slug');
     ?><!doctype html>
-<html lang="en">
+<html lang="<?= h(current_lang()) ?>">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -383,6 +383,7 @@ function render(string $title, callable $body, array $opts = []): void
       <a href="/contract/new" class="nav-btn">CREATE CONTRACT</a>
     </nav>
     <div class="bar-right">
+      <span class="lang-switch desk"><a href="/lang/ru" class="<?= current_lang() === 'ru' ? 'on' : '' ?>">RU</a> | <a href="/lang/en" class="<?= current_lang() === 'en' ? 'on' : '' ?>">EN</a></span>
       <?php if ($u): ?>
         <span class="small"><?= h(display_name($u)) ?></span>
       <?php else: ?>
@@ -398,6 +399,7 @@ function render(string $title, callable $body, array $opts = []): void
         </button>
         <div class="menu-pop" id="menu-pop" hidden>
           <div class="m-only m-top">
+            <span class="lang-switch m-lang"><a href="/lang/ru" class="<?= current_lang() === 'ru' ? 'on' : '' ?>">RU</a> | <a href="/lang/en" class="<?= current_lang() === 'en' ? 'on' : '' ?>">EN</a></span>
             <?php if ($u): ?><span class="m-user"><?= h(display_name($u)) ?></span><?php else: ?><span class="m-user"><a href="/login">Login</a> | <a href="/register">Register</a></span><?php endif; ?>
             <a href="/contracts">CONTRACTS</a>
             <a href="/contract/new">CREATE CONTRACT</a>
@@ -436,6 +438,7 @@ function render(string $title, callable $body, array $opts = []): void
     <div class="copy"><strong>bablito</strong> by sysfera.ru &nbsp;copyrights <?= date('Y') ?></div>
   </div>
 </footer>
+<script>window.LANG="<?= h(current_lang()) ?>";window.I18N=<?= i18n_js_json() ?>;</script>
 <script src="/assets/app.js"></script>
 </body>
 </html>

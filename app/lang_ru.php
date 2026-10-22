@@ -1,0 +1,264 @@
+<?php
+declare(strict_types=1);
+
+// Russian translation. Keys are the English texts as they appear on the page (after &nbsp; / &amp; are
+// normalised to a space / &). 'patterns' use {} for any text and may return a closure.
+
+function ru_plural(int $n, string $one, string $few, string $many): string
+{
+    $m10 = $n % 10;
+    $m100 = $n % 100;
+    if ($m10 === 1 && $m100 !== 11) {
+        return $one;
+    }
+    if ($m10 >= 2 && $m10 <= 4 && ($m100 < 12 || $m100 > 14)) {
+        return $few;
+    }
+    return $many;
+}
+
+$exact = [
+    // navigation / header / footer
+    'CONTRACTS' => 'КОНТРАКТЫ', 'CREATE CONTRACT' => 'СОЗДАТЬ КОНТРАКТ', 'WATCH LATER' => 'СМОТРЕТЬ ПОЗЖЕ', 'Watch later' => 'Смотреть позже',
+    'Login' => 'Вход', 'Log in' => 'Войти', 'Log out' => 'Выйти', 'Register' => 'Регистрация', 'Back' => 'Назад',
+    'Admin mode' => 'Режим администратора', 'Homepage' => 'Главная страница', 'Home' => 'Главная', 'Dashboard' => 'Панель',
+    'Profile' => 'Профиль', 'Invoices' => 'Счета', 'My Contracts' => 'Мои контракты', 'My contracts' => 'Мои контракты',
+    'Create Contract' => 'Создать контракт', 'Create contract' => 'Создать контракт', 'Menu' => 'Меню', 'Filters' => 'Фильтры',
+    'bablito' => 'bablito', 'About Site' => 'О сайте', 'Privacy Policy' => 'Политика конфиденциальности',
+    'Disclaimer' => 'Отказ от ответственности', 'Public Offer' => 'Публичная оферта',
+    'Error' => 'Ошибка', 'Forbidden' => 'Доступ запрещён', 'Not found' => 'Не найдено', 'Page not found.' => 'Страница не найдена.',
+    'You have no access to this page.' => 'У вас нет доступа к этой странице.',
+    'Something went wrong. Please try again later.' => 'Что-то пошло не так. Попробуйте позже.',
+    'Invalid or expired form. Go back, reload the page and try again.' => 'Форма недействительна или устарела. Вернитесь назад, обновите страницу и попробуйте снова.',
+
+    // home
+    'Control Your Missions and Money' => 'Управляйте задачами и деньгами',
+    'Create Custom Contracts' => 'Создавайте контракты под себя',
+    'Describe the job, split it into steps with a price and a deadline for each one, and publish it for freelancers to make offers.' => 'Опишите работу, разбейте её на этапы с ценой и сроком для каждого и опубликуйте, чтобы фрилансеры присылали предложения.',
+    'Call to Action for Freelancers' => 'Предложение для фрилансеров',
+    'Browse open contracts, offer your own price and terms for every step, and get paid step by step as the client accepts your work.' => 'Просматривайте открытые контракты, предлагайте свою цену и сроки для каждого этапа и получайте оплату по мере приёмки работы заказчиком.',
+    'Browse contracts' => 'Смотреть контракты', 'Edit Homepage' => 'Редактировать главную',
+
+    // auth / profile
+    'Password' => 'Пароль', 'Password (8+ characters)' => 'Пароль (от 8 символов)', 'Create account' => 'Создать аккаунт',
+    'No account?' => 'Нет аккаунта?', 'Already registered?' => 'Уже зарегистрированы?', 'Your name' => 'Ваше имя', 'Name' => 'Имя',
+    'Email' => 'Эл. почта', 'Phone' => 'Телефон', 'Contact Email' => 'Контактная почта', 'Contact Phone' => 'Контактный телефон',
+    'I register as' => 'Я регистрируюсь как', 'I act as' => 'Я выступаю как', '(you can choose several)' => '(можно выбрать несколько)',
+    'Company' => 'Компания', 'Self employed' => 'Самозанятый', 'Personal' => 'Физлицо',
+    'As company' => 'От компании', 'As self employed' => 'Как самозанятый', 'As personal' => 'Как физлицо',
+    'Time zone' => 'Часовой пояс', 'Not set' => 'Не задан', 'About me' => 'О себе', 'Show in Public' => 'Показывать публично',
+    'Add Field' => 'Добавить поле', '+ Add Field' => '+ Добавить поле', 'Field name' => 'Название поля', 'Save Profile' => 'Сохранить профиль',
+    'Edit Profile' => 'Редактирование профиля', 'Edit profile' => 'Редактировать профиль', 'View public profile' => 'Открыть публичный профиль',
+    'Add Review' => 'Добавить отзыв', 'You can review this user after a fulfilled contract together.' => 'Оставить отзыв можно после совместно выполненного контракта.',
+    'Set admin password' => 'Задайте пароль администратора', 'New password' => 'Новый пароль', 'Repeat password' => 'Повторите пароль',
+    'Save password' => 'Сохранить пароль', 'Admin setup' => 'Настройка администратора', 'Welcome to bablito!' => 'Добро пожаловать в bablito!',
+    'Administrator' => 'Администратор',
+
+    // contracts list / filters
+    'Sort by' => 'Сортировать', 'Date' => 'Дата', 'Price' => 'Цена', 'Category' => 'Категория', 'Select' => 'Выбрать', 'Apply' => 'Применить',
+    'Price from' => 'Цена от', 'to' => 'до', 'or' => 'или', 'No contracts found.' => 'Контракты не найдены.',
+    'Steps' => 'Шаги', 'STEPS' => 'ШАГОВ', 'Prepaid' => 'С предоплатой', 'Prepayd' => 'Предоплачено', 'Prepayment pending' => 'Ожидается предоплата',
+    'image' => 'фото', 'no image' => 'нет фото', 'Nothing saved yet. Use "Watch later" on a contract.' => 'Пока ничего нет. Нажмите «Смотреть позже» у контракта.',
+    'Remove from watch later' => 'Убрать из «Смотреть позже»', 'LIVE' => 'LIVE', 'No published contracts yet.' => 'Опубликованных контрактов пока нет.',
+    'Posted' => 'Опубликованные', 'POSTED' => 'ОПУБЛИКОВАННЫЕ', 'DRAFTS' => 'ЧЕРНОВИКИ', 'ACTIVE' => 'АКТИВНЫЕ', 'ARCHIVE' => 'АРХИВ',
+    'Nothing here yet.' => 'Здесь пока пусто.', 'Repeat Contract' => 'Повторить контракт',
+
+    // statuses
+    'Draft' => 'Черновик', 'Published' => 'Опубликован', 'Active' => 'Активен', 'Paused' => 'Приостановлен', 'Fulfilled' => 'Выполнен',
+    'Archived' => 'В архиве', 'Overdue' => 'Просрочен', 'running' => 'идёт', 'Started' => 'Запущен', 'Stopped' => 'Остановлен',
+    'Waiting' => 'Ожидание', 'Pending' => 'В обработке', 'Paid' => 'Оплачено', 'Status' => 'Статус', 'Status: new' => 'Статус: новый',
+    'Accepted' => 'Принято', 'Rejected' => 'Отклонено',
+
+    // contract page / editor
+    'Description' => 'Описание', 'Location' => 'Место', 'Contract' => 'Контракт', 'Contract name' => 'Название контракта',
+    'Contract as' => 'Контракт от лица', 'Currency' => 'Валюта', 'Make Me Offer' => 'Разрешить добавлять задачи', 'Prepay Contract' => 'Предоплата',
+    'Reset Contract' => 'Сбросить', 'Delete Contract' => 'Удалить контракт', 'Save Contract' => 'Сохранить контракт', 'Publish Contract' => 'Опубликовать контракт',
+    'Edit Contract' => 'Редактировать контракт', 'Edit contract' => 'Редактирование контракта', 'New contract' => 'Новый контракт',
+    'Upload Image' => 'Загрузить фото', 'Upload File' => 'Загрузить файл', 'Files' => 'Файлы', 'Time days' => 'Дней', 'Days' => 'Дни',
+    'Till Date' => 'Срок до', 'Preferred till date' => 'Желаемый срок до', 'Deadline' => 'Срок', 'Deadline date' => 'Срок',
+    '+ Add To Do' => '+ Добавить задачу', 'To Do Name' => 'Название задачи', 'Remove' => 'Удалить', 'remove' => 'удалить',
+    'Offers already exist, so the steps can no longer be changed.' => 'Предложения уже есть, поэтому задачи изменить нельзя.',
+    'Make Offer' => 'Сделать предложение', 'Offer price' => 'Цена предложения', 'Offer Days' => 'Дней в предложении', 'Offer days' => 'Дней в предложении',
+    'Offer Price' => 'Цена предложения', 'Offer From' => 'Предложение от', 'Offer as' => 'Предложение от лица', 'Offer' => 'Предложение',
+    'Notes' => 'Заметки', 'View my offer' => 'Моё предложение', 'Edit Offer' => 'Изменить предложение', 'Save Offer' => 'Сохранить предложение',
+    'Delete My Offer' => 'Удалить моё предложение', 'Accept Offer' => 'Принять предложение', 'Reject Offer' => 'Отклонить предложение',
+    'Added by the offerer' => 'Добавлено исполнителем', 'The author allows you to add your own To Dos to the contract.' => 'Автор разрешил добавлять в контракт свои задачи.',
+    'Either fill an offer price and days for every To Do, or enter one total price and days. 0 days means the same day.' => 'Укажите цену и дни для каждой задачи или одну общую цену и дни. 0 дней означает «в тот же день».',
+    'Payment for the contract' => 'Оплата контракта', 'Selected payment type:' => 'Выбранный тип оплаты:', 'Payment:' => 'Оплата:',
+    'When Contract Finished' => 'По завершении контракта', 'Step by Step' => 'Поэтапно',
+    'Private: only the author and the other participant can read this conversation.' => 'Приватно: переписку видят только автор и второй участник.',
+    'Comments' => 'Комментарии', 'Post Comment' => 'Отправить', 'No comments yet.' => 'Комментариев пока нет.',
+    'No one has written to you yet.' => 'Вам пока никто не писал.', 'Reply' => 'Ответить', 'Ask the author' => 'Спросить автора',
+    'Log' => 'Журнал', 'Contractor' => 'Исполнитель', 'Contractor:' => 'Исполнитель:', 'Client:' => 'Заказчик:', 'Author' => 'Автор',
+    'Client (contract author)' => 'Заказчик (автор контракта)', 'Contract author' => 'Автор контракта', 'From' => 'От', 'To' => 'Кому',
+    'Mark as Done' => 'Отметить выполненным', 'Contractor Done' => 'Исполнитель закончил', 'Pause Contract' => 'Приостановить контракт',
+    'Resume Contract' => 'Возобновить контракт', 'Fire Contractor' => 'Уволить исполнителя', 'Prepay' => 'Предоплата',
+    'Stopwatch' => 'Секундомер', 'Start' => 'Старт', 'Stop' => 'Стоп', 'Stopwatch log' => 'Журнал секундомера', 'Current task' => 'Текущая задача',
+    'Time' => 'Время', 'Cost' => 'Стоимость', 'Total' => 'Итого', 'Work hour cost:' => 'Стоимость часа работы:',
+    '(agreed price / (agreed days x 8 h))' => '(согласованная цена / (согласованные дни × 8 ч))',
+    'Nothing logged yet. Entries appear when the contractor presses Start.' => 'Записей пока нет. Они появятся, когда исполнитель нажмёт «Старт».',
+    'Unread Comments' => 'Непрочитанные комментарии', 'Whole contract' => 'Весь контракт', 'Step' => 'Шаг', 'Todo' => 'Задача',
+    'Todo name' => 'Название задачи', 'Todo №' => 'Задача №', 'Details' => 'Детали', 'Created' => 'Создано', 'Updated' => 'Обновлено',
+    'Contract fulfilled.' => 'Контракт выполнен.', 'Comment on this step' => 'Комментарий к этому шагу', 'Write a comment' => 'Напишите комментарий',
+    'Agreed price / (agreed days x 8 hours)' => 'Согласованная цена / (согласованные дни × 8 часов)',
+    'Task Done' => 'Задача выполнена', 'Pay now' => 'Оплатить', 'Later' => 'Позже',
+    'The contract payment type is &ldquo;Step&#8209;by&#8209;Step&rdquo;. The invoice for the completed step is located in the' => 'Тип оплаты контракта — «Поэтапно». Счёт за выполненный этап находится в разделе',
+    'section. Contract execution will continue after payment.' => '. Исполнение контракта продолжится после оплаты.',
+
+    // payment dialog
+    'Payment' => 'Оплата', 'Demo payment window. No real money is charged.' => 'Демонстрационное окно оплаты. Реальные деньги не списываются.',
+    'Payment method' => 'Способ оплаты', 'Card &bull;&bull;&bull;&bull; 4242' => 'Карта &bull;&bull;&bull;&bull; 4242', 'Amount' => 'Сумма',
+    'Proceed' => 'Продолжить', 'Cancel' => 'Отмена', 'Invoice' => 'Счёт', 'Payment card illustration' => 'Иллюстрация платёжной карты',
+    'Confirm payment' => 'Подтвердить оплату', 'Contract ID' => 'ID контракта',
+
+    // invoices page / view
+    'No invoices yet.' => 'Счетов пока нет.', 'Steps ' => 'Шаги ', 'View invoice' => 'Открыть счёт', 'Print' => 'Печать',
+    'No templates yet.' => 'Шаблонов пока нет.',
+
+    // dashboard / clocks
+    'Time:' => 'Время:', 'My Contracts ' => 'Мои контракты ',
+    'You have no active contracts yet.' => 'У вас пока нет активных контрактов.', 'create one' => 'создайте новый',
+    'Where is the other side? Click the gear to choose a city.' => 'Где вторая сторона? Нажмите на шестерёнку и выберите город.',
+    'City / time zone' => 'Город / часовой пояс', 'Set city' => 'Выбрать город', 'Reset' => 'Сбросить', 'Save' => 'Сохранить',
+    'Search city, e.g. London' => 'Поиск города, например: Лондон', 'Popular' => 'Популярные', 'All cities' => 'Все города',
+
+    // admin
+    'Users' => 'Пользователи', 'Contracts' => 'Контракты', 'Pages' => 'Страницы', 'Categories' => 'Категории', 'User Profile Editor' => 'Редактор профиля',
+    'Invoice Editor' => 'Редактор счетов', 'Role' => 'Роль', 'Registered' => 'Зарегистрирован', 'Block' => 'Заблокировать', 'Unblock' => 'Разблокировать',
+    'Unpublish' => 'Снять с публикации', 'Delete' => 'Удалить', 'Title' => 'Заголовок', 'Order' => 'Порядок', 'Color' => 'Цвет', 'Text' => 'Текст',
+    'Green' => 'Зелёный', 'Blue' => 'Синий', 'Main title' => 'Главный заголовок', 'Add Block' => 'Добавить блок', 'New block' => 'Новый блок', 'Author ' => 'Автор ',
+    'The default image is shown on contracts of this category that have no uploaded images.' => 'Изображение по умолчанию показывается у контрактов этой категории без загруженных фото.',
+    'Default image' => 'Изображение по умолчанию', 'Remove image' => 'Убрать изображение', 'New category' => 'Новая категория', 'Add Category' => 'Добавить категорию',
+    'Sections and fields defined here appear on every user\'s "Edit Profile" page. Users fill them in and choose which ones are public.' => 'Разделы и поля, заданные здесь, появляются на странице «Редактирование профиля» у каждого пользователя. Пользователи заполняют их и выбирают, какие показывать публично.',
+    'Section title' => 'Название раздела', 'Section type' => 'Тип раздела', 'Type' => 'Тип', 'Delete section' => 'Удалить раздел', 'Delete field' => 'Удалить поле',
+    'Add a field to this section' => 'Добавить поле в этот раздел', 'Required' => 'Обязательное', 'Public' => 'Публичное', 'Public by default' => 'Публичное по умолчанию',
+    'Choices (one per line)' => 'Варианты (по одному в строке)', 'Choices for a "Choice list" (one per line)' => 'Варианты для «Списка выбора» (по одному в строке)',
+    'No sections yet. Add the first one below.' => 'Разделов пока нет. Добавьте первый ниже.', 'New section' => 'Новый раздел', 'Add Section' => 'Добавить раздел',
+    'ID' => 'ID', 'Field ID used in invoice templates' => 'ID поля для шаблонов счетов', 'Section' => 'Раздел',
+    'Long text' => 'Длинный текст', 'Number' => 'Число', 'Link (URL)' => 'Ссылка (URL)', 'Choice list' => 'Список выбора',
+    'Contact email' => 'Контактная почта', 'Contact phone' => 'Контактный телефон', 'User name' => 'Имя пользователя',
+    'Invoice number' => 'Номер счёта', 'Invoice date' => 'Дата счёта',
+    'Invoice templates' => 'Шаблоны счетов', 'Add Invoice' => 'Добавить счёт', 'Edit Invoice' => 'Изменить счёт', 'Delete Invoice' => 'Удалить счёт', 'Clone' => 'Клонировать',
+    'Templates are chosen automatically by the statuses of the contractor (From) and the contract author (To).' => 'Шаблон выбирается автоматически по статусам исполнителя (От) и автора контракта (Кому).',
+    'Type (From → To)' => 'Тип (От → Кому)', '&larr; Templates' => '&larr; Шаблоны', 'Template name' => 'Название шаблона', 'Template type' => 'Тип шаблона',
+    'Header' => 'Шапка', 'Footer' => 'Подвал', 'Content' => 'Содержимое', 'From (contractor)' => 'От (исполнитель)', 'To (contract author)' => 'Кому (автор контракта)',
+    'Use autofill' => 'Автозаполнение', '+ Add new field' => '+ Добавить поле', 'Save template' => 'Сохранить шаблон', 'Choose a field…' => 'Выберите поле…',
+    'User Profile Editor fields' => 'Поля редактора профиля', 'User and invoice data' => 'Данные пользователя и счёта',
+    'Invoice template' => 'Шаблон счёта', 'New invoice template' => 'Новый шаблон счёта', 'Thank you for your business.' => 'Спасибо за сотрудничество.',
+    'HTML allowed: &lt;h1&gt;, &lt;b&gt;, &lt;i&gt;, &lt;br&gt;' => 'Разрешён HTML: &lt;h1&gt;, &lt;b&gt;, &lt;i&gt;, &lt;br&gt;',
+    'Contract Author' => 'Автор контракта', 'Rating' => 'Рейтинг', 'Software' => 'Разработка ПО', 'Design' => 'Дизайн', 'Repair' => 'Ремонт',
+    'Construction' => 'Строительство', 'Writing' => 'Тексты', 'Marketing' => 'Маркетинг', 'Admin & Management' => 'Администрирование и управление', 'Other' => 'Другое',
+    'Invoices ' => 'Счета ', 'TO PAY' => 'К ОПЛАТЕ', 'TO RECEIVE' => 'К ПОЛУЧЕНИЮ',
+
+    // flash / error messages
+    'Please log in first.' => 'Сначала войдите в аккаунт.', 'Wrong email or password.' => 'Неверная почта или пароль.',
+    'Too many failed attempts. Try again in 15 minutes.' => 'Слишком много неудачных попыток. Повторите через 15 минут.',
+    'Enter a valid email address.' => 'Введите корректный адрес почты.', 'Enter your name.' => 'Введите ваше имя.',
+    'Password must be at least 8 characters.' => 'Пароль должен быть не короче 8 символов.', 'Password must be at least 10 characters.' => 'Пароль должен быть не короче 10 символов.',
+    'Passwords do not match.' => 'Пароли не совпадают.', 'This email is already registered.' => 'Эта почта уже зарегистрирована.',
+    'Admin password set. You can log in now.' => 'Пароль администратора задан. Теперь можно войти.', 'Contact email is invalid.' => 'Контактная почта указана неверно.',
+    'Profile saved.' => 'Профиль сохранён.', 'Review added.' => 'Отзыв добавлен.', 'You cannot leave this review.' => 'Вы не можете оставить этот отзыв.',
+    'You have already reviewed this contract.' => 'Вы уже оставили отзыв по этому контракту.',
+    'Contract name is required (up to 190 characters).' => 'Укажите название контракта (до 190 символов).', 'Location is too long.' => 'Слишком длинное место.',
+    'Till date is invalid.' => 'Некорректная дата срока.', 'Add at least one To Do.' => 'Добавьте хотя бы одну задачу.', 'Contract saved.' => 'Контракт сохранён.',
+    'An accepted contract can no longer be edited.' => 'Принятый контракт больше нельзя редактировать.', 'Up to 8 images per contract.' => 'Не более 8 изображений на контракт.',
+    'A new draft was created from the archived contract. Review it, set the preferred date and publish.' => 'Из архивного контракта создан новый черновик. Проверьте его, укажите желаемый срок и опубликуйте.',
+    'Contract deleted.' => 'Контракт удалён.', 'An active contract cannot be deleted. Dismiss the contractor first.' => 'Активный контракт удалить нельзя. Сначала уволите исполнителя.',
+    'Contract paused.' => 'Контракт приостановлен.', 'Contract resumed.' => 'Контракт возобновлён.', 'Contract moved to drafts.' => 'Контракт перенесён в черновики.',
+    'The contractor was dismissed and the contract moved to the archive.' => 'Исполнитель уволен, контракт перенесён в архив.',
+    'Prepayment marked as paid. Payments are settled directly between you and the contractor.' => 'Предоплата отмечена как оплаченная. Расчёты проходят напрямую между вами и исполнителем.',
+    'You cannot make an offer on this contract.' => 'Вы не можете сделать предложение по этому контракту.', 'You have already made an offer.' => 'Вы уже сделали предложение.',
+    'Offer sent.' => 'Предложение отправлено.', 'Offer updated.' => 'Предложение обновлено.', 'Your offer was deleted.' => 'Ваше предложение удалено.',
+    'Offer accepted. The contract is now active.' => 'Предложение принято. Контракт активен.', 'Offer rejected and deleted.' => 'Предложение отклонено и удалено.',
+    'Notes are too long.' => 'Слишком длинные заметки.', 'Enter valid offer days.' => 'Укажите корректное число дней.', 'Enter a valid offer price.' => 'Укажите корректную цену предложения.',
+    'Enter Time days (1 or more), or fill the days of the To Dos.' => 'Укажите «Дней» (1 или больше) или дни у задач.',
+    'Fill in the offer price for every To Do, or clear them all and enter a total.' => 'Укажите цену для каждой задачи или очистите все поля и введите общую цену.',
+    'Check the name, price and days of your added To Dos.' => 'Проверьте название, цену и дни добавленных вами задач.',
+    'Step-by-step contract: the next step continues after the previous step is paid.' => 'Поэтапный контракт: следующий шаг продолжится после оплаты предыдущего.',
+    'This step is already being paid, so the acceptance cannot be withdrawn.' => 'Этот шаг уже оплачивается, поэтому принятие нельзя отозвать.',
+    'Step accepted. The invoice was added to Invoices (Waiting for payment).' => 'Шаг принят. Счёт добавлен в «Счета» (ожидает оплаты).',
+    'All steps accepted. The contract is fulfilled and an invoice for the whole contract is in Invoices. Please leave a review for the contractor.' => 'Все шаги приняты. Контракт выполнен, счёт за весь контракт находится в «Счетах». Пожалуйста, оставьте отзыв об исполнителе.',
+    'All steps accepted. The contract is fulfilled. Please leave a review for the contractor.' => 'Все шаги приняты. Контракт выполнен. Пожалуйста, оставьте отзыв об исполнителе.',
+    'Payment sent. The invoice is pending until the contractor confirms it.' => 'Платёж отправлен. Счёт в обработке, пока исполнитель не подтвердит его.',
+    'Payment confirmed.' => 'Оплата подтверждена.', 'Uploaded.' => 'Загружено.', 'No file selected.' => 'Файл не выбран.', 'Could not save the file.' => 'Не удалось сохранить файл.',
+    'File is larger than 10 MB.' => 'Файл больше 10 МБ.', 'Only JPG, PNG, GIF or WEBP images are allowed.' => 'Допустимы только изображения JPG, PNG, GIF или WEBP.',
+    'This file type is not allowed.' => 'Этот тип файла не разрешён.', 'The uploads folder is not writable on the server.' => 'Папка загрузок на сервере недоступна для записи.',
+    'Category added.' => 'Категория добавлена.', 'Category deleted. Its contracts stay without a category.' => 'Категория удалена. Её контракты остаются без категории.',
+    'Category saved.' => 'Категория сохранена.', 'Default image removed.' => 'Изображение по умолчанию удалено.',
+    'Enter a unique category name (up to 80 characters).' => 'Введите уникальное название категории (до 80 символов).',
+    'Enter a section title (up to 120 characters).' => 'Введите название раздела (до 120 символов).', 'Section added.' => 'Раздел добавлен.',
+    'Section deleted together with its fields and the values users entered.' => 'Раздел удалён вместе с полями и введёнными пользователями значениями.',
+    'Field deleted.' => 'Поле удалено.', 'Saved.' => 'Сохранено.', 'Homepage saved.' => 'Главная страница сохранена.', 'Pages saved.' => 'Страницы сохранены.', 'User updated.' => 'Пользователь обновлён.',
+    'Empty template created.' => 'Пустой шаблон создан.', 'Template cloned. Change its type or fields and save.' => 'Шаблон склонирован. Измените тип или поля и сохраните.',
+    'Template deleted.' => 'Шаблон удалён.', 'Template saved.' => 'Шаблон сохранён.',
+    'No template is set up for' => 'Для типа не настроен шаблон',
+    'to make an offer.' => ', чтобы сделать предложение.', 'to write to the author.' => ', чтобы написать автору.', 'days' => 'дн.',
+    'New offers you have not opened yet' => 'Новые предложения, которые вы ещё не открывали',
+
+    // confirm() dialogs
+    'Delete this contract?' => 'Удалить этот контракт?', 'Delete contract?' => 'Удалить контракт?', 'Delete block?' => 'Удалить блок?', 'Delete this category?' => 'Удалить эту категорию?',
+    'Delete this template?' => 'Удалить этот шаблон?', 'Delete your offer?' => 'Удалить ваше предложение?', 'Clone the saved version of this template?' => 'Клонировать сохранённую версию этого шаблона?',
+    'Dismiss the contractor and archive this contract?' => 'Уволить исполнителя и отправить контракт в архив?',
+    'Mark the prepayment as paid? Money is settled directly between you and the contractor.' => 'Отметить предоплату как оплаченную? Расчёты проходят напрямую между вами и исполнителем.',
+    'Create a new draft from this contract?' => 'Создать новый черновик из этого контракта?',
+    'Create a new draft from this contract? Comments and files uploaded by the contractor are not copied.' => 'Создать новый черновик из этого контракта? Комментарии и файлы исполнителя не копируются.',
+    'Delete this section with all its fields and user data?' => 'Удалить этот раздел со всеми полями и данными пользователей?',
+    'Delete this field and the values users entered?' => 'Удалить это поле и введённые значения?',
+    'Accept this offer? Other offers will be rejected.' => 'Принять это предложение? Остальные будут отклонены.',
+    'Create a new draft from this contract? Comments and the contractor\\x27s files are not copied.' => 'Создать новый черновик из этого контракта? Комментарии и файлы исполнителя не копируются.',
+];
+
+$patterns = [
+    ['/^Invoice #(\d+)$/', 'Счёт №$1'],
+    ['/^(\d+) views$/', fn($m) => $m[1] . ' ' . ru_plural((int)$m[1], 'просмотр', 'просмотра', 'просмотров')],
+    ['/^(\d+) views · (\d+) offers$/', fn($m) => $m[1] . ' ' . ru_plural((int)$m[1], 'просмотр', 'просмотра', 'просмотров') . ' · ' . $m[2] . ' ' . ru_plural((int)$m[2], 'предложение', 'предложения', 'предложений')],
+    ['/^(\d+) offers?$/', fn($m) => $m[1] . ' ' . ru_plural((int)$m[1], 'предложение', 'предложения', 'предложений')],
+    ['/^(\d+) contracts$/', fn($m) => $m[1] . ' ' . ru_plural((int)$m[1], 'контракт', 'контракта', 'контрактов')],
+    ['/^(\d+) fields$/', fn($m) => $m[1] . ' ' . ru_plural((int)$m[1], 'поле', 'поля', 'полей')],
+    ['/^(RUB|USD|EUR) accepted$/', 'принято ($1)'],
+    ['/^(.*)\/ hour$/', '$1/ час'],
+    ['/^Creation Date (.+)$/', 'Дата создания $1'],
+    ['/^Deadline (.+)$/', 'Срок $1'],
+    ['/^Contract ID: (.+)$/', 'ID контракта: $1'],
+    ['/^Offers \((.+)\)$/', 'Предложения ($1)'],
+    ['/^Leave a review for (.+)$/', 'Оставить отзыв: $1'],
+    ['/^For contract: (.+)$/', 'По контракту: $1'],
+    ['/^Account: (.+)$/', 'Аккаунт: $1'],
+    ['/^Section ID #(.+)$/', 'ID раздела #$1'],
+    ['/^ID #(\d+) · (.+?) · (\d+) fields$/', fn($m) => 'ID #' . $m[1] . ' · ' . i18n_lookup($m[2]) . ' · ' . $m[3] . ' ' . ru_plural((int)$m[3], 'поле', 'поля', 'полей')],
+    ['/^TO PAY(.*)$/', 'К ОПЛАТЕ$1'],
+    ['/^TO RECEIVE(.*)$/', 'К ПОЛУЧЕНИЮ$1'],
+    ['/^(.+) · bablito$/', fn($m) => i18n_lookup($m[1]) . ' · bablito'],
+    ['/^Choose where the other side of "(.+)" is, like in a world clock\. Only you see this choice\.$/', 'Выберите, где находится вторая сторона контракта «$1», как во всемирных часах. Этот выбор видите только вы.'],
+    ['/^by sysfera\.ru copyrights (\d+)$/', 'от sysfera.ru © $1'],
+    ['/^Text of "(.+)" will be published here\.$/', fn($m) => 'Текст страницы «' . i18n_lookup($m[1]) . '» будет опубликован здесь.'],
+    ['/^Fill in the required field "(.+)"\.$/', 'Заполните обязательное поле «$1».'],
+    ['/^"(.+)" must be a number\.$/', 'Поле «$1» должно быть числом.'],
+    ['/^"(.+)" must be a link starting with http:\/\/ or https:\/\/\.$/', 'Поле «$1» должно быть ссылкой, начинающейся с http:// или https://.'],
+    ['/^"(.+)" must be a date\.$/', 'Поле «$1» должно быть датой.'],
+    ['/^"(.+)" has an invalid choice\.$/', 'В поле «$1» выбран недопустимый вариант.'],
+    ['/^"(.+)" is too long\.$/', 'Поле «$1» слишком длинное.'],
+    ['/^Check price and days of "(.+)"\.$/', 'Проверьте цену и дни задачи «$1».'],
+    ['/^Saved\. (\d+) field\(s\) added\.$/', 'Сохранено. Добавлено полей: $1.'],
+    ['/^Saved\. (.+)$/', fn($m) => 'Сохранено. ' . i18n_lookup($m[1])],
+    ['/^File is larger than the server allows \((.+)\)\.$/', 'Файл больше, чем разрешает сервер ($1).'],
+    ['/^Upload failed \(code (\d+)\)\.$/', 'Не удалось загрузить (код $1).'],
+    ['/^The files you selected are too large for this server \(limit (.+) per request\)\. Go back and choose smaller files\.$/', 'Выбранные файлы слишком велики для сервера (лимит $1 на запрос). Вернитесь и выберите файлы поменьше.'],
+    ['/^(.+): (Only JPG, PNG, GIF or WEBP images are allowed\.|This file type is not allowed\.|File is larger than 10 MB\.|Could not save the file\.|No file selected\.)$/', fn($m) => $m[1] . ': ' . i18n_lookup($m[2])],
+    ['/^No template is set up for (.+), so the default layout is shown\.$/', fn($m) => 'Для типа «' . i18n_party_pair($m[1]) . '» шаблон не настроен, поэтому показан стандартный вид.'],
+    ['/^(.+) → (.+)$/', fn($m) => i18n_lookup($m[1]) . ' → ' . i18n_lookup($m[2])],
+    ['/^Fields of the "(.+)" sections of the User Profile Editor are used:$/', 'Используются поля разделов «$1» из редактора профиля:'],
+    ['/^As (company|self employed|personal)$/', fn($m) => ['company' => 'От компании', 'self employed' => 'Как самозанятый', 'personal' => 'Как физлицо'][$m[1]]],
+];
+
+// strings used by the browser scripts (window.I18N)
+$js = [
+    'Remove' => 'Удалить',
+    'Not saved yet. Press Save Contract to upload.' => 'Ещё не сохранено. Нажмите «Сохранить контракт», чтобы загрузить.',
+    'Will be sent with your comment.' => 'Будет отправлено вместе с комментарием.',
+    'Started' => 'Запущен', 'Stopped' => 'Остановлен',
+    'Fields of the "' => 'Используются поля разделов «', '" sections of the User Profile Editor are used:' => '» из редактора профиля:',
+    'Close' => 'Закрыть', 'Previous' => 'Назад', 'Next' => 'Вперёд',
+];
+
+return ['exact' => $exact, 'patterns' => $patterns, 'js' => $js];
