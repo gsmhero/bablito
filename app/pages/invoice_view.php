@@ -35,7 +35,7 @@ render('Invoice #' . $inv['id'], function () use ($inv, $tpl, $from, $to, $fromT
     <?php if ($tpl): ?>
       <div class="inv-head"><?= $tpl['header_html'] /* sanitized when the template is saved */ ?></div>
       <div class="inv-two">
-        <?php $block('From', $tpl['from_fields'], $from); $block('To', $tpl['to_fields'], $to); ?>
+        <?php $block('From', json_encode(invoice_block_tokens($tpl, 'from')), $from); $block('To', json_encode(invoice_block_tokens($tpl, 'to')), $to); ?>
       </div>
       <div class="inv-content"><?php $block('Details', $tpl['content_fields'], $from); ?></div>
       <div class="inv-foot"><?= $tpl['footer_html'] ?></div>

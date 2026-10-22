@@ -63,6 +63,51 @@ function valid_invoice_token(string $t): bool
     return isset(INVOICE_SYSTEM_FIELDS[$t]) || (bool)preg_match('/^p\d+$/', $t);
 }
 
+/**
+ * "Use autofill": the fields of the User Profile Editor sections whose type matches the party status
+ * (e.g. every field of the "Company" sections for a Company), preceded by the user's name.
+ */
+function autofill_tokens(string $type): array
+{
+    $out = ['u:name'];
+    foreach (profile_structure() as $s) {
+        if (($s['type'] ?? 'personal') === $type) {
+            foreach ($s['fields'] as $f) {
+                $out[] = 'p' . (int)$f['id'];
+            }
+        }
+    }
+    return $out;
+}
+
+/** Field tokens of the From or To block of a template: autofill by status, or the custom list. */
+function invoice_block_tokens(array $t, string $side): array
+{
+    if (!empty($t[$side . '_autofill'])) {
+        return autofill_tokens((string)$t[$side . '_type']);
+    }
+    return invoice_tokens($t[$side . '_fields'] ?? null);
+}
+
+/** Default invoice content: invoice data lines. */
+const DEFAULT_INVOICE_CONTENT = ['s:number', 's:date', 's:contract', 's:todo_name', 's:todo_no', 's:price', 's:status'];
+
+/** Creates the nine default templates (one per From -> To pair) that do not exist yet. */
+function seed_default_invoice_templates(PDO $pdo): void
+{
+    $ins = $pdo->prepare('INSERT INTO invoice_templates (name, from_type, to_type, header_html, footer_html, from_fields, to_fields, content_fields, from_autofill, to_autofill) VALUES (?,?,?,?,?,?,?,?,1,1)');
+    $has = $pdo->prepare('SELECT COUNT(*) FROM invoice_templates WHERE from_type = ? AND to_type = ?');
+    foreach (['company', 'self', 'personal'] as $from) {
+        foreach (['company', 'self', 'personal'] as $to) {
+            $has->execute([$from, $to]);
+            if ((int)$has->fetchColumn() > 0) {
+                continue;
+            }
+            $ins->execute([invoice_pair_label($from, $to), $from, $to, '<h1>Invoice</h1>', 'Thank you for your business.', '[]', '[]', json_encode(DEFAULT_INVOICE_CONTENT)]);
+        }
+    }
+}
+
 /* ---------- admin: POST and view ---------- */
 
 function admin_invoices_post(string $do, string $self): void
@@ -75,8 +120,8 @@ function admin_invoices_post(string $do, string $self): void
     if (str_starts_with($do, 'clone_')) {
         $src = row('SELECT * FROM invoice_templates WHERE id = ?', [(int)substr($do, 6)]);
         if ($src) {
-            q('INSERT INTO invoice_templates (name, from_type, to_type, header_html, footer_html, from_fields, to_fields, content_fields) VALUES (?,?,?,?,?,?,?,?)',
-                [mb_substr($src['name'], 0, 108) . ' (copy)', $src['from_type'], $src['to_type'], $src['header_html'], $src['footer_html'], $src['from_fields'], $src['to_fields'], $src['content_fields']]);
+            q('INSERT INTO invoice_templates (name, from_type, to_type, header_html, footer_html, from_fields, to_fields, content_fields, from_autofill, to_autofill) VALUES (?,?,?,?,?,?,?,?,?,?)',
+                [mb_substr($src['name'], 0, 108) . ' (copy)', $src['from_type'], $src['to_type'], $src['header_html'], $src['footer_html'], $src['from_fields'], $src['to_fields'], $src['content_fields'], $src['from_autofill'] ?? 1, $src['to_autofill'] ?? 1]);
             flash('Template cloned. Change its type or fields and save.');
             redirect($self . '?edit=' . (int)db()->lastInsertId());
         }
@@ -99,10 +144,11 @@ function admin_invoices_post(string $do, string $self): void
         foreach (['from_fields', 'to_fields', 'content_fields'] as $k) {
             $lists[$k] = json_encode(array_values(array_filter((array)($_POST[$k] ?? []), fn($t) => is_string($t) && valid_invoice_token($t))));
         }
-        q('UPDATE invoice_templates SET name = ?, from_type = ?, to_type = ?, header_html = ?, footer_html = ?, from_fields = ?, to_fields = ?, content_fields = ? WHERE id = ?', [
+        q('UPDATE invoice_templates SET name = ?, from_type = ?, to_type = ?, header_html = ?, footer_html = ?, from_fields = ?, to_fields = ?, content_fields = ?, from_autofill = ?, to_autofill = ? WHERE id = ?', [
             mb_substr(trim((string)($_POST['name'] ?? '')), 0, 120) ?: 'Invoice template', $from, $to,
             sanitize_invoice_html((string)($_POST['header_html'] ?? '')), sanitize_invoice_html((string)($_POST['footer_html'] ?? '')),
-            $lists['from_fields'], $lists['to_fields'], $lists['content_fields'], $id,
+            $lists['from_fields'], $lists['to_fields'], $lists['content_fields'],
+            empty($_POST['from_autofill']) ? 0 : 1, empty($_POST['to_autofill']) ? 0 : 1, $id,
         ]);
         flash('Template saved.');
         redirect($self . '?edit=' . $id);
@@ -162,13 +208,32 @@ function admin_invoices_view(): void
       <textarea name="header_html" rows="4" placeholder="HTML allowed: &lt;h1&gt;, &lt;b&gt;, &lt;i&gt;, &lt;br&gt;"><?= h($t['header_html']) ?></textarea>
 
       <div class="inv-two">
-        <?php foreach (['from' => 'From (contractor)', 'to' => 'To (contract author)'] as $k => $title): ?>
-          <div class="card">
+        <?php foreach (['from' => 'From (contractor)', 'to' => 'To (contract author)'] as $k => $title):
+            $auto = !isset($t[$k . '_autofill']) || (int)$t[$k . '_autofill'] === 1; ?>
+          <div class="card inv-side" data-side="<?= $k ?>">
             <h3><?= h($title) ?></h3>
-            <div class="inv-list" id="list-<?= $k ?>"><?php foreach ($lists[$k] as $tok) { echo invoice_field_row_html($k . '_fields', $tok); } ?></div>
-            <button type="button" class="btn small green-outline add-fld" data-list="list-<?= $k ?>" data-name="<?= $k ?>_fields">+ Add new field</button>
+            <label class="check"><input type="checkbox" class="af-toggle" name="<?= $k ?>_autofill" value="1" <?= $auto ? 'checked' : '' ?>> Use autofill</label>
+            <div class="af-note small muted" <?= $auto ? '' : 'hidden' ?>></div>
+            <div class="af-manual" <?= $auto ? 'hidden' : '' ?>>
+              <div class="inv-list" id="list-<?= $k ?>"><?php foreach ($lists[$k] as $tok) { echo invoice_field_row_html($k . '_fields', $tok); } ?></div>
+              <button type="button" class="btn small green-outline add-fld" data-list="list-<?= $k ?>" data-name="<?= $k ?>_fields">+ Add new field</button>
+            </div>
           </div>
         <?php endforeach; ?>
+        <?php
+          $afData = [];
+          foreach (array_keys(PARTY_TYPES) as $pt) {
+              $names = ['User name'];
+              foreach (profile_structure() as $s) {
+                  if (($s['type'] ?? 'personal') === $pt) {
+                      foreach ($s['fields'] as $f) {
+                          $names[] = 'ID #' . (int)$f['id'] . ' ' . $f['label'];
+                      }
+                  }
+              }
+              $afData[$pt] = ['label' => party_label($pt), 'fields' => $names];
+          } ?>
+        <script type="application/json" id="af-data"><?= json_encode($afData, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
       </div>
 
       <div class="card">

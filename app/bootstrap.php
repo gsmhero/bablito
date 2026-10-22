@@ -117,5 +117,5 @@ require ROOT . '/app/helpers.php';
 require ROOT . '/app/extras.php';
 require ROOT . '/app/profile_fields.php';
 require ROOT . '/app/invoices.php';
-require ROOT . '/app/types.php';
-require ROOT . '/app/invoice_templates.php';
+require_once ROOT . '/app/types.php';
+require_once ROOT . '/app/invoice_templates.php';

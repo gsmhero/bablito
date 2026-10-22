@@ -394,3 +394,33 @@
     });
   });
 })();
+
+(function () {
+  'use strict';
+  // Invoice Editor: "Use autofill" hides the manual field list and previews the fields taken from
+  // the User Profile Editor sections of the selected status.
+  var ed = document.getElementById('inv-editor');
+  if (!ed) { return; }
+  var data = {};
+  try { data = JSON.parse(document.getElementById('af-data').textContent); } catch (e) {}
+  var refresh = function () {
+    var r = ed.querySelector('input[name="pair"]:checked'), p = (r ? r.value : 'personal>personal').split('>'), types = { from: p[0], to: p[1] };
+    ed.querySelectorAll('.inv-side').forEach(function (side) {
+      var k = side.getAttribute('data-side'), on = side.querySelector('.af-toggle').checked;
+      var note = side.querySelector('.af-note'), man = side.querySelector('.af-manual'), d = data[types[k]];
+      man.hidden = on; note.hidden = !on;
+      note.textContent = '';
+      if (!d) { return; }
+      var head = document.createElement('div');
+      head.appendChild(document.createTextNode('Fields of the "'));
+      var b = document.createElement('b'); b.textContent = d.label; head.appendChild(b);
+      head.appendChild(document.createTextNode('" sections of the User Profile Editor are used:'));
+      note.appendChild(head);
+      var ul = document.createElement('ul');
+      d.fields.forEach(function (f) { var li = document.createElement('li'); li.textContent = f; ul.appendChild(li); });
+      note.appendChild(ul);
+    });
+  };
+  ed.addEventListener('change', function (e) { if (e.target.matches('.af-toggle, input[name="pair"]')) { refresh(); } });
+  refresh();
+})();

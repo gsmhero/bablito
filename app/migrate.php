@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const SCHEMA_VERSION = 14;
+const SCHEMA_VERSION = 15;
 const ADMIN_EMAIL = 'admin@bablito.ru';
 
 function migrate_if_needed(): void
@@ -164,6 +164,16 @@ function migrate_if_needed(): void
   content_fields TEXT NULL,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        }
+        if ($cur < 15) {
+            foreach (['from_autofill', 'to_autofill'] as $col) {
+                if (!column_exists($pdo, 'invoice_templates', $col)) {
+                    $pdo->exec("ALTER TABLE invoice_templates ADD COLUMN $col TINYINT(1) NOT NULL DEFAULT 1");
+                }
+            }
+            require_once ROOT . '/app/types.php';
+            require_once ROOT . '/app/invoice_templates.php';
+            seed_default_invoice_templates($pdo);
         }
         $pdo->exec('REPLACE INTO schema_meta (id, version) VALUES (1, ' . SCHEMA_VERSION . ')');
         ensure_admin();

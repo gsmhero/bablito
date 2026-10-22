@@ -313,3 +313,4 @@ details.pe-section>summary::-webkit-details-marker{display:none}
 details.pe-section>summary::after{content:"\25B8";color:#888;transition:transform .15s}
 details.pe-section[open]>summary::after{transform:rotate(90deg)}
 details.pe-section[open]>summary{border-bottom:1px solid #eee;margin-bottom:10px;padding-bottom:8px}
+.af-note ul{margin:6px 0 0;padding-left:20px}.af-note{background:#f3f9ee;border:1px solid #dcefd0;border-radius:8px;padding:8px 12px;margin:8px 0}
