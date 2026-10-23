@@ -11,7 +11,7 @@ if (($args[0] ?? '') === 'live') {
 
 require_once ROOT . '/app/card.php';
 
-$st = db()->prepare("SELECT c.*, cat.name AS category, au.name AS a_name, au.show_name AS a_show, ct.name AS k_name, ct.show_name AS k_show,
+$st = db()->prepare("SELECT c.*, " . cat_name_sql() . " AS category, au.name AS a_name, au.show_name AS a_show, ct.name AS k_name, ct.show_name AS k_show,
         (SELECT COUNT(*) FROM todos t WHERE t.contract_id = c.id) AS steps,
         (SELECT COUNT(*) FROM todos t WHERE t.contract_id = c.id AND t.accepted_at IS NOT NULL) AS accepted_steps,
         (SELECT COUNT(*) FROM comments cm WHERE cm.contract_id = c.id AND cm.scope IN ('work','todo') AND cm.user_id <> :me

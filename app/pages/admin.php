@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($do === 'add') {
                 $name = trim((string)($_POST['name'] ?? ''));
                 if ($name !== '' && mb_strlen($name) <= 80 && !val('SELECT id FROM categories WHERE name = ?', [$name])) {
-                    q('INSERT INTO categories (name) VALUES (?)', [$name]);
+                    q('INSERT INTO categories (name, name_ru) VALUES (?, ?)', [$name, mb_substr(trim((string)($_POST['name_ru'] ?? '')), 0, 80) ?: null]);
                     flash('Category added.');
                 } else {
                     flash('Enter a unique category name (up to 80 characters).', 'err');
@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     flash('Enter a unique category name (up to 80 characters).', 'err');
                     break;
                 }
-                q('UPDATE categories SET name = ?, image_fit = ? WHERE id = ?', [$name, ($_POST['image_fit'] ?? '') === 'contain' ? 'contain' : 'cover', $cid]);
+                q('UPDATE categories SET name = ?, name_ru = ?, image_fit = ? WHERE id = ?', [$name, mb_substr(trim((string)($_POST['name_ru'] ?? '')), 0, 80) ?: null, ($_POST['image_fit'] ?? '') === 'contain' ? 'contain' : 'cover', $cid]);
                 foreach (['image' => 'image', 'image_mobile' => 'image_mobile'] as $field => $col) {
                     $f = $_FILES[$field] ?? ['error' => UPLOAD_ERR_NO_FILE];
                     if ($f['error'] === UPLOAD_ERR_NO_FILE) {
@@ -265,6 +265,7 @@ render('Admin', function () use ($tab) {
         </div>
         <div class="cat-fields">
           <label class="tiny">Name <input name="name" value="<?= h($cat['name']) ?>" maxlength="80" required></label>
+          <label class="tiny">Name in Russian <span class="muted">(shown when the site is in Russian)</span> <input name="name_ru" value="<?= h($cat['name_ru'] ?? '') ?>" maxlength="80"></label>
           <label class="tiny">Desktop image <span class="muted">(shown left of the card, a tall frame of about 180 × 230-280 px; best 360 × 520 px)</span> <input type="file" name="image" accept="image/*"></label>
           <label class="tiny">Mobile image <span class="muted">(shown above the card; best 750 × 380 px; the desktop image is used if empty)</span> <input type="file" name="image_mobile" accept="image/*"></label>
           <label class="tiny">Image fit <select name="image_fit"><option value="cover" <?= ($cat['image_fit'] ?? 'cover') === 'cover' ? 'selected' : '' ?>>Fill the frame (edges may be cropped)</option><option value="contain" <?= ($cat['image_fit'] ?? '') === 'contain' ? 'selected' : '' ?>>Show the whole image</option></select></label>
@@ -280,10 +281,7 @@ render('Admin', function () use ($tab) {
     <?php endforeach; ?>
     <form method="post" action="/admin/categories" class="card row gap end"><?= csrf_field() ?>
       <label class="tiny grow">New category <input name="name" maxlength="80" required></label>
-      <button class="btn green" type="submit" name="do" value="add">Add Category</button>
-    </form>
-    <form method="post" action="/admin/categories" class="card row gap end"><?= csrf_field() ?>
-      <label class="tiny grow">New category <input name="name" maxlength="80" required></label>
+      <label class="tiny grow">Name in Russian <input name="name_ru" maxlength="80"></label>
       <button class="btn green" type="submit" name="do" value="add">Add Category</button>
     </form>
   <?php else: $pgs = rows('SELECT * FROM static_pages ORDER BY slug'); ?>

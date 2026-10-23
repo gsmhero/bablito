@@ -10,7 +10,7 @@ $sel = listing_sel_my();
 
 function listing_sel_my(): string
 {
-    return 'SELECT c.*, cat.name AS category, t.total_price, COALESCE(t.steps,0) AS steps,
+    return 'SELECT c.*, ' . cat_name_sql() . ' AS category, t.total_price, COALESCE(t.steps,0) AS steps,
         (SELECT COUNT(*) FROM offers o WHERE o.contract_id = c.id) AS offer_count,
         (SELECT COUNT(*) FROM offers o WHERE o.contract_id = c.id AND o.status <> \'accepted\' AND o.seen_at IS NULL) AS new_offers,
         (SELECT COUNT(*) FROM todos x WHERE x.contract_id = c.id AND x.accepted_at IS NOT NULL) AS accepted_steps

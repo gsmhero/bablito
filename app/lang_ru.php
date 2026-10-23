@@ -197,6 +197,7 @@ $exact = [
     '(shown above the card; best 750 × 380 px; the desktop image is used if empty)' => '(показывается сверху карточки; лучше 750 × 380 px; если пусто — используется изображение для компьютера)',
     'Image fit' => 'Вписывание изображения', 'Fill the frame (edges may be cropped)' => 'Заполнить рамку (края могут обрезаться)', 'Show the whole image' => 'Показать изображение целиком',
     '(shown left of the card, a tall frame of about 180 × 230-280 px; best 360 × 520 px)' => '(показывается слева в карточке, высокая рамка около 180 × 230–280 px; лучше 360 × 520 px)',
+    'Name in Russian' => 'Название по-русски', '(shown when the site is in Russian)' => '(показывается, когда сайт на русском)',
     'Remove desktop image' => 'Убрать изображение для компьютера', 'Remove mobile image' => 'Убрать изображение для телефона',
     'to make an offer.' => ', чтобы сделать предложение.', 'to write to the author.' => ', чтобы написать автору.', 'days' => 'дн.',
     'New offers you have not opened yet' => 'Новые предложения, которые вы ещё не открывали',

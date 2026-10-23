@@ -191,7 +191,7 @@ function is_overdue(array $c): bool
 function categories(): array
 {
     static $c = null;
-    return $c ??= rows('SELECT id, name FROM categories ORDER BY name');
+    return $c ??= rows('SELECT id, ' . cat_name_sql('categories') . ' AS name FROM categories ORDER BY name');
 }
 
 function setting(string $k, string $default = ''): string
@@ -234,7 +234,7 @@ function is_participant(array $c): bool
 
 function load_contract(int $id): array
 {
-    $c = row('SELECT c.*, cat.name AS category, cat.image AS category_image, cat.image_mobile AS category_image_mobile, cat.image_fit AS category_fit FROM contracts c LEFT JOIN categories cat ON cat.id = c.category_id WHERE c.id = ?', [$id]);
+    $c = row('SELECT c.*, ' . cat_name_sql() . ' AS category, cat.image AS category_image, cat.image_mobile AS category_image_mobile, cat.image_fit AS category_fit FROM contracts c LEFT JOIN categories cat ON cat.id = c.category_id WHERE c.id = ?', [$id]);
     if (!$c) {
         not_found();
     }
@@ -500,4 +500,10 @@ function hour_rate(array $c): ?float
 function money2($n): string
 {
     return number_format((float)$n, 2, '.', "\u{00A0}");
+}
+
+/** SQL for the category name in the current language (the Russian name when it is set). */
+function cat_name_sql(string $alias = 'cat'): string
+{
+    return current_lang() === 'ru' ? "COALESCE(NULLIF($alias.name_ru, ''), $alias.name)" : "$alias.name";
 }

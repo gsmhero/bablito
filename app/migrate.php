@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const SCHEMA_VERSION = 17;
+const SCHEMA_VERSION = 18;
 const ADMIN_EMAIL = 'admin@bablito.ru';
 
 function migrate_if_needed(): void
@@ -180,6 +180,9 @@ function migrate_if_needed(): void
         }
         if ($cur < 17 && !column_exists($pdo, 'categories', 'image_fit')) {
             $pdo->exec("ALTER TABLE categories ADD COLUMN image_fit VARCHAR(8) NOT NULL DEFAULT 'cover'");
+        }
+        if ($cur < 18 && !column_exists($pdo, 'categories', 'name_ru')) {
+            $pdo->exec("ALTER TABLE categories ADD COLUMN name_ru VARCHAR(80) NULL");
         }
         $pdo->exec('REPLACE INTO schema_meta (id, version) VALUES (1, ' . SCHEMA_VERSION . ')');
         ensure_admin();
