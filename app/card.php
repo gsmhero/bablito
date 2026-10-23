@@ -47,7 +47,7 @@ function listing_card(array $c, ?int $watchUserId = null): void
 
 function listing_select(): string
 {
-    return 'SELECT c.*, cat.name AS category, cat.image AS category_image, cat.image_mobile AS category_image_mobile, t.total_price, t.total_days, COALESCE(t.steps,0) AS steps,
+    return 'SELECT c.*, cat.name AS category, cat.image AS category_image, cat.image_mobile AS category_image_mobile, cat.image_fit AS category_fit, t.total_price, t.total_days, COALESCE(t.steps,0) AS steps,
             COALESCE(NULLIF(u.name,\'\'), CONCAT(\'User #\', u.id)) AS author_name, u.rating_avg, u.rating_count
             FROM contracts c
             JOIN users u ON u.id = c.user_id

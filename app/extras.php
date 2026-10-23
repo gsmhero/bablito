@@ -57,5 +57,6 @@ function category_picture(array $c): string
     }
     $desk = $d !== '' ? $d : $m;
     $mob = $m !== '' ? $m : $d;
-    return '<picture class="cat-pic"><source media="(max-width:800px)" srcset="/uploads/' . h($mob) . '"><img src="/uploads/' . h($desk) . '" alt=""></picture>';
+    $fit = ($c['category_fit'] ?? 'cover') === 'contain' ? 'contain' : 'cover';
+    return '<picture class="cat-pic fit-' . $fit . '"><source media="(max-width:800px)" srcset="/uploads/' . h($mob) . '"><img src="/uploads/' . h($desk) . '" alt=""></picture>';
 }

@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     flash('Enter a unique category name (up to 80 characters).', 'err');
                     break;
                 }
-                q('UPDATE categories SET name = ? WHERE id = ?', [$name, $cid]);
+                q('UPDATE categories SET name = ?, image_fit = ? WHERE id = ?', [$name, ($_POST['image_fit'] ?? '') === 'contain' ? 'contain' : 'cover', $cid]);
                 foreach (['image' => 'image', 'image_mobile' => 'image_mobile'] as $field => $col) {
                     $f = $_FILES[$field] ?? ['error' => UPLOAD_ERR_NO_FILE];
                     if ($f['error'] === UPLOAD_ERR_NO_FILE) {
@@ -265,8 +265,9 @@ render('Admin', function () use ($tab) {
         </div>
         <div class="cat-fields">
           <label class="tiny">Name <input name="name" value="<?= h($cat['name']) ?>" maxlength="80" required></label>
-          <label class="tiny">Desktop image <span class="muted">(shown left of the card; best 360 × 440 px)</span> <input type="file" name="image" accept="image/*"></label>
+          <label class="tiny">Desktop image <span class="muted">(shown left of the card, a tall frame of about 180 × 230-280 px; best 360 × 520 px)</span> <input type="file" name="image" accept="image/*"></label>
           <label class="tiny">Mobile image <span class="muted">(shown above the card; best 750 × 380 px; the desktop image is used if empty)</span> <input type="file" name="image_mobile" accept="image/*"></label>
+          <label class="tiny">Image fit <select name="image_fit"><option value="cover" <?= ($cat['image_fit'] ?? 'cover') === 'cover' ? 'selected' : '' ?>>Fill the frame (edges may be cropped)</option><option value="contain" <?= ($cat['image_fit'] ?? '') === 'contain' ? 'selected' : '' ?>>Show the whole image</option></select></label>
           <div class="row gap">
             <button class="btn small green" type="submit" name="do" value="save">Save</button>
             <?php if ($cat['image']): ?><button class="btn small" type="submit" name="do" value="remove_image" formnovalidate>Remove desktop image</button><?php endif; ?>

@@ -335,3 +335,4 @@ details.pe-section[open]>summary{border-bottom:1px solid #eee;margin-bottom:10px
 .cat-img-mobile{width:200px;aspect-ratio:750/380}
 @media(max-width:800px){.gallery figure.cat-fig{aspect-ratio:2/1}}
 .thumb picture{align-self:stretch;flex:1 1 auto;min-height:100%}.thumb picture img{min-height:100%}
+.cat-pic.fit-contain img{object-fit:contain}
