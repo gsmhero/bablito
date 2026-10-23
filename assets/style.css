@@ -322,3 +322,15 @@ details.pe-section[open]>summary{border-bottom:1px solid #eee;margin-bottom:10px
   .lang-switch.desk{display:none}
   .m-top .m-lang{display:flex;gap:6px;padding:7px 14px;border-bottom:1px solid #d3e6c0;font-family:"Fira Sans Extra Condensed",sans-serif;font-size:1rem}
 }
+
+/* category default images: fill the placeholder, desktop or mobile version */
+.thumb picture,.cat-pic{display:block;width:100%;height:100%}
+.thumb picture img,.cat-pic img{display:block;width:100%;height:100%;object-fit:cover}
+.gallery figure.cat-fig{width:100%;aspect-ratio:3/2}
+.gallery figure.cat-fig .cat-pic{height:100%}
+.cat-previews{display:flex;gap:12px;align-items:flex-start;flex:none}
+.cat-prev{text-align:center}
+.cat-img{width:auto;aspect-ratio:auto}
+.cat-img-desktop{width:110px;aspect-ratio:9/11}
+.cat-img-mobile{width:200px;aspect-ratio:750/380}
+@media(max-width:800px){.gallery figure.cat-fig{aspect-ratio:2/1}}

@@ -51,16 +51,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     flash('Enter a unique category name (up to 80 characters).', 'err');
                 }
-            } elseif ($cid && in_array($do, ['delete', 'remove_image'], true)) {
-                $old = (string)val('SELECT image FROM categories WHERE id = ?', [$cid]);
-                if ($old !== '') {
-                    @unlink(ROOT . '/uploads/' . $old);
+            } elseif ($cid && ($do === 'delete' || $do === 'remove_image' || $do === 'remove_image_mobile')) {
+                // each category has a desktop image and an optional mobile image
+                $cols = $do === 'delete' ? ['image', 'image_mobile'] : [$do === 'remove_image' ? 'image' : 'image_mobile'];
+                foreach ($cols as $col) {
+                    $old = (string)val("SELECT $col FROM categories WHERE id = ?", [$cid]);
+                    if ($old !== '') {
+                        @unlink(ROOT . '/uploads/' . $old);
+                    }
                 }
                 if ($do === 'delete') {
                     q('DELETE FROM categories WHERE id = ?', [$cid]);
                     flash('Category deleted. Its contracts stay without a category.');
                 } else {
-                    q('UPDATE categories SET image = NULL WHERE id = ?', [$cid]);
+                    q('UPDATE categories SET ' . $cols[0] . ' = NULL WHERE id = ?', [$cid]);
                     flash('Default image removed.');
                 }
             } elseif ($cid && $do === 'save') {
@@ -71,18 +75,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     break;
                 }
                 q('UPDATE categories SET name = ? WHERE id = ?', [$name, $cid]);
-                $f = $_FILES['image'] ?? ['error' => UPLOAD_ERR_NO_FILE];
-                if ($f['error'] !== UPLOAD_ERR_NO_FILE) {
+                foreach (['image' => 'image', 'image_mobile' => 'image_mobile'] as $field => $col) {
+                    $f = $_FILES[$field] ?? ['error' => UPLOAD_ERR_NO_FILE];
+                    if ($f['error'] === UPLOAD_ERR_NO_FILE) {
+                        continue;
+                    }
                     $res = store_upload($f, 'image');
                     if (is_string($res)) {
                         flash($res, 'err');
-                        break;
+                        redirect($self);
                     }
-                    $old = (string)val('SELECT image FROM categories WHERE id = ?', [$cid]);
+                    $old = (string)val("SELECT $col FROM categories WHERE id = ?", [$cid]);
                     if ($old !== '') {
                         @unlink(ROOT . '/uploads/' . $old);
                     }
-                    q('UPDATE categories SET image = ? WHERE id = ?', [$res[1], $cid]);
+                    q("UPDATE categories SET $col = ? WHERE id = ?", [$res[1], $cid]);
                 }
                 flash('Category saved.');
             }
@@ -248,23 +255,34 @@ render('Admin', function () use ($tab) {
   <?php elseif ($tab === 'invoices'): admin_invoices_view(); ?>
   <?php elseif ($tab === 'categories'): $cats = rows('SELECT c.*, (SELECT COUNT(*) FROM contracts x WHERE x.category_id = c.id) AS n FROM categories c ORDER BY c.name'); ?>
     <p class="small muted">The default image is shown on contracts of this category that have no uploaded images.</p>
+  <?php elseif ($tab === 'categories'): $cats = rows('SELECT c.*, (SELECT COUNT(*) FROM contracts x WHERE x.category_id = c.id) AS n FROM categories c ORDER BY c.name'); ?>
+    <p class="small muted">The default image is shown on contracts of this category that have no uploaded images.</p>
     <?php foreach ($cats as $cat): ?>
       <form method="post" action="/admin/categories" enctype="multipart/form-data" class="card cat-row">
         <?= csrf_field() ?>
         <input type="hidden" name="id" value="<?= (int)$cat['id'] ?>">
-        <div class="cat-img"><?php if ($cat['image']): ?><img src="/uploads/<?= h($cat['image']) ?>" alt=""><?php else: ?><span>no image</span><?php endif; ?></div>
+        <div class="cat-previews">
+          <div class="cat-prev"><div class="cat-img cat-img-desktop"><?php if ($cat['image']): ?><img src="/uploads/<?= h($cat['image']) ?>" alt=""><?php else: ?><span>no image</span><?php endif; ?></div><div class="tiny muted">Desktop</div></div>
+          <div class="cat-prev"><div class="cat-img cat-img-mobile"><?php if ($cat['image_mobile']): ?><img src="/uploads/<?= h($cat['image_mobile']) ?>" alt=""><?php else: ?><span>no image</span><?php endif; ?></div><div class="tiny muted">Mobile</div></div>
+        </div>
         <div class="cat-fields">
           <label class="tiny">Name <input name="name" value="<?= h($cat['name']) ?>" maxlength="80" required></label>
-          <label class="tiny">Default image <input type="file" name="image" accept="image/*"></label>
+          <label class="tiny">Desktop image <span class="muted">(shown left of the card; best 360 × 440 px)</span> <input type="file" name="image" accept="image/*"></label>
+          <label class="tiny">Mobile image <span class="muted">(shown above the card; best 750 × 380 px; the desktop image is used if empty)</span> <input type="file" name="image_mobile" accept="image/*"></label>
           <div class="row gap">
             <button class="btn small green" type="submit" name="do" value="save">Save</button>
-            <?php if ($cat['image']): ?><button class="btn small" type="submit" name="do" value="remove_image" formnovalidate>Remove image</button><?php endif; ?>
+            <?php if ($cat['image']): ?><button class="btn small" type="submit" name="do" value="remove_image" formnovalidate>Remove desktop image</button><?php endif; ?>
+            <?php if ($cat['image_mobile']): ?><button class="btn small" type="submit" name="do" value="remove_image_mobile" formnovalidate>Remove mobile image</button><?php endif; ?>
             <button class="btn small red-outline" type="submit" name="do" value="delete" formnovalidate onclick="return confirm('Delete this category?')">Delete</button>
             <span class="tiny muted"><?= (int)$cat['n'] ?> contracts</span>
           </div>
         </div>
       </form>
     <?php endforeach; ?>
+    <form method="post" action="/admin/categories" class="card row gap end"><?= csrf_field() ?>
+      <label class="tiny grow">New category <input name="name" maxlength="80" required></label>
+      <button class="btn green" type="submit" name="do" value="add">Add Category</button>
+    </form>
     <form method="post" action="/admin/categories" class="card row gap end"><?= csrf_field() ?>
       <label class="tiny grow">New category <input name="name" maxlength="80" required></label>
       <button class="btn green" type="submit" name="do" value="add">Add Category</button>

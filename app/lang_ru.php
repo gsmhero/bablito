@@ -192,6 +192,10 @@ $exact = [
     'Empty template created.' => 'Пустой шаблон создан.', 'Template cloned. Change its type or fields and save.' => 'Шаблон склонирован. Измените тип или поля и сохраните.',
     'Template deleted.' => 'Шаблон удалён.', 'Template saved.' => 'Шаблон сохранён.',
     'No template is set up for' => 'Для типа не настроен шаблон',
+    'Desktop' => 'Компьютер', 'Mobile' => 'Телефон', 'Desktop image' => 'Изображение для компьютера', 'Mobile image' => 'Изображение для телефона',
+    '(shown left of the card; best 360 × 440 px)' => '(показывается слева в карточке; лучше 360 × 440 px)',
+    '(shown above the card; best 750 × 380 px; the desktop image is used if empty)' => '(показывается сверху карточки; лучше 750 × 380 px; если пусто — используется изображение для компьютера)',
+    'Remove desktop image' => 'Убрать изображение для компьютера', 'Remove mobile image' => 'Убрать изображение для телефона',
     'to make an offer.' => ', чтобы сделать предложение.', 'to write to the author.' => ', чтобы написать автору.', 'days' => 'дн.',
     'New offers you have not opened yet' => 'Новые предложения, которые вы ещё не открывали',
 

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const SCHEMA_VERSION = 15;
+const SCHEMA_VERSION = 16;
 const ADMIN_EMAIL = 'admin@bablito.ru';
 
 function migrate_if_needed(): void
@@ -174,6 +174,9 @@ function migrate_if_needed(): void
             require_once ROOT . '/app/types.php';
             require_once ROOT . '/app/invoice_templates.php';
             seed_default_invoice_templates($pdo);
+        }
+        if ($cur < 16 && !column_exists($pdo, 'categories', 'image_mobile')) {
+            $pdo->exec("ALTER TABLE categories ADD COLUMN image_mobile VARCHAR(80) NULL");
         }
         $pdo->exec('REPLACE INTO schema_meta (id, version) VALUES (1, ' . SCHEMA_VERSION . ')');
         ensure_admin();

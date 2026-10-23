@@ -83,7 +83,7 @@ render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $com
   <div class="col">
     <hr>
     <div class="gallery">
-      <?php if (!array_filter($files, fn($f) => $f['kind'] === 'image') && !empty($c['category_image'])): ?><figure><img src="/uploads/<?= h($c['category_image']) ?>" alt=""></figure><?php endif; ?>
+      <?php if (!array_filter($files, fn($f) => $f['kind'] === 'image') && category_picture($c) !== ''): ?><figure class="cat-fig"><?= category_picture($c) ?></figure><?php endif; ?>
       <?php foreach ($files as $f): if ($f['kind'] !== 'image') { continue; } ?><figure><img src="/uploads/<?= h($f['stored_name']) ?>" alt=""></figure><?php endforeach; ?>
     </div>
     <h3>Files</h3>
