@@ -255,8 +255,6 @@ render('Admin', function () use ($tab) {
   <?php elseif ($tab === 'invoices'): admin_invoices_view(); ?>
   <?php elseif ($tab === 'categories'): $cats = rows('SELECT c.*, (SELECT COUNT(*) FROM contracts x WHERE x.category_id = c.id) AS n FROM categories c ORDER BY c.name'); ?>
     <p class="small muted">The default image is shown on contracts of this category that have no uploaded images.</p>
-  <?php elseif ($tab === 'categories'): $cats = rows('SELECT c.*, (SELECT COUNT(*) FROM contracts x WHERE x.category_id = c.id) AS n FROM categories c ORDER BY c.name'); ?>
-    <p class="small muted">The default image is shown on contracts of this category that have no uploaded images.</p>
     <?php foreach ($cats as $cat): ?>
       <form method="post" action="/admin/categories" enctype="multipart/form-data" class="card cat-row">
         <?= csrf_field() ?>
