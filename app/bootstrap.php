@@ -124,3 +124,9 @@ require ROOT . '/app/profile_fields.php';
 require ROOT . '/app/invoices.php';
 require_once ROOT . '/app/types.php';
 require_once ROOT . '/app/invoice_templates.php';
+
+try {
+    archive_stale_contracts();
+} catch (Throwable $e) {
+    error_log((string)$e);
+}

@@ -60,3 +60,24 @@ function category_picture(array $c): string
     $fit = ($c['category_fit'] ?? 'cover') === 'contain' ? 'contain' : 'cover';
     return '<picture class="cat-pic fit-' . $fit . '"><source media="(max-width:800px)" srcset="/uploads/' . h($mob) . '"><img src="/uploads/' . h($desk) . '" alt=""></picture>';
 }
+
+/**
+ * Published contracts that got no Contractor within one month leave the listing and go to the
+ * author's archive (as stated on the Prices page). Runs at most every 10 minutes, on page loads.
+ */
+function archive_stale_contracts(): void
+{
+    $last = (int)val("SELECT v FROM site_settings WHERE k = 'last_stale_archive'");
+    if ($last > time() - 600) {
+        return;
+    }
+    q("REPLACE INTO site_settings (k, v) VALUES ('last_stale_archive', ?)", [(string)time()]);
+    $ids = array_column(rows("SELECT id FROM contracts WHERE status = 'published' AND COALESCE(published_at, created_at) < (NOW() - INTERVAL 1 MONTH)"), 'id');
+    if (!$ids) {
+        return;
+    }
+    $in = implode(',', array_map('intval', $ids));
+    q("DELETE FROM comments WHERE scope = 'offer' AND offer_id IN (SELECT id FROM offers WHERE contract_id IN ($in) AND status = 'pending')");
+    q("DELETE FROM offers WHERE contract_id IN ($in) AND status = 'pending'");
+    q("UPDATE contracts SET status = 'terminated' WHERE id IN ($in) AND status = 'published'");
+}

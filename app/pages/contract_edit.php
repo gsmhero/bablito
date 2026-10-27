@@ -95,6 +95,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $at = in_array((string)($_POST['author_type'] ?? ''), user_types($u), true) ? (string)$_POST['author_type'] : user_types($u)[0];
             q('UPDATE contracts SET currency = ?, author_type = ? WHERE id = ?', [$form['currency'], $at, $id]);
+            if ($status === 'published' && (empty($c) || $c['status'] !== 'published')) {
+                q('UPDATE contracts SET published_at = NOW() WHERE id = ?', [$id]);
+            }
             if (!$hasOffers) {
                 $keep = [];
                 foreach ($todos as $pos => $t) {

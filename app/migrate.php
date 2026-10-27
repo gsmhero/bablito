@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const SCHEMA_VERSION = 19;
+const SCHEMA_VERSION = 20;
 const ADMIN_EMAIL = 'admin@bablito.ru';
 
 function migrate_if_needed(): void
@@ -199,6 +199,13 @@ function migrate_if_needed(): void
                 "The price of a contract is 100 rubles.\nThe service is paid only after the contract's Contractor is approved.\nIf no Contractor has been assigned within 1 month, the contract is removed from display and moved to the author's archive.",
                 'Цены',
                 "Стоимость контракта 100 рублей.\nОплата услуги происходит только после утверждения Исполнителя контракта.\nЕсли по истечении 1 месяца, исполнитель контракта не назначен, контракт снимается с показа и переводится в архив автора."]);
+        }
+        if ($cur < 20) {
+            if (!column_exists($pdo, 'contracts', 'published_at')) {
+                $pdo->exec("ALTER TABLE contracts ADD COLUMN published_at DATETIME NULL");
+                // contracts that are already published get a fresh month starting now
+                $pdo->exec("UPDATE contracts SET published_at = NOW() WHERE status = 'published'");
+            }
         }
         $pdo->exec('REPLACE INTO schema_meta (id, version) VALUES (1, ' . SCHEMA_VERSION . ')');
         ensure_admin();
