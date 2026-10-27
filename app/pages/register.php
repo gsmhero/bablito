@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (strcasecmp($email, ADMIN_EMAIL) === 0 || val('SELECT id FROM users WHERE email = ?', [$email])) {
         $error = 'This email is already registered.';
     } else {
-        q('INSERT INTO users (email, pass_hash, name, contact_email, timezone, user_types) VALUES (?,?,?,?,?,?)', [$email, password_hash($pass, PASSWORD_DEFAULT), $name, $email, valid_timezone((string)($_POST['tz'] ?? '')), implode(',', types_from_post($_POST['types'] ?? []))]);
+        q('INSERT INTO users (email, pass_hash, name, contact_email, timezone, user_types, lang) VALUES (?,?,?,?,?,?,?)', [$email, password_hash($pass, PASSWORD_DEFAULT), $name, $email, valid_timezone((string)($_POST['tz'] ?? '')), implode(',', types_from_post($_POST['types'] ?? [])), current_lang()]);
         login_user((int)db()->lastInsertId());
         flash('Welcome to bablito!');
         redirect('/dashboard');
@@ -41,7 +41,7 @@ render('Register', function () use ($error, $email, $name, $types) { ?>
     <label>Password (8+ characters) <input type="password" name="password" minlength="8" required></label>
     <div class="price-note small">
       <p>The service is paid only after the contract's Contractor is approved.</p>
-      <p>The price of a contract is 100 rubles.</p>
+      <p><?= current_lang() === 'ru' ? 'Стоимость контракта ' . h(service_price_text('ru')) . '.' : 'The price of a contract is ' . h(service_price_text('en')) . '.' ?></p>
       <p><a href="/page/prices">Prices</a></p>
     </div>
     <button class="btn green" type="submit">Create account</button>

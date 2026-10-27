@@ -61,9 +61,66 @@ function category_picture(array $c): string
     return '<picture class="cat-pic fit-' . $fit . '"><source media="(max-width:800px)" srcset="/uploads/' . h($mob) . '"><img src="/uploads/' . h($desk) . '" alt=""></picture>';
 }
 
+
+/* ---------- service price (set in Admin mode -> Settings) ---------- */
+
+const SERVICE_CURRENCY_WORDS = [
+    'RUB' => ['ru' => ['рубль', 'рубля', 'рублей'], 'en' => ['ruble', 'rubles']],
+    'USD' => ['ru' => ['доллар', 'доллара', 'долларов'], 'en' => ['dollar', 'dollars']],
+    'EUR' => ['ru' => ['евро', 'евро', 'евро'], 'en' => ['euro', 'euros']],
+];
+
+function service_price(): array
+{
+    $amount = (float)(val("SELECT v FROM site_settings WHERE k = 'service_price'") ?? 100);
+    $cur = (string)(val("SELECT v FROM site_settings WHERE k = 'service_currency'") ?? 'RUB');
+    return [$amount, isset(SERVICE_CURRENCY_WORDS[$cur]) ? $cur : 'RUB'];
+}
+
+/** "100 рублей" / "100 rubles", in the given language. */
+function service_price_text(string $lang): string
+{
+    [$amount, $cur] = service_price();
+    $whole = floor($amount) == $amount;
+    $num = $whole ? number_format($amount, 0, '.', "\u{00A0}") : number_format($amount, 2, '.', "\u{00A0}");
+    if ($lang === 'ru') {
+        $f = SERVICE_CURRENCY_WORDS[$cur]['ru'];
+        $n = (int)$amount;
+        $m10 = $n % 10;
+        $m100 = $n % 100;
+        $word = !$whole ? $f[1] : (($m10 === 1 && $m100 !== 11) ? $f[0] : (($m10 >= 2 && $m10 <= 4 && ($m100 < 12 || $m100 > 14)) ? $f[1] : $f[2]));
+        return $num . ' ' . $word;
+    }
+    $f = SERVICE_CURRENCY_WORDS[$cur]['en'];
+    return $num . ' ' . ($amount == 1 ? $f[0] : $f[1]);
+}
+
+/* ---------- notices shown once on the user's next page and sent by e-mail ---------- */
+
+function user_lang(?array $u): string
+{
+    return (($u['lang'] ?? '') === 'en') ? 'en' : 'ru';
+}
+
+function add_notice(int $userId, string $text): void
+{
+    q('INSERT INTO notices (user_id, text) VALUES (?, ?)', [$userId, $text]);
+}
+
+/** Unseen notices of the user (and marks them as seen). */
+function take_notices(int $userId): array
+{
+    $rows = rows('SELECT id, text FROM notices WHERE user_id = ? AND shown_at IS NULL ORDER BY id LIMIT 5', [$userId]);
+    if ($rows) {
+        q('UPDATE notices SET shown_at = NOW() WHERE id IN (' . implode(',', array_map('intval', array_column($rows, 'id'))) . ')');
+    }
+    return array_column($rows, 'text');
+}
+
 /**
  * Published contracts that got no Contractor within one month leave the listing and go to the
- * author's archive (as stated on the Prices page). Runs at most every 10 minutes, on page loads.
+ * author's archive (as stated on the Prices page). The author gets a notice on the site and an e-mail.
+ * Runs at most every 10 minutes, on page loads.
  */
 function archive_stale_contracts(): void
 {
@@ -72,12 +129,24 @@ function archive_stale_contracts(): void
         return;
     }
     q("REPLACE INTO site_settings (k, v) VALUES ('last_stale_archive', ?)", [(string)time()]);
-    $ids = array_column(rows("SELECT id FROM contracts WHERE status = 'published' AND COALESCE(published_at, created_at) < (NOW() - INTERVAL 1 MONTH)"), 'id');
-    if (!$ids) {
-        return;
+    $list = rows("SELECT c.id, c.title, c.user_id, u.email, u.lang FROM contracts c JOIN users u ON u.id = c.user_id
+        WHERE c.status = 'published' AND COALESCE(c.published_at, c.created_at) < (NOW() - INTERVAL 1 MONTH)");
+    foreach ($list as $c) {
+        $st = q("UPDATE contracts SET status = 'terminated' WHERE id = ? AND status = 'published'", [$c['id']]);
+        if ($st->rowCount() !== 1) {
+            continue; // another request archived it first
+        }
+        q("DELETE FROM comments WHERE scope = 'offer' AND offer_id IN (SELECT id FROM offers WHERE contract_id = ? AND status = 'pending')", [$c['id']]);
+        q("DELETE FROM offers WHERE contract_id = ? AND status = 'pending'", [$c['id']]);
+        $ru = user_lang($c) === 'ru';
+        $link = rtrim(env('SITE_URL'), '/') . '/my?tab=archive';
+        $title = (string)$c['title'];
+        $notice = $ru
+            ? "Контракт «{$title}» не нашёл исполнителя за 1 месяц, снят с показа и перенесён в ваш архив. Вы можете повторить его кнопкой «Повторить контракт»."
+            : "Your contract \"{$title}\" found no Contractor within 1 month, was removed from display and moved to your archive. You can publish it again with the \"Repeat Contract\" button.";
+        add_notice((int)$c['user_id'], $notice);
+        $subject = $ru ? 'Контракт перенесён в архив' : 'Your contract was moved to the archive';
+        $body = $notice . "\n\n" . ($ru ? 'Архив: ' : 'Archive: ') . $link . "\n\nbablito";
+        smtp_send((string)$c['email'], $subject, $body);
     }
-    $in = implode(',', array_map('intval', $ids));
-    q("DELETE FROM comments WHERE scope = 'offer' AND offer_id IN (SELECT id FROM offers WHERE contract_id IN ($in) AND status = 'pending')");
-    q("DELETE FROM offers WHERE contract_id IN ($in) AND status = 'pending'");
-    q("UPDATE contracts SET status = 'terminated' WHERE id IN ($in) AND status = 'published'");
 }

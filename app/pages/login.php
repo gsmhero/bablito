@@ -19,6 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($ok) {
             q('DELETE FROM login_attempts WHERE email = ?', [$email]);
             login_user((int)$u['id']);
+            q('UPDATE users SET lang = ? WHERE id = ?', [current_lang(), $u['id']]);
             $to = safe_local_path((string)($_SESSION['after_login'] ?? '/dashboard'));
             unset($_SESSION['after_login']);
             redirect($to);

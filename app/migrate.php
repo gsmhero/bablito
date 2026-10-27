@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const SCHEMA_VERSION = 20;
+const SCHEMA_VERSION = 21;
 const ADMIN_EMAIL = 'admin@bablito.ru';
 
 function migrate_if_needed(): void
@@ -206,6 +206,22 @@ function migrate_if_needed(): void
                 // contracts that are already published get a fresh month starting now
                 $pdo->exec("UPDATE contracts SET published_at = NOW() WHERE status = 'published'");
             }
+        }
+        if ($cur < 21) {
+            if (!column_exists($pdo, 'users', 'lang')) {
+                $pdo->exec("ALTER TABLE users ADD COLUMN lang VARCHAR(2) NULL");
+            }
+            $pdo->exec("CREATE TABLE IF NOT EXISTS notices (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  text TEXT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  shown_at DATETIME NULL,
+  INDEX (user_id, shown_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            $pdo->exec("INSERT IGNORE INTO site_settings (k, v) VALUES ('service_price', '100'), ('service_currency', 'RUB')");
+            // the price in the Prices page text becomes a placeholder that follows the admin setting
+            $pdo->exec("UPDATE static_pages SET body = REPLACE(body, '100 rubles', '{price}'), body_ru = REPLACE(body_ru, '100 рублей', '{price}') WHERE slug = 'prices'");
         }
         $pdo->exec('REPLACE INTO schema_meta (id, version) VALUES (1, ' . SCHEMA_VERSION . ')');
         ensure_admin();

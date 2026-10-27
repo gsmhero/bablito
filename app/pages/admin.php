@@ -139,6 +139,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         case 'invoices':
             admin_invoices_post($do, $self);
             break;
+        case 'settings':
+            if ($do === 'test_mail') {
+                $err = smtp_send((string)$me['email'], 'bablito test e-mail', "This is a test message from bablito.\nIf you can read it, e-mail notifications work.");
+                flash($err === null ? 'Test e-mail sent to ' . $me['email'] . '.' : 'The test e-mail failed: ' . $err, $err === null ? 'ok' : 'err');
+            } else {
+                $price = str_replace([' ', "\u{00A0}", ','], ['', '', '.'], trim((string)($_POST['service_price'] ?? '')));
+                $cur = (string)($_POST['service_currency'] ?? 'RUB');
+                if (!is_numeric($price) || (float)$price < 0 || (float)$price > 1000000 || !isset(CURRENCIES[$cur])) {
+                    flash('Enter a valid service price (0 to 1 000 000).', 'err');
+                } else {
+                    q("REPLACE INTO site_settings (k, v) VALUES ('service_price', ?), ('service_currency', ?)", [rtrim(rtrim(number_format((float)$price, 2, '.', ''), '0'), '.'), $cur]);
+                    flash('Settings saved.');
+                }
+            }
+            break;
         case 'pages':
             foreach ((array)($_POST['pages'] ?? []) as $slug => $p) {
                 q('UPDATE static_pages SET title = ?, body = ?, title_ru = ?, body_ru = ? WHERE slug = ?', [mb_substr(trim((string)($p['title'] ?? '')), 0, 190), (string)($p['body'] ?? ''), mb_substr(trim((string)($p['title_ru'] ?? '')), 0, 190) ?: null, ((string)($p['body_ru'] ?? '')) !== '' ? (string)$p['body_ru'] : null, (string)$slug]);
@@ -150,7 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 render('Admin', function () use ($tab) {
-    $tabs = ['users' => 'Users', 'contracts' => 'Contracts', 'home' => 'Homepage', 'pages' => 'Pages', 'categories' => 'Categories', 'profile' => 'User Profile Editor', 'invoices' => 'Invoice Editor']; ?>
+    $tabs = ['users' => 'Users', 'contracts' => 'Contracts', 'home' => 'Homepage', 'pages' => 'Pages', 'categories' => 'Categories', 'profile' => 'User Profile Editor', 'invoices' => 'Invoice Editor', 'settings' => 'Settings']; ?>
 <div class="wrap">
   <h1>Admin mode</h1>
   <div class="tabs"><?php foreach ($tabs as $k => $l): ?><a class="<?= $k === $tab ? 'on' : '' ?>" href="/admin/<?= $k ?>"><?= $l ?></a><?php endforeach; ?></div>
@@ -253,6 +268,24 @@ render('Admin', function () use ($tab) {
       <button class="btn green" type="submit" name="do" value="add_section">Add Section</button>
     </form>
   <?php elseif ($tab === 'invoices'): admin_invoices_view(); ?>
+  <?php elseif ($tab === 'settings'): [$spAmount, $spCur] = service_price(); ?>
+    <form method="post" action="/admin/settings" class="card-form wide">
+      <?= csrf_field() ?>
+      <h3>Service price</h3>
+      <p class="small muted">The price of publishing a contract. It is shown on the Prices page (use <b>{price}</b> in the page text) and on the registration form.</p>
+      <div class="field-row">
+        <label>Price <input name="service_price" value="<?= h(rtrim(rtrim(number_format($spAmount, 2, '.', ''), '0'), '.')) ?>" inputmode="decimal" required></label>
+        <label>Currency <select name="service_currency"><?php foreach (CURRENCIES as $code => $cur): ?><option value="<?= h($code) ?>" <?= $spCur === $code ? 'selected' : '' ?>><?= h($cur[1]) ?></option><?php endforeach; ?></select></label>
+      </div>
+      <p class="small">Shown as: <b><?= h(service_price_text('en')) ?></b> / <b><?= h(service_price_text('ru')) ?></b></p>
+      <div class="row between"><button class="btn green" type="submit" name="do" value="save">Save</button></div>
+    </form>
+    <form method="post" action="/admin/settings" class="card-form wide">
+      <?= csrf_field() ?>
+      <h3>E-mail notifications</h3>
+      <p class="small muted">Authors get an e-mail (and a notice on the site) when a contract without a Contractor is archived after one month. The mail server is set by the SMTP secrets of the repository.</p>
+      <button class="btn" type="submit" name="do" value="test_mail">Send a test e-mail to me</button>
+    </form>
   <?php elseif ($tab === 'categories'): $cats = rows('SELECT c.*, (SELECT COUNT(*) FROM contracts x WHERE x.category_id = c.id) AS n FROM categories c ORDER BY c.name'); ?>
     <p class="small muted">The default image is shown on contracts of this category that have no uploaded images.</p>
     <?php foreach ($cats as $cat): ?>

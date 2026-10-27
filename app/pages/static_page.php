@@ -9,6 +9,7 @@ if (!$p) {
 $ru = current_lang() === 'ru';
 $title = ($ru && (string)$p['title_ru'] !== '') ? (string)$p['title_ru'] : (string)$p['title'];
 $body = ($ru && (string)$p['body_ru'] !== '') ? (string)$p['body_ru'] : (string)$p['body'];
+$body = str_replace('{price}', service_price_text($ru ? 'ru' : 'en'), $body);
 // plain text with line breaks; e-mail addresses become links
 $html = nl2br(h($body));
 $html = (string)preg_replace('/([A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,})/', '<a href="mailto:$1">$1</a>', $html);

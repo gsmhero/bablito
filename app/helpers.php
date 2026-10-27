@@ -362,6 +362,7 @@ function render(string $title, callable $body, array $opts = []): void
 {
     $u = user();
     $f = flash();
+    $notices = $u ? take_notices((int)$u['id']) : [];
     $pages = rows('SELECT slug, title, title_ru FROM static_pages ORDER BY FIELD(slug, "about", "privacy", "disclaimer", "offer", "contact", "prices"), slug');
     foreach ($pages as $i => $pp) {
         if (current_lang() === 'ru' && (string)$pp['title_ru'] !== '') {
@@ -433,6 +434,7 @@ function render(string $title, callable $body, array $opts = []): void
 <div class="wrap"><a href="<?= h($opts['back'] ?? '/contracts') ?>" class="back-link"<?= isset($opts['back']) ? '' : ' data-back' ?>><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg> Back</a></div>
 <?php endif; ?>
 <?php if ($f): ?><div class="wrap"><div class="flash <?= $f[1] === 'err' ? 'err' : 'ok' ?>"><?= h($f[0]) ?></div></div><?php endif; ?>
+<?php foreach ($notices as $nt): ?><div class="wrap"><div class="flash ok"><?= h($nt) ?></div></div><?php endforeach; ?>
 <?php $body(); ?>
 </main>
 <footer class="foot">

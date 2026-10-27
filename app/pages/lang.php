@@ -5,6 +5,9 @@ declare(strict_types=1);
 $lang = (string)$args[0];
 if (in_array($lang, SUPPORTED_LANGS, true)) {
     set_lang_cookie($lang);
+    if (user()) {
+        q('UPDATE users SET lang = ? WHERE id = ?', [$lang, user()['id']]);
+    }
 }
 $ref = (string)($_SERVER['HTTP_REFERER'] ?? '');
 $to = '/';

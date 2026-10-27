@@ -41,8 +41,8 @@ $routes = [
     ['POST', '#^/logout$#',                        'logout'],
     ['GET',  '#^/contract/(\d+)/(timelog|timer\.json)$#', 'contract_info'],
     ['GET',  '#^/page/([a-z0-9-]+)$#',             'static_page'],
-    ['GET',  '#^/admin(?:/(users|contracts|home|pages|categories|profile|invoices))?$#', 'admin'],
-    ['POST', '#^/admin/(users|contracts|home|pages|categories|profile|invoices)$#',     'admin'],
+    ['GET',  '#^/admin(?:/(users|contracts|home|pages|categories|profile|invoices|settings))?$#', 'admin'],
+    ['POST', '#^/admin/(users|contracts|home|pages|categories|profile|invoices|settings)$#',     'admin'],
 ];
 
 foreach ($routes as [$m, $re, $page]) {
