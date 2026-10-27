@@ -362,7 +362,12 @@ function render(string $title, callable $body, array $opts = []): void
 {
     $u = user();
     $f = flash();
-    $pages = rows('SELECT slug, title FROM static_pages ORDER BY FIELD(slug, "about", "privacy", "disclaimer", "offer"), slug');
+    $pages = rows('SELECT slug, title, title_ru FROM static_pages ORDER BY FIELD(slug, "about", "privacy", "disclaimer", "offer", "contact", "prices"), slug');
+    foreach ($pages as $i => $pp) {
+        if (current_lang() === 'ru' && (string)$pp['title_ru'] !== '') {
+            $pages[$i]['title'] = $pp['title_ru'];
+        }
+    }
     ?><!doctype html>
 <html lang="<?= h(current_lang()) ?>">
 <head>

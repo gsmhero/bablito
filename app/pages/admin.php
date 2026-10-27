@@ -141,7 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             break;
         case 'pages':
             foreach ((array)($_POST['pages'] ?? []) as $slug => $p) {
-                q('UPDATE static_pages SET title = ?, body = ? WHERE slug = ?', [mb_substr(trim((string)($p['title'] ?? '')), 0, 190), (string)($p['body'] ?? ''), (string)$slug]);
+                q('UPDATE static_pages SET title = ?, body = ?, title_ru = ?, body_ru = ? WHERE slug = ?', [mb_substr(trim((string)($p['title'] ?? '')), 0, 190), (string)($p['body'] ?? ''), mb_substr(trim((string)($p['title_ru'] ?? '')), 0, 190) ?: null, ((string)($p['body_ru'] ?? '')) !== '' ? (string)$p['body_ru'] : null, (string)$slug]);
             }
             flash('Pages saved.');
             break;
@@ -289,7 +289,9 @@ render('Admin', function () use ($tab) {
       <?= csrf_field() ?>
       <?php foreach ($pgs as $p): ?>
         <div class="card"><label class="tiny">Title (<?= h($p['slug']) ?>) <input name="pages[<?= h($p['slug']) ?>][title]" value="<?= h($p['title']) ?>"></label>
-          <label class="tiny">Text <textarea name="pages[<?= h($p['slug']) ?>][body]" rows="6"><?= h($p['body']) ?></textarea></label></div>
+          <label class="tiny">Text <textarea name="pages[<?= h($p['slug']) ?>][body]" rows="6"><?= h($p['body']) ?></textarea></label>
+          <label class="tiny">Title in Russian <input name="pages[<?= h($p['slug']) ?>][title_ru]" value="<?= h($p['title_ru'] ?? '') ?>"></label>
+          <label class="tiny">Text in Russian <textarea name="pages[<?= h($p['slug']) ?>][body_ru]" rows="6"><?= h($p['body_ru'] ?? '') ?></textarea></label></div>
       <?php endforeach; ?>
       <button class="btn green" type="submit">Save</button>
     </form>

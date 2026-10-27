@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const SCHEMA_VERSION = 18;
+const SCHEMA_VERSION = 19;
 const ADMIN_EMAIL = 'admin@bablito.ru';
 
 function migrate_if_needed(): void
@@ -183,6 +183,22 @@ function migrate_if_needed(): void
         }
         if ($cur < 18 && !column_exists($pdo, 'categories', 'name_ru')) {
             $pdo->exec("ALTER TABLE categories ADD COLUMN name_ru VARCHAR(80) NULL");
+        }
+        if ($cur < 19) {
+            foreach (['title_ru' => 'VARCHAR(190) NULL', 'body_ru' => 'MEDIUMTEXT NULL'] as $col => $def) {
+                if (!column_exists($pdo, 'static_pages', $col)) {
+                    $pdo->exec("ALTER TABLE static_pages ADD COLUMN $col $def");
+                }
+            }
+            $ins = $pdo->prepare('INSERT IGNORE INTO static_pages (slug, title, body, title_ru, body_ru) VALUES (?,?,?,?,?)');
+            $ins->execute(['contact', 'Contact',
+                "Dmitry Aleksandrovich Semenov\nTax ID (INN) 236705279082\nadmin@bablito.ru",
+                'Контакты',
+                "Семенов Дмитрий Александрович\nИНН 236705279082\nadmin@bablito.ru"]);
+            $ins->execute(['prices', 'Prices',
+                "The price of a contract is 100 rubles.\nThe service is paid only after the contract's Contractor is approved.\nIf no Contractor has been assigned within 1 month, the contract is removed from display and moved to the author's archive.",
+                'Цены',
+                "Стоимость контракта 100 рублей.\nОплата услуги происходит только после утверждения Исполнителя контракта.\nЕсли по истечении 1 месяца, исполнитель контракта не назначен, контракт снимается с показа и переводится в архив автора."]);
         }
         $pdo->exec('REPLACE INTO schema_meta (id, version) VALUES (1, ' . SCHEMA_VERSION . ')');
         ensure_admin();

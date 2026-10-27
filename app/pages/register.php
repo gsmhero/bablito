@@ -39,6 +39,11 @@ render('Register', function () use ($error, $email, $name, $types) { ?>
     <label>Email <input type="email" name="email" value="<?= h($email) ?>" required></label>
     <div class="small"><b>I register as</b> <span class="muted">(you can choose several)</span><?= party_checkboxes('types', $types) ?></div>
     <label>Password (8+ characters) <input type="password" name="password" minlength="8" required></label>
+    <div class="price-note small">
+      <p>The service is paid only after the contract's Contractor is approved.</p>
+      <p>The price of a contract is 100 rubles.</p>
+      <p><a href="/page/prices">Prices</a></p>
+    </div>
     <button class="btn green" type="submit">Create account</button>
   </form>
   <p class="muted small">Already registered? <a href="/login">Login</a></p>

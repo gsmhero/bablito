@@ -336,3 +336,4 @@ details.pe-section[open]>summary{border-bottom:1px solid #eee;margin-bottom:10px
 @media(max-width:800px){.gallery figure.cat-fig{aspect-ratio:2/1}}
 .thumb picture{align-self:stretch;flex:1 1 auto;min-height:100%}.thumb picture img{min-height:100%}
 .cat-pic.fit-contain img{object-fit:contain}
+.price-note{background:#f3f9ee;border:1px solid #dcefd0;border-radius:8px;padding:8px 12px;margin:12px 0}.price-note p{margin:4px 0}
