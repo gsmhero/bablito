@@ -16,10 +16,26 @@ function smtp_send(string $to, string $subject, string $text): ?string
     $port = (int)(env('SMTP_PORT') ?: 587);
     $user = env('SMTP_USER');
     $pass = env('SMTP_PASS');
-    $from = env('SMTP_FROM') ?: $user;
+    $from = trim(env('SMTP_FROM') ?: $user);
     if ($host === '' || $from === '') {
         return 'SMTP_HOST / SMTP_FROM are not set';
     }
+    // SMTP_FROM may be an address, "Name <address>", or only a display name such as "Bablito | Notification".
+    // The envelope address must be a real address: the one in SMTP_FROM, else the SMTP login.
+    if (preg_match('/^(.*?)\s*<([^>]+)>\s*$/', $from, $fm)) {
+        $fromName = trim($fm[1], " \"");
+        $addr = trim($fm[2]);
+    } elseif (filter_var($from, FILTER_VALIDATE_EMAIL)) {
+        $fromName = '';
+        $addr = $from;
+    } else {
+        $fromName = $from;
+        $addr = filter_var($user, FILTER_VALIDATE_EMAIL) ? $user : '';
+    }
+    if (!filter_var($addr, FILTER_VALIDATE_EMAIL)) {
+        return 'no sender address: set SMTP_FROM to an e-mail address (or "Name <address>"), or use an e-mail address as SMTP_USER';
+    }
+    $fromHeader = $fromName !== '' ? '=?UTF-8?B?' . base64_encode($fromName) . '?= <' . $addr . '>' : $addr;
     if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
         return 'invalid recipient address';
     }
@@ -67,8 +83,6 @@ function smtp_send(string $to, string $subject, string $text): ?string
             $cmd(base64_encode($user), '334');
             $cmd(base64_encode($pass), '235');
         }
-        $addr = preg_match('/<([^>]+)>/', $from, $m) ? $m[1] : $from;
-        $fromHeader = preg_match('/<([^>]+)>/', $from) ? $from : $addr;
         $cmd('MAIL FROM:<' . $addr . '>', '250');
         $cmd('RCPT TO:<' . $to . '>', '250');
         $cmd('DATA', '354');
