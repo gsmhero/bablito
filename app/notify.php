@@ -171,10 +171,10 @@ function notify(string $kind, array $contract, array $opts): void
 
 /* ---------- mails are sent after the page has been delivered ---------- */
 
-function queue_mail(string $to, string $subject, string $body, ?string $html = null): void
+function queue_mail(string $to, string $subject, string $body, ?string $html = null, array $attachments = []): void
 {
     static $registered = false;
-    $GLOBALS['mail_queue'][] = [$to, $subject, $body, $html];
+    $GLOBALS['mail_queue'][] = [$to, $subject, $body, $html, $attachments];
     if (!$registered) {
         $registered = true;
         register_shutdown_function('flush_mail_queue');
@@ -195,7 +195,7 @@ function flush_mail_queue(): void
         }
         @fastcgi_finish_request();
     }
-    foreach ($queue as [$to, $subject, $body, $html]) {
-        smtp_send($to, $subject, $body, $html);
+    foreach ($queue as [$to, $subject, $body, $html, $attachments]) {
+        smtp_send($to, $subject, $body, $html, $attachments);
     }
 }

@@ -29,9 +29,17 @@ $block = function (string $title, ?string $json, array $user) use ($inv): void {
     echo '</div>';
 };
 
-render('Invoice #' . $inv['id'], function () use ($inv, $tpl, $from, $to, $fromType, $toType, $block) { ?>
+$sum = invoice_summary($inv, user_lang($u));
+
+render('Invoice #' . $inv['id'], function () use ($inv, $tpl, $from, $to, $fromType, $toType, $block, $sum) { ?>
 <div class="wrap">
   <div class="invoice-doc">
+    <div class="inv-sum">
+      <h1>Invoice <?= h($sum['number'][1]) ?></h1>
+      <div class="inv-line"><span class="inv-label"><?= h($sum['date'][0]) ?></span> <?= h($sum['date'][1]) ?></div>
+      <div class="inv-line"><span class="inv-label"><?= h($sum['reason'][0]) ?></span> <b><?= h($sum['reason'][1]) ?></b></div>
+      <div class="inv-line"><span class="inv-label"><?= h($sum['price'][0]) ?></span> <b><?= h($sum['price'][1]) ?></b></div>
+    </div>
     <?php if ($tpl): ?>
       <div class="inv-head"><?= $tpl['header_html'] /* sanitized when the template is saved */ ?></div>
       <div class="inv-two">
@@ -40,7 +48,6 @@ render('Invoice #' . $inv['id'], function () use ($inv, $tpl, $from, $to, $fromT
       <div class="inv-content"><?php $block('Details', $tpl['content_fields'], $from); ?></div>
       <div class="inv-foot"><?= $tpl['footer_html'] ?></div>
     <?php else: ?>
-      <h1>Invoice #<?= (int)$inv['id'] ?></h1>
       <p class="muted small">No template is set up for <?= h(invoice_pair_label($fromType, $toType)) ?>, so the default layout is shown.</p>
       <div class="inv-two">
         <div class="inv-block"><h3>From</h3><div><?= h(display_name($from)) ?></div></div>
@@ -54,6 +61,6 @@ render('Invoice #' . $inv['id'], function () use ($inv, $tpl, $from, $to, $fromT
       </div>
     <?php endif; ?>
   </div>
-  <p class="right"><button class="btn" type="button" onclick="window.print()">Print</button></p>
+  <p class="right"><a class="btn" href="/invoice/<?= (int)$inv['id'] ?>.pdf">Download PDF</a> <button class="btn" type="button" onclick="window.print()">Print</button></p>
 </div>
 <?php }, ['back' => '/invoices']);

@@ -16,6 +16,7 @@ $routes = [
     ['GET',  '#^/notifications$#',                'notifications'],
     ['POST', '#^/invoice/(\d+)/(pay|confirm)$#', 'invoice_action'],
     ['GET',  '#^/invoice/(\d+)$#',               'invoice_view'],
+    ['GET',  '#^/invoice/(\d+)\.pdf$#',        'invoice_pdf'],
     ['GET',  '#^/contract/(\d+)/clock$#',       'contract_clock'],
     ['POST', '#^/contract/(\d+)/clock$#',       'contract_clock'],
     ['GET',  '#^/contract/new$#',                  'contract_edit'],

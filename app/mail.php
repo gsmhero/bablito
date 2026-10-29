@@ -10,7 +10,7 @@ function mail_log(string $line): void
 }
 
 /** Sends a plain-text e-mail. Returns null on success or an error text. */
-function smtp_send(string $to, string $subject, string $text, ?string $html = null): ?string
+function smtp_send(string $to, string $subject, string $text, ?string $html = null, array $attachments = []): ?string
 {
     $host = env('SMTP_HOST');
     $port = (int)(env('SMTP_PORT') ?: 587);
@@ -86,6 +86,28 @@ function smtp_send(string $to, string $subject, string $text, ?string $html = nu
         $cmd('MAIL FROM:<' . $addr . '>', '250');
         $cmd('RCPT TO:<' . $to . '>', '250');
         $cmd('DATA', '354');
+        $b64 = fn(string $d): string => chunk_split(base64_encode($d), 76, "\r\n");
+        if ($html === null) {
+            $ct = 'text/plain; charset=UTF-8';
+            $part = "Content-Transfer-Encoding: base64\r\n\r\n" . $b64($text);
+        } else {
+            $alt = 'bbl_a' . bin2hex(random_bytes(8));
+            $ct = 'multipart/alternative; boundary="' . $alt . '"';
+            $part = "\r\n--$alt\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n" . $b64($text)
+                . "--$alt\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n" . $b64($html)
+                . "--$alt--\r\n";
+        }
+        if ($attachments) {
+            $mix = 'bbl_m' . bin2hex(random_bytes(8));
+            $inner = "Content-Type: $ct\r\n" . $part;
+            $part = "\r\n--$mix\r\n" . $inner;
+            foreach ($attachments as $a) {
+                $fn = '=?UTF-8?B?' . base64_encode((string)$a['name']) . '?=';
+                $part .= "--$mix\r\nContent-Type: " . $a['type'] . "; name=\"$fn\"\r\nContent-Transfer-Encoding: base64\r\nContent-Disposition: attachment; filename=\"$fn\"\r\n\r\n" . $b64((string)$a['data']);
+            }
+            $part .= "--$mix--\r\n";
+            $ct = 'multipart/mixed; boundary="' . $mix . '"';
+        }
         $headers = [
             'From: ' . $fromHeader,
             'To: <' . $to . '>',
@@ -93,16 +115,10 @@ function smtp_send(string $to, string $subject, string $text, ?string $html = nu
             'Date: ' . date('r'),
             'Message-ID: <' . bin2hex(random_bytes(10)) . '@' . $helo . '>',
             'MIME-Version: 1.0',
-            $html === null ? 'Content-Type: text/plain; charset=UTF-8' : 'Content-Type: multipart/alternative; boundary="' . ($boundary = 'bbl_' . bin2hex(random_bytes(8))) . '"',
         ];
-        if ($html === null) {
-            $headers[] = 'Content-Transfer-Encoding: base64';
-            $body = chunk_split(base64_encode($text), 76, "\r\n");
-        } else {
-            $body = '--' . $boundary . "\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n" . chunk_split(base64_encode($text), 76, "\r\n")
-                . '--' . $boundary . "\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n" . chunk_split(base64_encode($html), 76, "\r\n")
-                . '--' . $boundary . "--\r\n";
-        }
+        $headers[] = 'Content-Type: ' . $ct;
+        $body = $part;
+        // dot-stuffing is not needed: base64 lines never start with a dot
         fwrite($fp, implode("\r\n", $headers) . "\r\n\r\n" . $body . "\r\n.\r\n");
         $r = $read();
         if (strpos($r, '250') !== 0) {

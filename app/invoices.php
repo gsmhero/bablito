@@ -28,7 +28,9 @@ function create_invoice(array $contract, ?array $todo, float $amount): int
     }
     q('INSERT INTO invoices (contract_id, todo_id, payer_id, payee_id, amount, currency, status) VALUES (?,?,?,?,?,?,?)',
         [$contract['id'], $todo['id'] ?? null, $contract['user_id'], $contract['contractor_id'], $amount, cur_code($contract), 'waiting']);
-    return (int)db()->lastInsertId();
+    $id = (int)db()->lastInsertId();
+    mail_invoice_copy($id);
+    return $id;
 }
 
 function has_unpaid_invoice(int $contractId): bool
