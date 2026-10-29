@@ -13,6 +13,7 @@ $routes = [
     ['GET',  '#^/dashboard(?:/(live))?$#',        'dashboard'],
     ['GET',  '#^/home$#',                         'home'],
     ['GET',  '#^/invoices$#',                     'invoices'],
+    ['GET',  '#^/notifications$#',                'notifications'],
     ['POST', '#^/invoice/(\d+)/(pay|confirm)$#', 'invoice_action'],
     ['GET',  '#^/invoice/(\d+)$#',               'invoice_view'],
     ['GET',  '#^/contract/(\d+)/clock$#',       'contract_clock'],

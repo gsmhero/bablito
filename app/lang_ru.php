@@ -204,6 +204,8 @@ $exact = [
     'Settings' => 'Настройки', 'Service price' => 'Стоимость услуги', 'E-mail notifications' => 'Уведомления по почте', 'Send a test e-mail to me' => 'Отправить мне тестовое письмо',
     'Price ' => 'Цена ', 'Enter a valid service price (0 to 1 000 000).' => 'Введите корректную стоимость услуги (от 0 до 1 000 000).', 'Settings saved.' => 'Настройки сохранены.',
     'The price of publishing a contract. It is shown on the Prices page (use {price} in the page text) and on the registration form.' => 'Стоимость публикации контракта. Показывается на странице «Цены» (используйте {price} в тексте страницы) и в форме регистрации.',
+    'Notifications' => 'Уведомления', 'No notifications yet.' => 'Уведомлений пока нет.',
+    'Receive e-mail notifications about my contracts' => 'Получать уведомления о моих контрактах по почте',
     'Remove desktop image' => 'Убрать изображение для компьютера', 'Remove mobile image' => 'Убрать изображение для телефона',
     'to make an offer.' => ', чтобы сделать предложение.', 'to write to the author.' => ', чтобы написать автору.', 'days' => 'дн.',
     'New offers you have not opened yet' => 'Новые предложения, которые вы ещё не открывали',

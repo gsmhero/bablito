@@ -125,6 +125,7 @@ require ROOT . '/app/invoices.php';
 require_once ROOT . '/app/types.php';
 require_once ROOT . '/app/invoice_templates.php';
 require_once ROOT . '/app/mail.php';
+require_once ROOT . '/app/notify.php';
 
 try {
     archive_stale_contracts();

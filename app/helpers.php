@@ -241,18 +241,20 @@ function load_contract(int $id): array
     return $c;
 }
 
-function log_comment(int $contractId, string $scope, ?int $offerId, ?int $todoId, string $body, ?int $threadUserId = null): void
+function log_comment(int $contractId, string $scope, ?int $offerId, ?int $todoId, string $body, ?int $threadUserId = null): ?array
 {
     $u = user();
     $body = trim($body);
     $hasFiles = !empty($_FILES['attach']['name'][0] ?? '');
     if (($body === '' && !$hasFiles) || mb_strlen($body) > 4000) {
-        return;
+        return null;
     }
     q('INSERT INTO comments (contract_id, scope, offer_id, todo_id, thread_user_id, user_id, body) VALUES (?,?,?,?,?,?,?)', [$contractId, $scope, $offerId, $todoId, $threadUserId, $u['id'], $body]);
+    $newId = (int)db()->lastInsertId();
     if ($hasFiles) {
-        save_comment_files((int)db()->lastInsertId());
+        save_comment_files($newId);
     }
+    return ['id' => $newId, 'body' => $body, 'files' => $hasFiles];
 }
 
 /** Stores files attached to a comment (up to 5, images or documents). */
@@ -362,7 +364,7 @@ function render(string $title, callable $body, array $opts = []): void
 {
     $u = user();
     $f = flash();
-    $notices = $u ? take_notices((int)$u['id']) : [];
+    $unread = $u ? unread_notice_count((int)$u['id']) : 0;
     $pages = rows('SELECT slug, title, title_ru FROM static_pages ORDER BY FIELD(slug, "about", "privacy", "disclaimer", "offer", "contact", "prices"), slug');
     foreach ($pages as $i => $pp) {
         if (current_lang() === 'ru' && (string)$pp['title_ru'] !== '') {
@@ -395,6 +397,7 @@ function render(string $title, callable $body, array $opts = []): void
       <?php else: ?>
         <span class="small"><a href="/login">Login</a> | <a href="/register">Register</a></span>
       <?php endif; ?>
+      <?php if ($u): ?><a href="/notifications" class="icon-btn bell" title="Notifications" aria-label="Notifications"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><?php if ($unread > 0): ?><span class="bell-n"><?= $unread > 99 ? '99+' : $unread ?></span><?php endif; ?></a><?php endif; ?>
       <a href="/watchlater" class="icon-btn" title="Watch later" aria-label="Watch later">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
       </a>
@@ -434,7 +437,6 @@ function render(string $title, callable $body, array $opts = []): void
 <div class="wrap"><a href="<?= h($opts['back'] ?? '/contracts') ?>" class="back-link"<?= isset($opts['back']) ? '' : ' data-back' ?>><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg> Back</a></div>
 <?php endif; ?>
 <?php if ($f): ?><div class="wrap"><div class="flash <?= $f[1] === 'err' ? 'err' : 'ok' ?>"><?= h($f[0]) ?></div></div><?php endif; ?>
-<?php foreach ($notices as $nt): ?><div class="wrap"><div class="flash ok"><?= h($nt) ?></div></div><?php endforeach; ?>
 <?php $body(); ?>
 </main>
 <footer class="foot">

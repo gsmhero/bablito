@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const SCHEMA_VERSION = 21;
+const SCHEMA_VERSION = 22;
 const ADMIN_EMAIL = 'admin@bablito.ru';
 
 function migrate_if_needed(): void
@@ -222,6 +222,15 @@ function migrate_if_needed(): void
             $pdo->exec("INSERT IGNORE INTO site_settings (k, v) VALUES ('service_price', '100'), ('service_currency', 'RUB')");
             // the price in the Prices page text becomes a placeholder that follows the admin setting
             $pdo->exec("UPDATE static_pages SET body = REPLACE(body, '100 rubles', '{price}'), body_ru = REPLACE(body_ru, '100 рублей', '{price}') WHERE slug = 'prices'");
+        }
+        if ($cur < 22) {
+            foreach (['notices' => ['url', 'VARCHAR(255) NULL'], 'notices ' => ['read_at', 'DATETIME NULL'], 'users' => ['notify_email', 'TINYINT(1) NOT NULL DEFAULT 1']] as $tbl => [$col, $def]) {
+                $tbl = trim($tbl);
+                if (!column_exists($pdo, $tbl, $col)) {
+                    $pdo->exec("ALTER TABLE $tbl ADD COLUMN $col $def");
+                }
+            }
+            $pdo->exec("UPDATE notices SET read_at = shown_at WHERE read_at IS NULL AND shown_at IS NOT NULL");
         }
         $pdo->exec('REPLACE INTO schema_meta (id, version) VALUES (1, ' . SCHEMA_VERSION . ')');
         ensure_admin();

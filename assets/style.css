@@ -337,3 +337,12 @@ details.pe-section[open]>summary{border-bottom:1px solid #eee;margin-bottom:10px
 .thumb picture{align-self:stretch;flex:1 1 auto;min-height:100%}.thumb picture img{min-height:100%}
 .cat-pic.fit-contain img{object-fit:contain}
 .price-note{background:#f3f9ee;border:1px solid #dcefd0;border-radius:8px;padding:8px 12px;margin:12px 0}.price-note p{margin:4px 0}
+
+/* notifications: bell in the header and the list */
+.bell{position:relative}
+.bell-n{position:absolute;top:-4px;right:-6px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:#e00000;color:#fff;font-size:.68rem;font-weight:600;display:flex;align-items:center;justify-content:center;line-height:1}
+.notice-list{display:flex;flex-direction:column;gap:8px;margin:14px 0}
+.notice-item{display:flex;justify-content:space-between;gap:16px;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.notice-item:hover{text-decoration:none;border-color:#bcd}.notice-item.unread{background:#f3f9ee;border-color:#cfe8bf;font-weight:500}
+.notice-time{color:#999;font-size:.8rem;white-space:nowrap}
+@media(max-width:800px){.bar-right .bell{order:3;margin-left:auto}.bar-right .menu{order:4;margin-left:6px}.notice-item{flex-direction:column;gap:4px}}

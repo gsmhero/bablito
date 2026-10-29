@@ -18,17 +18,23 @@ if (!$isOwner && !$isOfferer && !is_admin()) {
 
 switch ($args[1]) {
     case 'comment':
-        log_comment((int)$c['id'], 'offer', (int)$offer['id'], null, (string)($_POST['body'] ?? ''));
+        $cm = log_comment((int)$c['id'], 'offer', (int)$offer['id'], null, (string)($_POST['body'] ?? ''));
+        if ($cm) {
+            notify('offer_comment', $c, ['to' => [$isOwner ? (int)$offer['user_id'] : (int)$c['user_id']], 'url' => $back . '#comments', 'comment' => $cm]);
+        }
         redirect($back . '#comments');
 
     case 'accept':
         if (!$isOwner || $offer['status'] !== 'pending' || $c['status'] !== 'published') {
             forbidden();
         }
+        $others = array_column(rows("SELECT user_id FROM offers WHERE contract_id = ? AND id <> ? AND status = 'pending'", [$c['id'], $offer['id']]), 'user_id');
         $pdo = db();
         $pdo->beginTransaction();
         accept_offer_terms($c, $offer);
         $pdo->commit();
+        notify('offer_accepted', $c, ['to' => [(int)$offer['user_id']], 'url' => '/contract/' . (int)$c['id']]);
+        notify('offer_lost', $c, ['to' => $others, 'url' => '/contracts']);
         flash('Offer accepted. The contract is now active.');
         redirect('/contract/' . $c['id']);
 
@@ -36,6 +42,7 @@ switch ($args[1]) {
         if (!$isOwner || $offer['status'] !== 'pending') {
             forbidden();
         }
+        notify('offer_rejected', $c, ['to' => [(int)$offer['user_id']], 'url' => '/contracts']);
         delete_offers('id = ?', [$offer['id']]);
         flash('Offer rejected and deleted.');
         redirect('/contract/' . $c['id']);
@@ -44,6 +51,7 @@ switch ($args[1]) {
         if (!$isOfferer || $offer['status'] === 'accepted') {
             forbidden();
         }
+        notify('offer_withdrawn', $c, ['to' => [(int)$c['user_id']]]);
         delete_offers('id = ?', [$offer['id']]);
         flash('Your offer was deleted.');
         redirect('/contract/' . $c['id']);
@@ -64,6 +72,7 @@ switch ($args[1]) {
         q('UPDATE offers SET price = ?, days = ?, notes = ?, payment_type = ?, offerer_type = ? WHERE id = ?', [$o['price'], $o['days'], $o['notes'], $o['payment_type'], $o['offerer_type'], $offer['id']]);
         save_offer_steps((int)$offer['id'], $o['steps'], $o['extras']);
         $pdo->commit();
+        notify('offer_edit', $c, ['to' => [(int)$c['user_id']], 'url' => $back]);
         flash('Offer updated.');
         redirect($back);
 }

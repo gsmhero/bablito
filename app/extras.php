@@ -102,9 +102,14 @@ function user_lang(?array $u): string
     return (($u['lang'] ?? '') === 'en') ? 'en' : 'ru';
 }
 
-function add_notice(int $userId, string $text): void
+function add_notice(int $userId, string $text, ?string $url = null): void
 {
-    q('INSERT INTO notices (user_id, text) VALUES (?, ?)', [$userId, $text]);
+    q('INSERT INTO notices (user_id, text, url) VALUES (?, ?, ?)', [$userId, $text, $url]);
+}
+
+function unread_notice_count(int $userId): int
+{
+    return (int)val('SELECT COUNT(*) FROM notices WHERE user_id = ? AND read_at IS NULL', [$userId]);
 }
 
 /** Unseen notices of the user (and marks them as seen). */
@@ -144,9 +149,9 @@ function archive_stale_contracts(): void
         $notice = $ru
             ? "Контракт «{$title}» не нашёл исполнителя за 1 месяц, снят с показа и перенесён в ваш архив. Вы можете повторить его кнопкой «Повторить контракт»."
             : "Your contract \"{$title}\" found no Contractor within 1 month, was removed from display and moved to your archive. You can publish it again with the \"Repeat Contract\" button.";
-        add_notice((int)$c['user_id'], $notice);
+        add_notice((int)$c['user_id'], $notice, '/my?tab=archive');
         $subject = $ru ? 'Контракт перенесён в архив' : 'Your contract was moved to the archive';
         $body = $notice . "\n\n" . ($ru ? 'Архив: ' : 'Archive: ') . $link . "\n\nbablito";
-        smtp_send((string)$c['email'], $subject, $body);
+        queue_mail((string)$c['email'], $subject, $body);
     }
 }

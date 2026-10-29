@@ -45,6 +45,7 @@ switch ($action) {
         $oid = (int)$pdo->lastInsertId();
         save_offer_steps($oid, $o['steps'], $o['extras']);
         $pdo->commit();
+        notify('offer_new', $c, ['to' => [(int)$c['user_id']], 'url' => '/offer/' . $oid, 'extra' => ['en' => 'Offer: ' . money($o['price']) . ' ' . cur_code($c) . ', ' . (int)$o['days'] . ' days', 'ru' => 'Предложение: ' . money($o['price']) . ' ' . cur_code($c) . ', дней: ' . (int)$o['days']]]);
         flash('Offer sent.');
         redirect('/offer/' . $oid);
 
@@ -56,10 +57,16 @@ switch ($action) {
             if ($thread <= 0 || $thread === (int)$c['user_id']) {
                 forbidden();
             }
-            log_comment($id, 'public', null, null, $body, $thread);
+            $cm = log_comment($id, 'public', null, null, $body, $thread);
+            if ($cm) {
+                notify('thread_comment', $c, ['to' => [$isOwner ? $thread : (int)$c['user_id']], 'url' => $isOwner ? $back . '#comments' : $back . '?thread=' . (int)$u['id'] . '#comments', 'comment' => $cm]);
+            }
             redirect($back . ($isOwner ? '?thread=' . $thread : '') . '#comments');
         } elseif (is_participant($c)) {
-            log_comment($id, 'work', null, null, $body);
+            $cm = log_comment($id, 'work', null, null, $body);
+            if ($cm) {
+                notify('work_comment', $c, ['to' => [other_participant($c, (int)$u['id'])], 'url' => $back . '#comments', 'comment' => $cm]);
+            }
         } else {
             forbidden();
         }
@@ -75,6 +82,7 @@ switch ($action) {
             flash($res, 'err');
         } else {
             q('INSERT INTO files (contract_id, user_id, kind, stored_name, original_name, by_contractor) VALUES (?,?,?,?,?,?)', [$id, $u['id'], $res[0], $res[1], $res[2], $isContractor ? 1 : 0]);
+            notify('upload', $c, ['to' => [other_participant($c, (int)$u['id'])], 'extra' => ['en' => 'File: ' . $res[2], 'ru' => 'Файл: ' . $res[2]]]);
             flash('Uploaded.');
         }
         redirect($back);
@@ -86,9 +94,11 @@ switch ($action) {
         if ($c['status'] === 'active') {
             stop_timer($id);
             q("UPDATE contracts SET status = 'paused' WHERE id = ?", [$id]);
+            notify('paused', $c, ['to' => [(int)$c['contractor_id']]]);
             flash('Contract paused.');
         } elseif ($c['status'] === 'paused') {
             q("UPDATE contracts SET status = 'active' WHERE id = ?", [$id]);
+            notify('resumed', $c, ['to' => [(int)$c['contractor_id']]]);
             flash('Contract resumed.');
         }
         redirect($back);
@@ -112,6 +122,7 @@ switch ($action) {
         }
         q("UPDATE contracts SET status = 'terminated' WHERE id = ?", [$id]);
         stop_timer($id);
+        notify('fired', $c, ['to' => [(int)$c['contractor_id']], 'url' => '/my?tab=archive']);
         flash('The contractor was dismissed and the contract moved to the archive.');
         redirect('/my');
 
@@ -120,6 +131,7 @@ switch ($action) {
             forbidden();
         }
         q('UPDATE contracts SET prepaid_at = NOW() WHERE id = ?', [$id]);
+        notify('prepaid', $c, ['to' => [(int)$c['contractor_id']]]);
         flash('Prepayment marked as paid. Payments are settled directly between you and the contractor.');
         redirect($back);
 

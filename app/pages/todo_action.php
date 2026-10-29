@@ -17,7 +17,10 @@ $isStep = ($c['payment_type'] ?? 'finish') === 'step';
 
 switch ($args[1]) {
     case 'comment':
-        log_comment((int)$c['id'], 'todo', null, (int)$todo['id'], (string)($_POST['body'] ?? ''));
+        $cm = log_comment((int)$c['id'], 'todo', null, (int)$todo['id'], (string)($_POST['body'] ?? ''));
+        if ($cm) {
+            notify('todo_comment', $c, ['to' => [other_participant($c, (int)$u['id'])], 'url' => $back . '#todo-' . $todo['id'], 'step' => $todo['name'], 'comment' => $cm]);
+        }
         redirect($back . '#todo-' . $todo['id']);
 
     case 'done':
@@ -29,6 +32,7 @@ switch ($args[1]) {
             redirect($back . '#todo-' . $todo['id']);
         }
         q('UPDATE todos SET done_at = ' . ($todo['done_at'] ? 'NULL' : 'NOW()') . ' WHERE id = ?', [$todo['id']]);
+        notify($todo['done_at'] ? 'todo_undone' : 'todo_done', $c, ['to' => [(int)$c['user_id']], 'url' => $back . '#todo-' . $todo['id'], 'step' => $todo['name']]);
         redirect($back . '#todo-' . $todo['id']);
 
     case 'accept':
@@ -46,6 +50,7 @@ switch ($args[1]) {
                 q('DELETE FROM invoices WHERE id = ?', [$inv['id']]);
             }
             q('UPDATE todos SET accepted_at = NULL WHERE id = ?', [$todo['id']]);
+            notify('todo_unaccepted', $c, ['to' => [(int)$c['contractor_id']], 'url' => $back . '#todo-' . $todo['id'], 'step' => $todo['name']]);
             redirect($back . '#todo-' . $todo['id']);
         }
 
@@ -67,6 +72,8 @@ switch ($args[1]) {
         } elseif ($isStep) {
             flash('Step accepted. The invoice was added to Invoices (Waiting for payment).');
         }
+        $invExtra = $invoiceId ? ['en' => 'An invoice was issued: ' . money($todo['agreed_price'] ?? $todo['price']) . ' ' . cur_code($c) . '. See "Invoices".', 'ru' => 'Выставлен счёт: ' . money($todo['agreed_price'] ?? $todo['price']) . ' ' . cur_code($c) . '. Смотрите раздел «Счета».'] : '';
+        notify($left === 0 ? 'contract_fulfilled' : 'todo_accepted', $c, ['to' => [(int)$c['contractor_id']], 'url' => $invoiceId ? '/invoices?tab=receive' : $back . '#todo-' . $todo['id'], 'step' => $todo['name'], 'extra' => $invExtra]);
         if ($invoiceId && ($_POST['pay'] ?? '') === 'now') {
             redirect($back . '?pay=' . $invoiceId);
         }

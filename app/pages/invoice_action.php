@@ -14,6 +14,8 @@ if ($args[1] === 'pay') {
         forbidden();
     }
     q("UPDATE invoices SET status = 'pending' WHERE id = ?", [$inv['id']]);
+    $ic = load_contract((int)$inv['contract_id']);
+    notify('invoice_paid', $ic, ['to' => [(int)$inv['payee_id']], 'url' => '/invoices?tab=receive', 'extra' => ['en' => 'Amount: ' . money($inv['amount']) . ' ' . $inv['currency'], 'ru' => 'Сумма: ' . money($inv['amount']) . ' ' . $inv['currency']]]);
     flash('Payment sent. The invoice is pending until the contractor confirms it.');
     redirect($back);
 }
@@ -23,6 +25,8 @@ if ($args[1] === 'confirm') {
         forbidden();
     }
     q("UPDATE invoices SET status = 'paid', paid_at = NOW() WHERE id = ?", [$inv['id']]);
+    $ic = load_contract((int)$inv['contract_id']);
+    notify('invoice_confirmed', $ic, ['to' => [(int)$inv['payer_id']], 'url' => '/invoices?tab=pay', 'extra' => ['en' => 'Amount: ' . money($inv['amount']) . ' ' . $inv['currency'], 'ru' => 'Сумма: ' . money($inv['amount']) . ' ' . $inv['currency']]]);
     flash('Payment confirmed.');
     redirect('/invoices?tab=receive');
 }

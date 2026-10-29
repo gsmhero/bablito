@@ -17,5 +17,6 @@ if (val('SELECT id FROM reviews WHERE contract_id = ? AND reviewer_id = ?', [$ci
 }
 q('INSERT INTO reviews (contract_id, reviewer_id, reviewed_id, rating, body) VALUES (?,?,?,?,?)', [$cid, $u['id'], $target, $rating, mb_substr(trim((string)($_POST['body'] ?? '')), 0, 2000)]);
 recompute_rating($target);
+notify('review', $c, ['to' => [$target], 'url' => '/user/' . $target, 'extra' => ['en' => 'Rating: ' . $rating . ' of 5', 'ru' => 'Оценка: ' . $rating . ' из 5']]);
 flash('Review added.');
 redirect('/user/' . $target);
