@@ -35,17 +35,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $u = array_merge($u, ['name' => $name]);
 }
 
-$struct = sections_for(profile_structure(), user_types($u));
+// Every section is in the form; the ones for statuses that are not ticked are hidden and switched on
+// as soon as the user ticks the status (also after a failed save, so required fields stay visible).
+$curTypes = $_SERVER['REQUEST_METHOD'] === 'POST' ? types_from_post($_POST['types'] ?? []) : user_types($u);
+$struct = profile_structure();
 $pvals = profile_values((int)$u['id']);
+$posted = $_SERVER['REQUEST_METHOD'] === 'POST' ? (array)($_POST['pf'] ?? []) : [];
 
-render('Edit profile', function () use ($u, $extra, $error, $struct, $pvals) { ?>
+render('Edit profile', function () use ($u, $extra, $error, $struct, $pvals, $curTypes, $posted) { ?>
 <form method="post" class="narrow card-form wide">
   <?= csrf_field() ?>
   <div class="row between"><h1>Edit Profile</h1><span><a class="small" href="/user/<?= (int)$u['id'] ?>">View public profile</a> <button class="btn small" type="submit">Save Profile</button></span></div>
   <?php if ($error): ?><div class="flash err"><?= h($error) ?></div><?php endif; ?>
   <div class="field-row"><label>Your name <input name="name" value="<?= h($u['name']) ?>" maxlength="120" required></label>
     <label class="check"><input type="checkbox" name="show_name" value="1" <?= $u['show_name'] ? 'checked' : '' ?>> Show in Public</label></div>
-  <div class="small"><b>I act as</b> <span class="muted">(you can choose several)</span><?= party_checkboxes('types', user_types($u)) ?></div>
+  <div class="small"><b>I act as</b> <span class="muted">(you can choose several)</span><?= party_checkboxes('types', $curTypes) ?></div>
   <label class="check"><input type="checkbox" name="notify_email" value="1" <?= (int)($u['notify_email'] ?? 1) === 1 ? 'checked' : '' ?>> Receive e-mail notifications about my contracts</label>
   <label>Time zone <select name="timezone"><option value="">Not set</option><?php $cur = valid_timezone($u['timezone'] ?? null); $zones = common_timezones(); if ($cur && !in_array($cur, $zones, true)) { $zones[] = $cur; } foreach ($zones as $z): ?><option value="<?= h($z) ?>" <?= $cur === $z ? 'selected' : '' ?>><?= h($z) ?></option><?php endforeach; ?></select></label>
   <div class="field-row"><label>Contact Phone <input name="contact_phone" value="<?= h($u['contact_phone']) ?>" maxlength="60"></label>
@@ -61,14 +65,21 @@ render('Edit profile', function () use ($u, $extra, $error, $struct, $pvals) { ?
     <?php endforeach; ?>
   </div>
   <div class="field-row"><label>Field name <input id="new-field-name" maxlength="60"></label><button type="button" class="btn small" id="add-field">Add Field</button></div>
-  <?php foreach ($struct as $s): if (!$s['fields']) { continue; } ?>
-    <h3 class="pf-title"><?= h($s['title']) ?></h3>
-    <?php foreach ($s['fields'] as $f): $pv = $pvals[(int)$f['id']] ?? null; ?>
+  <?php foreach ($struct as $s): if (!$s['fields']) { continue; }
+      $on = in_array($s['type'] ?? 'personal', $curTypes, true); ?>
+  <div class="pf-section" data-type="<?= h($s['type'] ?? 'personal') ?>" <?= $on ? '' : 'hidden' ?>>
+    <h3 class="pf-title"><?= h($s['title']) ?> <span class="pill party-pill"><?= h(party_label($s['type'] ?? null)) ?></span></h3>
+    <?php foreach ($s['fields'] as $f):
+        $pv = $pvals[(int)$f['id']] ?? null;
+        if (isset($posted[$f['id']])) {
+            $pv = ['value' => (string)($posted[$f['id']]['value'] ?? ''), 'is_public' => empty($posted[$f['id']]['public']) ? 0 : 1];
+        } ?>
       <div class="field-row">
         <label><?= h($f['label']) ?><?= $f['required'] ? ' *' : '' ?> <?= profile_input_html($f, $pv ? (string)$pv['value'] : '') ?></label>
         <label class="check"><input type="checkbox" name="pf[<?= (int)$f['id'] ?>][public]" value="1" <?= ($pv ? $pv['is_public'] : $f['default_public']) ? 'checked' : '' ?>> Show in Public</label>
       </div>
     <?php endforeach; ?>
+  </div>
   <?php endforeach; ?>
   <label>About me <textarea name="about" rows="4"><?= h($u['about']) ?></textarea></label>
 </form>

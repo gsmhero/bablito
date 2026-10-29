@@ -425,3 +425,22 @@ window.T = function (s) { return (window.I18N && window.I18N[s]) || s; };
   ed.addEventListener('change', function (e) { if (e.target.matches('.af-toggle, input[name="pair"]')) { refresh(); } });
   refresh();
 })();
+
+(function () {
+  'use strict';
+  // Profile: the sections of a status appear when the status is ticked in "I act as";
+  // fields of hidden sections are switched off so they are neither required nor sent.
+  var form = document.querySelector('form:has(.pf-section)');
+  if (!form) { return; }
+  var apply = function () {
+    var on = {};
+    form.querySelectorAll('input[name="types[]"]').forEach(function (cb) { on[cb.value] = cb.checked; });
+    form.querySelectorAll('.pf-section').forEach(function (sec) {
+      var show = !!on[sec.getAttribute('data-type')];
+      sec.hidden = !show;
+      sec.querySelectorAll('input, select, textarea').forEach(function (el) { el.disabled = !show; });
+    });
+  };
+  form.addEventListener('change', function (e) { if (e.target.matches('input[name="types[]"]')) { apply(); } });
+  apply();
+})();
