@@ -127,6 +127,7 @@ require_once ROOT . '/app/invoice_templates.php';
 require_once ROOT . '/app/mail.php';
 require_once ROOT . '/app/email_template.php';
 require_once ROOT . '/app/tax.php';
+require_once ROOT . '/app/yookassa.php';
 require_once ROOT . '/app/invoice_pdf.php';
 require_once ROOT . '/app/notify.php';
 

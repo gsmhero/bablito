@@ -146,7 +146,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             admin_invoices_post($do, $self);
             break;
         case 'settings':
-            if ($do === 'test_mail') {
+            if ($do === 'yk_save') {
+                $vat = (int)($_POST['yk_vat_code'] ?? 1);
+                $ts = (int)($_POST['yk_tax_system'] ?? 0);
+                q("REPLACE INTO site_settings (k, v) VALUES ('yk_receipt', ?), ('yk_vat_code', ?), ('yk_tax_system', ?)", [empty($_POST['yk_receipt']) ? '0' : '1', (string)($vat >= 1 && $vat <= 6 ? $vat : 1), (string)($ts >= 1 && $ts <= 6 ? $ts : 0)]);
+                flash('YooKassa settings saved.');
+            } elseif ($do === 'test_mail') {
                 $err = smtp_send((string)$me['email'], 'bablito test e-mail', "This is a test message from bablito.\nIf you can read it, e-mail notifications work.", email_sample_html(user_lang($me)));
                 flash($err === null ? 'Test e-mail sent to ' . $me['email'] . '.' : 'The test e-mail failed: ' . $err, $err === null ? 'ok' : 'err');
             } else {
@@ -354,6 +359,33 @@ render('Admin', function () use ($tab) {
       <button class="btn" type="submit" name="do" value="test_mail">Send a test e-mail to me</button>
       <a class="btn" href="/admin/settings?preview=en" target="_blank">Preview (EN)</a>
       <a class="btn" href="/admin/settings?preview=ru" target="_blank">Preview (RU)</a>
+    </form>
+    <?php $ykOn = yk_configured(); $ykRc = (string)(val("SELECT v FROM site_settings WHERE k = 'yk_receipt'") ?? '0') === '1';
+        $ykVat = (int)(val("SELECT v FROM site_settings WHERE k = 'yk_vat_code'") ?: 1); $ykTs = (int)(val("SELECT v FROM site_settings WHERE k = 'yk_tax_system'") ?: 0);
+        $ykPays = rows('SELECT p.*, c.title FROM payments p LEFT JOIN contracts c ON c.id = p.contract_id ORDER BY p.id DESC LIMIT 15'); ?>
+    <form method="post" action="/admin/settings" class="card-form wide">
+      <?= csrf_field() ?>
+      <h3>YooKassa payments</h3>
+      <p class="small">Status: <b><?= $ykOn ? 'keys are installed, payments are on' : 'keys are not installed (accepting an offer is free)' ?></b>.
+        The service fee (<?= h(service_price_text('en')) ?>) is paid on the YooKassa page when the author accepts an offer.</p>
+      <p class="small muted">In the YooKassa account (Integration &rarr; HTTP notifications) add the address <b><?= h(rtrim(env('SITE_URL'), '/')) ?>/yookassa/webhook</b> for the events <b>payment.succeeded</b> and <b>payment.canceled</b>. Without it the offer is still accepted when the author returns to the site after paying.</p>
+      <label class="check"><input type="checkbox" name="yk_receipt" value="1" <?= $ykRc ? 'checked' : '' ?>> Send a receipt (54-FZ) with each payment (switch on only if receipts are set up in the YooKassa account)</label>
+      <div class="field-row">
+        <label>VAT code of the service
+          <select name="yk_vat_code"><?php foreach ([1 => 'Without VAT', 2 => 'VAT 0%', 3 => 'VAT 10%', 4 => 'VAT 20%', 5 => 'VAT 10/110', 6 => 'VAT 20/120'] as $k => $l): ?><option value="<?= $k ?>" <?= $ykVat === $k ? 'selected' : '' ?>><?= h($l) ?></option><?php endforeach; ?></select></label>
+        <label>Tax system of the shop
+          <select name="yk_tax_system"><option value="0">Not set (the shop setting is used)</option><?php foreach ([1 => 'General (OSN)', 2 => 'Simplified, income (USN 6%)', 3 => 'Simplified, income minus expenses (USN 15%)', 4 => 'Unified agricultural tax', 5 => 'Patent', 6 => 'Professional income (self-employed)'] as $k => $l): ?><option value="<?= $k ?>" <?= $ykTs === $k ? 'selected' : '' ?>><?= h($l) ?></option><?php endforeach; ?></select></label>
+      </div>
+      <button class="btn green" type="submit" name="do" value="yk_save">Save</button>
+      <?php if ($ykPays): ?>
+      <h3>Latest payments</h3>
+      <table class="admin-table">
+        <tr><th>ID</th><th>Date</th><th>Contract</th><th class="right">Amount</th><th>Status</th><th>YooKassa ID</th></tr>
+        <?php foreach ($ykPays as $pp): ?>
+          <tr><td><?= (int)$pp['id'] ?></td><td><?= h($pp['created_at']) ?></td><td><?= h($pp['title'] ?? '-') ?></td><td class="right"><?= h(money($pp['amount'])) ?> <?= h($pp['currency']) ?></td><td><?= h($pp['status']) ?><?= $pp['error'] ? ' <span class="muted small">(' . h($pp['error']) . ')</span>' : '' ?></td><td class="small"><?= h($pp['yk_id'] ?? '') ?></td></tr>
+        <?php endforeach; ?>
+      </table>
+      <?php endif; ?>
     </form>
   <?php elseif ($tab === 'categories'): $cats = rows('SELECT c.*, (SELECT COUNT(*) FROM contracts x WHERE x.category_id = c.id) AS n FROM categories c ORDER BY c.name'); ?>
     <p class="small muted">The default image is shown on contracts of this category that have no uploaded images.</p>

@@ -78,7 +78,7 @@ function other_participant(array $c, int $actorId): ?int
 function notify(string $kind, array $contract, array $opts): void
 {
     try {
-        $actor = user();
+        $actor = $opts['actor'] ?? user(); // a payment webhook has no session: it passes the acting user
         if (!$actor || !isset(NOTIFY_PHRASES[$kind])) {
             return;
         }

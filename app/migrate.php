@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const SCHEMA_VERSION = 24;
+const SCHEMA_VERSION = 25;
 const ADMIN_EMAIL = 'admin@bablito.ru';
 
 function migrate_if_needed(): void
@@ -243,6 +243,24 @@ function migrate_if_needed(): void
             if (!column_exists($pdo, 'users', 'tax_json')) {
                 $pdo->exec('ALTER TABLE users ADD COLUMN tax_json TEXT NULL');
             }
+        }
+        if ($cur < 25) {
+            // service-fee payments through YooKassa (see app/yookassa.php); no foreign keys: offers can be deleted later
+            $pdo->exec("CREATE TABLE IF NOT EXISTS payments (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  contract_id INT UNSIGNED NOT NULL,
+  offer_id INT UNSIGNED NOT NULL,
+  yk_id VARCHAR(64) NULL,
+  amount DECIMAL(12,2) NOT NULL,
+  currency VARCHAR(3) NOT NULL DEFAULT 'RUB',
+  status VARCHAR(16) NOT NULL DEFAULT 'pending',
+  confirmation_url TEXT NULL,
+  error VARCHAR(500) NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  paid_at DATETIME NULL,
+  INDEX (yk_id), INDEX (offer_id), INDEX (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
         }
         $pdo->exec('REPLACE INTO schema_meta (id, version) VALUES (1, ' . SCHEMA_VERSION . ')');
         ensure_admin();

@@ -28,13 +28,17 @@ switch ($args[1]) {
         if (!$isOwner || $offer['status'] !== 'pending' || $c['status'] !== 'published') {
             forbidden();
         }
-        $others = array_column(rows("SELECT user_id FROM offers WHERE contract_id = ? AND id <> ? AND status = 'pending'", [$c['id'], $offer['id']]), 'user_id');
-        $pdo = db();
-        $pdo->beginTransaction();
-        accept_offer_terms($c, $offer);
-        $pdo->commit();
-        notify('offer_accepted', $c, ['to' => [(int)$offer['user_id']], 'url' => '/contract/' . (int)$c['id']]);
-        notify('offer_lost', $c, ['to' => $others, 'url' => '/contracts']);
+        // With YooKassa connected the service fee is paid first; the offer is accepted when the payment succeeds.
+        if (yk_configured() && service_price()[0] > 0) {
+            [$payUrl, $payErr] = payment_start($u, $c, $offer);
+            if ($payUrl === null) {
+                flash('The payment could not be started: ' . $payErr, 'err');
+                redirect($back);
+            }
+            header('Location: ' . $payUrl, true, 303);
+            exit;
+        }
+        accept_offer_and_notify($c, $offer, $u);
         flash('Offer accepted. The contract is now active.');
         redirect('/contract/' . $c['id']);
 

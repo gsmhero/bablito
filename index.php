@@ -17,6 +17,8 @@ $routes = [
     ['POST', '#^/invoice/(\d+)/(pay|confirm)$#', 'invoice_action'],
     ['GET',  '#^/invoice/(\d+)$#',               'invoice_view'],
     ['GET',  '#^/invoice/(\d+)\.pdf$#',        'invoice_pdf'],
+    ['GET',  '#^/payment/return/(\d+)$#',       'payment_return'],
+    ['POST', '#^/yookassa/webhook$#',            'yookassa_webhook'],
     ['GET',  '#^/contract/(\d+)/clock$#',       'contract_clock'],
     ['POST', '#^/contract/(\d+)/clock$#',       'contract_clock'],
     ['GET',  '#^/contract/new$#',                  'contract_edit'],
@@ -51,7 +53,7 @@ foreach ($routes as [$m, $re, $page]) {
     if ($m === $method && preg_match($re, $path, $match)) {
         array_shift($match);
         $args = $match;
-        if ($method === 'POST') {
+        if ($method === 'POST' && $page !== 'yookassa_webhook') { // the webhook comes from YooKassa, not from a form
             csrf_check();
         }
         require __DIR__ . '/app/pages/' . $page . '.php';

@@ -128,7 +128,7 @@ render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $com
   </div>
 </form>
 
-<?php if ($decidable): ?>
+<?php if ($decidable): $liveFee = yk_configured() && service_price()[0] > 0; ?>
 <form id="accept-form" method="post" action="/offer/<?= (int)$offer['id'] ?>/accept"><?= csrf_field() ?></form>
 <div class="modal" id="accept-dialog" hidden>
   <div class="modal-card pay-card" role="dialog" aria-modal="true" aria-labelledby="pay-title">
@@ -143,13 +143,18 @@ render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $com
       </svg>
     </div>
     <h2 id="pay-title">Payment</h2>
-    <p class="muted small">Demo payment window. No real money is charged.</p>
+    <?php if ($liveFee): ?><p class="muted small">You will be taken to the secure YooKassa page to pay the service fee. The offer is accepted as soon as the payment is confirmed.</p>
+    <?php else: ?><p class="muted small">Demo payment window. No real money is charged.</p><?php endif; ?>
     <table class="pay-table">
       <tr><td>Contract</td><td><?= h($c['title']) ?></td></tr>
       <tr><td>Contractor</td><td><?= h($offer['oname']) ?></td></tr>
       <tr><td>Offer days</td><td><?= (int)$offer['days'] ?></td></tr>
+      <?php if ($liveFee): ?>
+      <tr class="pay-total"><td>Service fee</td><td><?= h(service_price_text(user_lang($u))) ?></td></tr>
+      <?php else: ?>
       <tr><td>Payment method</td><td>Card &bull;&bull;&bull;&bull; 4242</td></tr>
       <tr class="pay-total"><td>Amount</td><td><?= h(cur_symbol($c)) ?>&nbsp;<?= money($offer['price']) ?></td></tr>
+      <?php endif; ?>
     </table>
     <div class="row between pay-actions">
       <button type="submit" form="accept-form" class="btn green" data-close="accept-dialog">Proceed</button>
