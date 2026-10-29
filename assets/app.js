@@ -430,7 +430,8 @@ window.T = function (s) { return (window.I18N && window.I18N[s]) || s; };
   'use strict';
   // Profile: the sections of a status appear when the status is ticked in "I act as";
   // fields of hidden sections are switched off so they are neither required nor sent.
-  var form = document.querySelector('form:has(.pf-section)');
+  var firstSec = document.querySelector('.pf-section');
+  var form = firstSec ? firstSec.closest('form') : null;
   if (!form) { return; }
   var apply = function () {
     var on = {};
