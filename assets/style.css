@@ -347,3 +347,5 @@ details.pe-section[open]>summary{border-bottom:1px solid #eee;margin-bottom:10px
 .notice-time{color:#999;font-size:.8rem;white-space:nowrap}
 @media(max-width:800px){.bar-right .bell{order:3;margin-left:auto}.bar-right .menu{order:4;margin-left:6px}.notice-item{flex-direction:column;gap:4px}}
 .inv-sum{border-bottom:2px solid var(--green,#00bc1f);padding-bottom:12px;margin-bottom:14px}.inv-sum h1{margin:0 0 8px}
+
+.pay-info{text-align:center}.pay-info p{margin:.4em 0}.pay-info .pay-phone svg{max-width:110px}.pay-big{font-size:1.25rem;color:var(--green)}.pay-info .pay-actions{justify-content:center;gap:10px;margin-top:18px}

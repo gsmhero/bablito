@@ -108,11 +108,23 @@ function payment_dialog_html(array $inv, string $domId, bool $open, string $back
 </div>
 <?php if ($byPhone): ?>
 <div class="modal" id="<?= h($infoId) ?>" hidden>
-  <div class="modal-card pay-card" role="dialog" aria-modal="true">
+  <div class="modal-card pay-card pay-info" role="dialog" aria-modal="true">
+    <div class="pay-art pay-phone">
+      <svg viewBox="0 0 120 190" role="img" aria-label="Mobile phone">
+        <rect x="14" y="4" width="92" height="182" rx="16" fill="#12ad00"/>
+        <rect x="24" y="26" width="72" height="124" rx="6" fill="#fff" opacity=".95"/>
+        <rect x="48" y="12" width="24" height="5" rx="2.5" fill="#0b7d00"/>
+        <circle cx="60" cy="168" r="8" fill="#0b7d00"/>
+        <circle cx="60" cy="74" r="20" fill="#12ad00"/>
+        <path d="M52 66c0-2 2-3 4-2l3 2c1 1 1 2 0 3l-1 2c2 4 4 6 8 8l2-1c1-1 2-1 3 0l2 3c1 2 0 4-2 4-9 0-18-9-19-19z" fill="#fff"/>
+        <rect x="38" y="108" width="44" height="6" rx="3" fill="#12ad00" opacity=".35"/>
+        <rect x="46" y="122" width="28" height="6" rx="3" fill="#12ad00" opacity=".2"/>
+      </svg>
+    </div>
     <h2>Payment</h2>
     <p>I accept payments via phone number</p>
-    <p><b><?= $phone !== '' ? h($phone) : '&mdash;' ?></b></p>
-    <?php if ($banks !== ''): ?><p>preferred banks:</p><p><b><?= nl2br(h($banks)) ?></b></p><?php endif; ?>
+    <p class="pay-big"><b><?= $phone !== '' ? h($phone) : '&mdash;' ?></b></p>
+    <?php if ($banks !== ''): ?><p>preferred banks:</p><p class="pay-big"><b><?= nl2br(h($banks)) ?></b></p><?php endif; ?>
     <div class="row between pay-actions">
       <?= payment_paid_form($inv, $back, $infoId, 'I have paid') ?>
       <button type="button" class="btn" data-close="<?= h($infoId) ?>">Cancel</button>
