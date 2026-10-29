@@ -101,6 +101,9 @@ function notify(string $kind, array $contract, array $opts): void
 
             // short text for the notification center
             $short = $who . ' ' . $what . ': ' . $title;
+            if (!empty($opts['step'])) {
+                $short .= ' / ' . $opts['step'];
+            }
             if ($comment && (string)$comment['body'] !== '') {
                 $short .= ' — ' . mb_strimwidth((string)$comment['body'], 0, 140, '…');
             }
