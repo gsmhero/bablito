@@ -10,7 +10,7 @@ function mail_log(string $line): void
 }
 
 /** Sends a plain-text e-mail. Returns null on success or an error text. */
-function smtp_send(string $to, string $subject, string $text): ?string
+function smtp_send(string $to, string $subject, string $text, ?string $html = null): ?string
 {
     $host = env('SMTP_HOST');
     $port = (int)(env('SMTP_PORT') ?: 587);
@@ -93,10 +93,16 @@ function smtp_send(string $to, string $subject, string $text): ?string
             'Date: ' . date('r'),
             'Message-ID: <' . bin2hex(random_bytes(10)) . '@' . $helo . '>',
             'MIME-Version: 1.0',
-            'Content-Type: text/plain; charset=UTF-8',
-            'Content-Transfer-Encoding: base64',
+            $html === null ? 'Content-Type: text/plain; charset=UTF-8' : 'Content-Type: multipart/alternative; boundary="' . ($boundary = 'bbl_' . bin2hex(random_bytes(8))) . '"',
         ];
-        $body = chunk_split(base64_encode($text), 76, "\r\n");
+        if ($html === null) {
+            $headers[] = 'Content-Transfer-Encoding: base64';
+            $body = chunk_split(base64_encode($text), 76, "\r\n");
+        } else {
+            $body = '--' . $boundary . "\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n" . chunk_split(base64_encode($text), 76, "\r\n")
+                . '--' . $boundary . "\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n" . chunk_split(base64_encode($html), 76, "\r\n")
+                . '--' . $boundary . "--\r\n";
+        }
         fwrite($fp, implode("\r\n", $headers) . "\r\n\r\n" . $body . "\r\n.\r\n");
         $r = $read();
         if (strpos($r, '250') !== 0) {

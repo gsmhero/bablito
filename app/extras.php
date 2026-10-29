@@ -152,6 +152,18 @@ function archive_stale_contracts(): void
         add_notice((int)$c['user_id'], $notice, '/my?tab=archive');
         $subject = $ru ? 'Контракт перенесён в архив' : 'Your contract was moved to the archive';
         $body = $notice . "\n\n" . ($ru ? 'Архив: ' : 'Archive: ') . $link . "\n\nbablito";
-        queue_mail((string)$c['email'], $subject, $body);
+        $site = rtrim(env('SITE_URL'), '/');
+        $html = email_html([
+            'lang' => $ru ? 'ru' : 'en', 'title' => $subject, 'preheader' => $subject . ': ' . $title,
+            'tag' => $ru ? 'Архив' : 'Archive', 'who' => 'bablito', 'when' => date('d.m.Y H:i'), 'headline' => $subject,
+            'rows' => [[$ru ? 'Контракт' : 'Contract', $title]],
+            'comment' => ['body' => $notice, 'files' => false, 'label' => $ru ? 'Что произошло' : 'What happened'],
+            'button' => $ru ? 'Открыть архив' : 'Open archive', 'url' => $link,
+            'link_hint' => $ru ? 'Если кнопка не работает, откройте ссылку:' : 'If the button does not work, open this link:',
+            'footer' => $ru ? 'Вы получили это письмо, потому что опубликовали этот контракт.' : 'You get this message because you published this contract.',
+            'settings_label' => $ru ? 'Отключить уведомления по почте' : 'Turn off e-mail notifications',
+            'settings_url' => $site . '/profile', 'site_url' => $site,
+        ]);
+        queue_mail((string)$c['email'], $subject, $body, $html);
     }
 }

@@ -6,6 +6,12 @@ $me = require_admin();
 $tab = $args[0] ?? 'users';
 $self = '/admin/' . $tab;
 
+if ($tab === 'settings' && isset($_GET['preview'])) {
+    header('Content-Type: text/html; charset=utf-8');
+    echo email_sample_html($_GET['preview'] === 'ru' ? 'ru' : 'en');
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $do = (string)($_POST['do'] ?? '');
     switch ($tab) {
@@ -141,7 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             break;
         case 'settings':
             if ($do === 'test_mail') {
-                $err = smtp_send((string)$me['email'], 'bablito test e-mail', "This is a test message from bablito.\nIf you can read it, e-mail notifications work.");
+                $err = smtp_send((string)$me['email'], 'bablito test e-mail', "This is a test message from bablito.\nIf you can read it, e-mail notifications work.", email_sample_html(user_lang($me)));
                 flash($err === null ? 'Test e-mail sent to ' . $me['email'] . '.' : 'The test e-mail failed: ' . $err, $err === null ? 'ok' : 'err');
             } else {
                 $price = str_replace([' ', "\u{00A0}", ','], ['', '', '.'], trim((string)($_POST['service_price'] ?? '')));
@@ -285,6 +291,8 @@ render('Admin', function () use ($tab) {
       <h3>E-mail notifications</h3>
       <p class="small muted">Authors get an e-mail (and a notice on the site) when a contract without a Contractor is archived after one month. The mail server is set by the SMTP secrets of the repository.</p>
       <button class="btn" type="submit" name="do" value="test_mail">Send a test e-mail to me</button>
+      <a class="btn" href="/admin/settings?preview=en" target="_blank">Preview (EN)</a>
+      <a class="btn" href="/admin/settings?preview=ru" target="_blank">Preview (RU)</a>
     </form>
   <?php elseif ($tab === 'categories'): $cats = rows('SELECT c.*, (SELECT COUNT(*) FROM contracts x WHERE x.category_id = c.id) AS n FROM categories c ORDER BY c.name'); ?>
     <p class="small muted">The default image is shown on contracts of this category that have no uploaded images.</p>

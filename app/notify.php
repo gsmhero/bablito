@@ -5,6 +5,28 @@ declare(strict_types=1);
 // notification center (bell in the header) and an e-mail with who did what, the comment text
 // (attachments are never sent, only the status "Comment has attachments") and a direct link.
 
+const NOTIFY_TAGS = [
+    'en' => ['offer' => 'Offer', 'comment' => 'Comment', 'step' => 'Step', 'contract' => 'Contract', 'invoice' => 'Invoice', 'review' => 'Review'],
+    'ru' => ['offer' => 'Предложение', 'comment' => 'Комментарий', 'step' => 'Шаг', 'contract' => 'Контракт', 'invoice' => 'Счёт', 'review' => 'Отзыв'],
+];
+
+function notify_tag_key(string $kind): string
+{
+    if (strpos($kind, 'offer') === 0) {
+        return 'offer';
+    }
+    if (substr($kind, -8) === '_comment' || $kind === 'thread_comment') {
+        return 'comment';
+    }
+    if (strpos($kind, 'todo') === 0) {
+        return 'step';
+    }
+    if (strpos($kind, 'invoice') === 0) {
+        return 'invoice';
+    }
+    return $kind === 'review' ? 'review' : 'contract';
+}
+
 const NOTIFY_PHRASES = [
     'offer_new'          => ['en' => 'made an offer on your contract', 'ru' => 'сделал(а) предложение по вашему контракту'],
     'offer_edit'         => ['en' => 'changed their offer', 'ru' => 'изменил(а) своё предложение'],
@@ -99,6 +121,32 @@ function notify(string $kind, array $contract, array $opts): void
                 ? 'Вы получили это письмо, потому что участвуете в этом контракте. Уведомления по почте можно отключить в профиле.'
                 : 'You get this message because you take part in this contract. You can turn e-mail notifications off in your profile.';
 
+            $rowsHtml = [[$ru ? 'Контракт' : 'Contract', $title]];
+            if (!empty($opts['step'])) {
+                $rowsHtml[] = [$ru ? 'Шаг' : 'Step', (string)$opts['step']];
+            }
+            if ($ex !== '') {
+                $rowsHtml[] = [$ru ? 'Подробности' : 'Details', $ex];
+            }
+            $html = email_html([
+                'lang' => $L,
+                'title' => $who . ' ' . $what,
+                'preheader' => $who . ' ' . $what . ' - ' . $title,
+                'tag' => NOTIFY_TAGS[$L][notify_tag_key($kind)],
+                'who' => $who,
+                'when' => date('d.m.Y H:i'),
+                'headline' => $who . ' ' . $what,
+                'rows' => $rowsHtml,
+                'comment' => $comment ? ['body' => (string)$comment['body'], 'files' => !empty($comment['files']), 'label' => $ru ? 'Комментарий' : 'Comment', 'files_label' => $ru ? 'К комментарию приложены файлы' : 'Comment has attachments'] : null,
+                'button' => $ru ? 'Открыть в bablito' : 'Open in bablito',
+                'url' => $url,
+                'link_hint' => $ru ? 'Если кнопка не работает, откройте ссылку:' : 'If the button does not work, open this link:',
+                'footer' => $ru ? 'Вы получили это письмо, потому что участвуете в этом контракте.' : 'You get this message because you take part in this contract.',
+                'settings_label' => $ru ? 'Отключить уведомления по почте' : 'Turn off e-mail notifications',
+                'settings_url' => site_base_url() . '/profile',
+                'site_url' => site_base_url(),
+            ]);
+
             // short text for the notification center
             $short = $who . ' ' . $what . ': ' . $title;
             if (!empty($opts['step'])) {
@@ -113,7 +161,7 @@ function notify(string $kind, array $contract, array $opts): void
             add_notice($uid, $short, $path);
 
             if ((int)($r['notify_email'] ?? 1) === 1 && $r['email'] !== '') {
-                queue_mail((string)$r['email'], 'bablito: ' . $who . ' ' . $what, implode("\n", $lines));
+                queue_mail((string)$r['email'], 'bablito: ' . $who . ' ' . $what, implode("\n", $lines), $html);
             }
         }
     } catch (Throwable $e) {
@@ -123,10 +171,10 @@ function notify(string $kind, array $contract, array $opts): void
 
 /* ---------- mails are sent after the page has been delivered ---------- */
 
-function queue_mail(string $to, string $subject, string $body): void
+function queue_mail(string $to, string $subject, string $body, ?string $html = null): void
 {
     static $registered = false;
-    $GLOBALS['mail_queue'][] = [$to, $subject, $body];
+    $GLOBALS['mail_queue'][] = [$to, $subject, $body, $html];
     if (!$registered) {
         $registered = true;
         register_shutdown_function('flush_mail_queue');
@@ -147,7 +195,7 @@ function flush_mail_queue(): void
         }
         @fastcgi_finish_request();
     }
-    foreach ($queue as [$to, $subject, $body]) {
-        smtp_send($to, $subject, $body);
+    foreach ($queue as [$to, $subject, $body, $html]) {
+        smtp_send($to, $subject, $body, $html);
     }
 }
