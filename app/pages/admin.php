@@ -283,7 +283,7 @@ render('Admin', function () use ($tab) {
     <form method="post" action="/admin/taxes" class="card-form wide">
       <?= csrf_field() ?>
       <h3>Taxes on invoices</h3>
-      <p class="small muted">The To Do price is the base of an invoice. Net amount, VAT and total are calculated from it with these settings every time an invoice is shown, mailed or put in the PDF, so a change here recalculates all unpaid invoices (<b><?= $open ?></b> now). A paid invoice keeps the numbers it had when the payment was confirmed.</p>
+      <p class="small muted">The To Do price is the base of an invoice. Net amount, VAT and total are calculated from it with these settings every time an invoice is shown, mailed or put in the PDF, so a change here recalculates all unpaid invoices (<b><?= $open ?></b> now). The tax mode, VAT rate, price type and exemption rule are the defaults: a contractor can set their own in their profile, and the invoice then uses the contractor's regime. A paid invoice keeps the numbers it had when the payment was confirmed.</p>
       <div class="field-row">
         <label>Tax mode
           <select name="tax_mode"><?php foreach (TAX_MODES as $k => $l): ?><option value="<?= h($k) ?>" <?= $tx['tax_mode'] === $k ? 'selected' : '' ?>><?= h($l) ?></option><?php endforeach; ?></select></label>

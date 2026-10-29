@@ -135,6 +135,59 @@ function tax_calc(float $amount, float $rate, array $cfg): array
     return ['net' => $net, 'vat' => $vat, 'total' => $total, 'rate' => $rate, 'included' => $included, 'no_vat' => false, 'note_en' => '', 'note_ru' => ''];
 }
 
+/**
+ * Site settings with the issuer's own regime on top. The invoice is issued by the contractor, so the contractor's
+ * profile (users.tax_json: tax_mode, default_vat_rate, vat_included_by_default, exemption_rule[_ru]) overrides the
+ * site-wide admin defaults; every key the contractor left empty falls back to the admin value. Item rules, rounding,
+ * the USN texts, currency and number format always stay site-wide.
+ */
+function tax_config_for_user(?string $userJson): array
+{
+    $cfg = tax_config();
+    $u = json_decode((string)$userJson, true);
+    if (!is_array($u)) {
+        return $cfg;
+    }
+    if (isset(TAX_MODES[$u['tax_mode'] ?? ''])) {
+        $cfg['tax_mode'] = $u['tax_mode'];
+    }
+    if (isset($u['default_vat_rate']) && is_numeric($u['default_vat_rate'])) {
+        $cfg['default_vat_rate'] = (float)$u['default_vat_rate'];
+    }
+    if (isset($u['vat_included_by_default']) && $u['vat_included_by_default'] !== '') {
+        $cfg['vat_included_by_default'] = (bool)$u['vat_included_by_default'];
+    }
+    foreach (['exemption_rule', 'exemption_rule_ru'] as $k) {
+        if (trim((string)($u[$k] ?? '')) !== '') {
+            $cfg[$k] = trim((string)$u[$k]);
+        }
+    }
+    return $cfg;
+}
+
+/** Validates the profile form fields; returns the JSON to store (null = use the site defaults) or an error text. */
+function tax_user_json_from_post(array $p): array
+{
+    $mode = (string)($p['tax_mode'] ?? '');
+    $rate = str_replace(',', '.', trim((string)($p['tax_vat_rate'] ?? '')));
+    $inc = (string)($p['tax_vat_included'] ?? '');
+    $rule = trim((string)($p['tax_exemption'] ?? ''));
+    if ($mode !== '' && !isset(TAX_MODES[$mode])) {
+        return [null, 'Choose a tax regime from the list.'];
+    }
+    if ($rate !== '' && (!is_numeric($rate) || (float)$rate < 0 || (float)$rate > 100)) {
+        return [null, 'The VAT rate must be a number from 0 to 100.'];
+    }
+    if ($mode === '' && $rate === '' && $inc === '' && $rule === '') {
+        return [null, null];
+    }
+    $out = ['tax_mode' => $mode, 'vat_included_by_default' => $inc === '' ? '' : ($inc === '1'), 'exemption_rule' => mb_substr($rule, 0, 400)];
+    if ($rate !== '') {
+        $out['default_vat_rate'] = (float)$rate;
+    }
+    return [json_encode($out, JSON_UNESCAPED_UNICODE), null];
+}
+
 /** Tax numbers of an invoice row: the frozen ones when it is paid, else calculated now from the current settings. */
 function tax_for_invoice(array $inv): array
 {
@@ -144,7 +197,7 @@ function tax_for_invoice(array $inv): array
             return $frozen;
         }
     }
-    $cfg = tax_config();
+    $cfg = tax_config_for_user(!empty($inv['payee_id']) ? (string)(val('SELECT tax_json FROM users WHERE id = ?', [$inv['payee_id']]) ?? '') : null);
     $task = (string)($inv['todo_name'] ?? '');
     if (!array_key_exists('todo_name', $inv) && !empty($inv['todo_id'])) {
         $task = (string)(val('SELECT name FROM todos WHERE id = ?', [$inv['todo_id']]) ?? '');

@@ -13,6 +13,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Enter your name.';
     } elseif ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = 'Contact email is invalid.';
+    } elseif ([$taxJson, $taxErr] = tax_user_json_from_post($_POST) and $taxErr !== null) {
+        $error = $taxErr;
     } elseif (($perr = profile_save_values((int)$u['id'], sections_for(profile_structure(), types_from_post($_POST['types'] ?? [])), (array)($_POST['pf'] ?? []))) !== null) {
         $error = $perr;
     } else {
@@ -24,10 +26,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $fields[] = ['label' => mb_substr($k, 0, 60), 'value' => mb_substr($v, 0, 190), 'public' => empty($e['public']) ? 0 : 1];
             }
         }
-        q('UPDATE users SET name=?, about=?, contact_phone=?, contact_email=?, show_name=?, show_phone=?, show_email=?, extra_fields=?, timezone=?, user_types=?, notify_email=? WHERE id=?', [
+        q('UPDATE users SET name=?, about=?, contact_phone=?, contact_email=?, show_name=?, show_phone=?, show_email=?, extra_fields=?, timezone=?, user_types=?, notify_email=?, tax_json=? WHERE id=?', [
             $name, mb_substr(trim((string)($_POST['about'] ?? '')), 0, 4000), mb_substr(trim((string)($_POST['contact_phone'] ?? '')), 0, 60), $email,
             empty($_POST['show_name']) ? 0 : 1, empty($_POST['show_phone']) ? 0 : 1, empty($_POST['show_email']) ? 0 : 1,
-            json_encode($fields, JSON_UNESCAPED_UNICODE), valid_timezone((string)($_POST['timezone'] ?? '')), implode(',', types_from_post($_POST['types'] ?? [])), empty($_POST['notify_email']) ? 0 : 1, $u['id'],
+            json_encode($fields, JSON_UNESCAPED_UNICODE), valid_timezone((string)($_POST['timezone'] ?? '')), implode(',', types_from_post($_POST['types'] ?? [])), empty($_POST['notify_email']) ? 0 : 1, $taxJson, $u['id'],
         ]);
         flash('Profile saved.');
         redirect('/profile');
@@ -81,6 +83,22 @@ render('Edit profile', function () use ($u, $extra, $error, $struct, $pvals, $cu
     <?php endforeach; ?>
   </div>
   <?php endforeach; ?>
+  <?php $tu = json_decode((string)($u['tax_json'] ?? ''), true); $tu = is_array($tu) ? $tu : [];
+      if ($_SERVER['REQUEST_METHOD'] === 'POST') { $tu = ['tax_mode' => (string)($_POST['tax_mode'] ?? ''), 'default_vat_rate' => (string)($_POST['tax_vat_rate'] ?? ''), 'vat_included_by_default' => ($_POST['tax_vat_included'] ?? ''), 'exemption_rule' => (string)($_POST['tax_exemption'] ?? '')]; }
+      $tv = $tu['vat_included_by_default'] ?? ''; $tinc = $tv === '' ? '' : ($tv === true || $tv === '1' || $tv === 1 ? '1' : '0'); ?>
+  <div class="pf-section" id="tax-section">
+    <h3 class="pf-title">Tax regime for invoices you issue</h3>
+    <p class="small muted">Used in the invoices where you are the Contractor. Leave "Site default" if you are not sure; the site then uses its general tax settings.</p>
+    <div class="field-row">
+      <label>Tax regime
+        <select name="tax_mode"><option value="">Site default</option><?php foreach (TAX_MODES as $k => $l): ?><option value="<?= h($k) ?>" <?= ($tu['tax_mode'] ?? '') === $k ? 'selected' : '' ?>><?= h($l) ?></option><?php endforeach; ?></select></label>
+      <label>VAT rate, % <input name="tax_vat_rate" value="<?= h(tax_num($tu['default_vat_rate'] ?? '')) ?>" inputmode="decimal" list="tax-rates" placeholder="Site default"></label>
+      <datalist id="tax-rates"><option value="20"><option value="10"><option value="0"></datalist>
+    </div>
+    <label>My prices
+      <select name="tax_vat_included"><option value="">Site default</option><option value="1" <?= $tinc === '1' ? 'selected' : '' ?>>include VAT</option><option value="0" <?= $tinc === '0' ? 'selected' : '' ?>>are without VAT (VAT is added)</option></select></label>
+    <label>VAT exemption reference (regime "Other"), e.g. Article 149 of the Tax Code <input name="tax_exemption" value="<?= h($tu['exemption_rule'] ?? '') ?>" maxlength="400"></label>
+  </div>
   <label>About me <textarea name="about" rows="4"><?= h($u['about']) ?></textarea></label>
 </form>
 <?php });

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const SCHEMA_VERSION = 23;
+const SCHEMA_VERSION = 24;
 const ADMIN_EMAIL = 'admin@bablito.ru';
 
 function migrate_if_needed(): void
@@ -236,6 +236,12 @@ function migrate_if_needed(): void
             // numbers of a paid invoice are frozen here (see app/tax.php)
             if (!column_exists($pdo, 'invoices', 'tax_json')) {
                 $pdo->exec('ALTER TABLE invoices ADD COLUMN tax_json TEXT NULL');
+            }
+        }
+        if ($cur < 24) {
+            // the contractor's own tax regime (see tax_config_for_user in app/tax.php)
+            if (!column_exists($pdo, 'users', 'tax_json')) {
+                $pdo->exec('ALTER TABLE users ADD COLUMN tax_json TEXT NULL');
             }
         }
         $pdo->exec('REPLACE INTO schema_meta (id, version) VALUES (1, ' . SCHEMA_VERSION . ')');
