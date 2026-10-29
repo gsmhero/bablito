@@ -336,6 +336,7 @@ window.T = function (s) { return (window.I18N && window.I18N[s]) || s; };
       d = document.getElementById(t.getAttribute('data-open'));
       e.preventDefault();
       if (d) { d.hidden = false; document.body.classList.add('lb-open'); }
+      if (t.hasAttribute('data-hide')) { var h = document.getElementById(t.getAttribute('data-hide')); if (h) { h.hidden = true; } }
       return;
     }
     if (t && t.hasAttribute('data-close')) {

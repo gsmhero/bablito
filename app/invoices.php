@@ -38,14 +38,40 @@ function has_unpaid_invoice(int $contractId): bool
     return (bool)val("SELECT id FROM invoices WHERE contract_id = ? AND status IN ('waiting','pending') LIMIT 1", [$contractId]);
 }
 
-/** Temporary demo payment window (content will be replaced later). Proceed marks the invoice as pending. */
+/**
+ * Profile fields that hold the payee's "transfer to phone number" details, by the payee's status on the contract:
+ * [phone field id, preferred banks field id]. A Company is paid by invoice only.
+ */
+const PAY_PHONE_FIELDS = ['personal' => [43, 47], 'self' => [48, 49]];
+
+/** Payee status on the contract (personal | self | company) and, for personal / self-employed, the phone and banks. */
+function invoice_payee_info(array $inv): array
+{
+    $type = (string)(val('SELECT o.offerer_type FROM contracts c JOIN offers o ON o.id = c.accepted_offer_id WHERE c.id = ?', [$inv['contract_id']]) ?: 'personal');
+    $phone = $banks = '';
+    if (isset(PAY_PHONE_FIELDS[$type])) {
+        [$fp, $fb] = PAY_PHONE_FIELDS[$type];
+        $get = fn(int $fid): string => trim((string)(val('SELECT value FROM profile_values WHERE user_id = ? AND field_id = ?', [$inv['payee_id'], $fid]) ?? ''));
+        $phone = $get($fp);
+        $banks = $get($fb);
+    }
+    return [$type, $phone, $banks];
+}
+
+/**
+ * Payment window of an invoice. The contractor is paid directly by the author (the site only takes the service fee):
+ * Personal / Self-Employed: phone transfer details, "Download Invoice" and "Proceed" that shows what the contractor accepts;
+ * Company: by invoice, "Download Invoice". "I have paid" (POST /invoice/N/pay) marks the invoice as pending.
+ */
 function payment_dialog_html(array $inv, string $domId, bool $open, string $back): string
 {
-    $sym = CURRENCIES[$inv['currency']][0] ?? '₽';
+    [$type, $phone, $banks] = invoice_payee_info($inv);
+    $byPhone = isset(PAY_PHONE_FIELDS[$type]);
+    $infoId = $domId . '-info';
+    $pdf = '/invoice/' . (int)$inv['id'] . '.pdf';
     ob_start(); ?>
 <div class="modal" id="<?= h($domId) ?>" <?= $open ? '' : 'hidden' ?>>
   <div class="modal-card pay-card" role="dialog" aria-modal="true">
-    <!-- TEMPORARY DUMMY CONTENT: the payment window will be replaced later -->
     <div class="pay-art">
       <svg viewBox="0 0 320 190" role="img" aria-label="Payment card illustration">
         <rect x="6" y="6" width="308" height="178" rx="16" fill="#12ad00"/>
@@ -56,22 +82,52 @@ function payment_dialog_html(array $inv, string $domId, bool $open, string $back
       </svg>
     </div>
     <h2>Payment</h2>
-    <p class="muted small">Demo payment window. No real money is charged.</p>
     <table class="pay-table">
       <tr><td>Invoice</td><td>#<?= (int)$inv['id'] ?></td></tr>
       <tr><td>Contract</td><td><?= h($inv['contract_title']) ?></td></tr>
       <?php if (!empty($inv['todo_name'])): ?><tr><td>Step</td><td><?= h($inv['todo_name']) ?></td></tr><?php endif; ?>
-      <tr><td>Payment method</td><td>Card &bull;&bull;&bull;&bull; 4242</td></tr>
+      <?php if ($byPhone): ?>
+      <tr><td>Payment method</td><td>Transfer to phone number</td></tr>
+      <tr><td>Phone number</td><td><?= $phone !== '' ? h($phone) : '&mdash;' ?></td></tr>
+      <?php if ($banks !== ''): ?><tr><td>Preferred banks</td><td><?= nl2br(h($banks)) ?></td></tr><?php endif; ?>
+      <?php endif; ?>
+      <?php if ($type === 'self'): ?><tr><td>Payment method</td><td>By invoice</td></tr>
+      <?php elseif ($type === 'company'): ?><tr><td>Payment method</td><td>By invoice</td></tr><?php endif; ?>
       <tr class="pay-total"><td>Amount</td><td><?= h(tax_money((float)tax_for_invoice($inv)['total'], $inv['currency'])) ?></td></tr>
     </table>
-    <form method="post" action="/invoice/<?= (int)$inv['id'] ?>/pay" class="row between pay-actions">
-      <?= csrf_field() ?>
-      <input type="hidden" name="back" value="<?= h($back) ?>">
-      <button type="submit" class="btn green" data-close="<?= h($domId) ?>">Proceed</button>
-      <button type="button" class="btn" data-close="<?= h($domId) ?>">Cancel</button>
-    </form>
+    <div class="row between pay-actions">
+      <a class="btn" href="<?= h($pdf) ?>" target="_blank" rel="noopener">Download Invoice</a>
+      <?php if ($byPhone): ?>
+        <button type="button" class="btn green" data-open="<?= h($infoId) ?>" data-hide="<?= h($domId) ?>"><?= $type === 'self' ? 'Proceed on Phone' : 'Proceed' ?></button>
+      <?php else: ?>
+        <?= payment_paid_form($inv, $back, $domId, 'I have paid') ?>
+      <?php endif; ?>
+    </div>
+    <p class="row pay-actions" style="margin-top:10px"><button type="button" class="btn" data-close="<?= h($domId) ?>">Cancel</button></p>
   </div>
 </div>
+<?php if ($byPhone): ?>
+<div class="modal" id="<?= h($infoId) ?>" hidden>
+  <div class="modal-card pay-card" role="dialog" aria-modal="true">
+    <h2>Payment</h2>
+    <p>I accept payments via phone number</p>
+    <p><b><?= $phone !== '' ? h($phone) : '&mdash;' ?></b></p>
+    <?php if ($banks !== ''): ?><p>preferred banks:</p><p><b><?= nl2br(h($banks)) ?></b></p><?php endif; ?>
+    <div class="row between pay-actions">
+      <?= payment_paid_form($inv, $back, $infoId, 'I have paid') ?>
+      <button type="button" class="btn" data-close="<?= h($infoId) ?>">Cancel</button>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
 <?php
     return (string)ob_get_clean();
+}
+
+/** The "I have paid" form: the invoice becomes pending until the contractor confirms the money. */
+function payment_paid_form(array $inv, string $back, string $domId, string $label): string
+{
+    return '<form method="post" action="/invoice/' . (int)$inv['id'] . '/pay" class="inline">' . csrf_field()
+        . '<input type="hidden" name="back" value="' . h($back) . '">'
+        . '<button type="submit" class="btn green" data-close="' . h($domId) . '">' . h($label) . '</button></form>';
 }

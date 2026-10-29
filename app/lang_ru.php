@@ -123,6 +123,9 @@ $exact = [
     // payment dialog
     'Payment' => 'Оплата', 'Demo payment window. No real money is charged.' => 'Демонстрационное окно оплаты. Реальные деньги не списываются.',
     'Payment method' => 'Способ оплаты', 'Card &bull;&bull;&bull;&bull; 4242' => 'Карта &bull;&bull;&bull;&bull; 4242', 'Amount' => 'Сумма',
+    'Transfer to phone number' => 'Перевод по номеру телефона', 'Phone number' => 'Номер телефона', 'Preferred banks' => 'Предпочтительные банки', 'By invoice' => 'По счёту',
+    'Download Invoice' => 'Скачать счёт', 'Proceed on Phone' => 'Продолжить на телефоне', 'I have paid' => 'Я оплатил(а)',
+    'I accept payments via phone number' => 'Я принимаю платежи по номеру телефона', 'preferred banks:' => 'предпочтительные банки:',
     'Proceed' => 'Продолжить', 'Cancel' => 'Отмена', 'Invoice' => 'Счёт', 'Payment card illustration' => 'Иллюстрация платёжной карты',
     'Confirm payment' => 'Подтвердить оплату', 'Contract ID' => 'ID контракта',
 
