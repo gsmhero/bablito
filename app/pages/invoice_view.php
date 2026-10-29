@@ -47,7 +47,10 @@ render('Invoice #' . $inv['id'], function () use ($inv, $tpl, $from, $to, $fromT
       <h1>Invoice <?= h($sum['number'][1]) ?></h1>
       <div class="inv-line"><span class="inv-label"><?= h($sum['date'][0]) ?></span> <?= h($sum['date'][1]) ?></div>
       <div class="inv-line"><span class="inv-label"><?= h($sum['reason'][0]) ?></span> <b><?= h($sum['reason'][1]) ?></b></div>
+      <div class="inv-line"><span class="inv-label"><?= h($sum['net'][0]) ?></span> <?= h($sum['net'][1]) ?></div>
+      <div class="inv-line"><span class="inv-label"><?= h($sum['vat'][0]) ?></span> <?= h($sum['vat'][1]) ?></div>
       <div class="inv-line"><span class="inv-label"><?= h($sum['price'][0]) ?></span> <b><?= h($sum['price'][1]) ?></b></div>
+      <?php if ($sum['note'][1] !== ''): ?><div class="inv-line inv-note"><b><?= h($sum['note'][1]) ?></b></div><?php endif; ?>
     </div>
     <?php if ($tpl): ?>
       <div class="inv-head"><?= $tpl['header_html'] /* sanitized when the template is saved */ ?></div>
@@ -65,7 +68,6 @@ render('Invoice #' . $inv['id'], function () use ($inv, $tpl, $from, $to, $fromT
       <div class="inv-content">
         <div class="inv-line"><span class="inv-label">Contract</span> <?= h($inv['contract_title']) ?></div>
         <div class="inv-line"><span class="inv-label">Step</span> <?= h($inv['todo_name'] ?? 'Whole contract') ?></div>
-        <div class="inv-line"><span class="inv-label">Price</span> <?= h(CURRENCIES[$inv['currency']][0] ?? '') ?> <?= money($inv['amount']) ?></div>
         <div class="inv-line"><span class="inv-label">Status</span> <?= h(INVOICE_STATUS[$inv['status']] ?? $inv['status']) ?></div>
       </div>
     <?php endif; ?>

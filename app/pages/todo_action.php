@@ -72,7 +72,8 @@ switch ($args[1]) {
         } elseif ($isStep) {
             flash('Step accepted. The invoice was added to Invoices (Waiting for payment).');
         }
-        $invExtra = $invoiceId ? ['en' => 'An invoice was issued: ' . money($todo['agreed_price'] ?? $todo['price']) . ' ' . cur_code($c) . '. See "Invoices".', 'ru' => 'Выставлен счёт: ' . money($todo['agreed_price'] ?? $todo['price']) . ' ' . cur_code($c) . '. Смотрите раздел «Счета».'] : '';
+        $invTotal = $invoiceId ? money(tax_for_invoice(invoice_full($invoiceId) ?: ['amount' => $todo['agreed_price'] ?? $todo['price'], 'contract_id' => $c['id']])['total']) : '';
+        $invExtra = $invoiceId ? ['en' => 'An invoice was issued: ' . $invTotal . ' ' . cur_code($c) . '. See "Invoices".', 'ru' => 'Выставлен счёт: ' . $invTotal . ' ' . cur_code($c) . '. Смотрите раздел «Счета».'] : '';
         notify($left === 0 ? 'contract_fulfilled' : 'todo_accepted', $c, ['to' => [(int)$c['contractor_id']], 'url' => $invoiceId ? '/invoices?tab=receive' : $back . '#todo-' . $todo['id'], 'step' => $todo['name'], 'extra' => $invExtra]);
         if ($invoiceId && ($_POST['pay'] ?? '') === 'now') {
             redirect($back . '?pay=' . $invoiceId);

@@ -160,6 +160,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             break;
+        case 'taxes':
+            $err = tax_save_from_post($_POST);
+            flash($err ?? 'Tax settings saved. Unpaid invoices were recalculated.', $err === null ? 'ok' : 'err');
+            break;
         case 'pages':
             foreach ((array)($_POST['pages'] ?? []) as $slug => $p) {
                 q('UPDATE static_pages SET title = ?, body = ?, title_ru = ?, body_ru = ? WHERE slug = ?', [mb_substr(trim((string)($p['title'] ?? '')), 0, 190), (string)($p['body'] ?? ''), mb_substr(trim((string)($p['title_ru'] ?? '')), 0, 190) ?: null, ((string)($p['body_ru'] ?? '')) !== '' ? (string)$p['body_ru'] : null, (string)$slug]);
@@ -171,7 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 render('Admin', function () use ($tab) {
-    $tabs = ['users' => 'Users', 'contracts' => 'Contracts', 'home' => 'Homepage', 'pages' => 'Pages', 'categories' => 'Categories', 'profile' => 'User Profile Editor', 'invoices' => 'Invoice Editor', 'settings' => 'Settings']; ?>
+    $tabs = ['users' => 'Users', 'contracts' => 'Contracts', 'home' => 'Homepage', 'pages' => 'Pages', 'categories' => 'Categories', 'profile' => 'User Profile Editor', 'invoices' => 'Invoice Editor', 'taxes' => 'Taxes', 'settings' => 'Settings']; ?>
 <div class="wrap">
   <h1>Admin mode</h1>
   <div class="tabs"><?php foreach ($tabs as $k => $l): ?><a class="<?= $k === $tab ? 'on' : '' ?>" href="/admin/<?= $k ?>"><?= $l ?></a><?php endforeach; ?></div>
@@ -274,6 +278,63 @@ render('Admin', function () use ($tab) {
       <button class="btn green" type="submit" name="do" value="add_section">Add Section</button>
     </form>
   <?php elseif ($tab === 'invoices'): admin_invoices_view(); ?>
+  <?php elseif ($tab === 'taxes'): $tx = tax_config(true); $rules = $tx['item_level_vat_override']; while (count($rules) < 3) { $rules[] = ['match' => '', 'rate' => '']; }
+      $open = (int)val("SELECT COUNT(*) FROM invoices WHERE status IN ('waiting','pending')"); ?>
+    <form method="post" action="/admin/taxes" class="card-form wide">
+      <?= csrf_field() ?>
+      <h3>Taxes on invoices</h3>
+      <p class="small muted">The To Do price is the base of an invoice. Net amount, VAT and total are calculated from it with these settings every time an invoice is shown, mailed or put in the PDF, so a change here recalculates all unpaid invoices (<b><?= $open ?></b> now). A paid invoice keeps the numbers it had when the payment was confirmed.</p>
+      <div class="field-row">
+        <label>Tax mode
+          <select name="tax_mode"><?php foreach (TAX_MODES as $k => $l): ?><option value="<?= h($k) ?>" <?= $tx['tax_mode'] === $k ? 'selected' : '' ?>><?= h($l) ?></option><?php endforeach; ?></select></label>
+        <label>Default VAT rate, %
+          <input name="default_vat_rate" value="<?= h(tax_num($tx['default_vat_rate'])) ?>" inputmode="decimal" list="vat-rates"></label>
+        <datalist id="vat-rates"><option value="20"><option value="10"><option value="0"></datalist>
+      </div>
+      <label class="check"><input type="checkbox" name="vat_included_by_default" value="1" <?= $tx['vat_included_by_default'] ? 'checked' : '' ?>> The To Do price already includes VAT (otherwise VAT is added on top)</label>
+      <p class="small muted">OSN: VAT is charged. USN 6% / USN 15%: no VAT, the legal basis below is printed on the invoice. Other: if the exemption rule is filled the invoice is "Without VAT" with that reference, otherwise VAT is charged like in OSN.</p>
+
+      <h3>Item VAT rates</h3>
+      <p class="small muted">Optional overrides: if the task name or the contract category contains the text, this rate is used instead of the default. The first matching row wins. Used only when VAT is charged.</p>
+      <?php foreach ($rules as $i => $r): ?>
+        <div class="field-row">
+          <label>Text in task / category <input name="override[<?= $i ?>][match]" value="<?= h($r['match']) ?>" maxlength="120"></label>
+          <label>VAT rate, % <input name="override[<?= $i ?>][rate]" value="<?= h(tax_num($r['rate'])) ?>" inputmode="decimal" list="vat-rates"></label>
+        </div>
+      <?php endforeach; ?>
+      <p class="small muted">Empty rows are ignored. Save to get three more empty rows.</p>
+
+      <h3>"Without VAT" legal basis</h3>
+      <label>USN description (English) <textarea name="usn_description" rows="2"><?= h($tx['usn_description']) ?></textarea></label>
+      <label>USN description (Russian) <textarea name="usn_description_ru" rows="2"><?= h($tx['usn_description_ru']) ?></textarea></label>
+      <label>Exemption rule, e.g. "Article 149 of the Tax Code" <textarea name="exemption_rule" rows="2"><?= h($tx['exemption_rule']) ?></textarea></label>
+      <label>Exemption rule (Russian) <textarea name="exemption_rule_ru" rows="2"><?= h($tx['exemption_rule_ru']) ?></textarea></label>
+      <p class="small muted">In the USN text you can use <b>{article}</b> (346.11) and <b>{mode}</b> (USN 6% / USN 15%).</p>
+
+      <h3>Rounding and format</h3>
+      <div class="field-row">
+        <label>Rounding
+          <select name="rounding_mode"><?php foreach (TAX_ROUNDING as $k => $l): ?><option value="<?= h($k) ?>" <?= $tx['rounding_mode'] === $k ? 'selected' : '' ?>><?= h($l) ?></option><?php endforeach; ?></select></label>
+        <label>Default currency <input name="currency" value="<?= h($tx['currency']) ?>" maxlength="3" size="4"></label>
+      </div>
+      <div class="field-row">
+        <label>Decimal separator <input name="decimal" value="<?= h($tx['locale_settings']['decimal']) ?>" maxlength="2" size="3"></label>
+        <label>Thousands separator <input name="thousands" value="<?= h($tx['locale_settings']['thousands']) ?>" maxlength="2" size="3"></label>
+        <label>Currency symbol
+          <select name="symbol_position"><option value="after" <?= $tx['locale_settings']['symbol_position'] === 'after' ? 'selected' : '' ?>>after the number</option><option value="before" <?= $tx['locale_settings']['symbol_position'] === 'before' ? 'selected' : '' ?>>before the number</option></select></label>
+      </div>
+      <div class="row between"><button class="btn green" type="submit">Save and recalculate</button></div>
+    </form>
+    <?php $smp = tax_calc(1000.0, tax_item_rate($tx, '', ''), $tx); ?>
+    <div class="card-form wide">
+      <h3>Example with the saved settings: a To Do price of 1000</h3>
+      <table class="admin-table">
+        <tr><td>Net amount</td><td class="right"><?= h(tax_money($smp['net'])) ?></td></tr>
+        <tr><td>VAT<?= $smp['no_vat'] ? '' : ' ' . h(tax_num($smp['rate'])) . '%' ?></td><td class="right"><?= $smp['no_vat'] ? 'without VAT' : h(tax_money($smp['vat'])) ?></td></tr>
+        <tr><td><b>Total</b></td><td class="right"><b><?= h(tax_money($smp['total'])) ?></b></td></tr>
+      </table>
+      <?php if ($smp['note_en'] !== ''): ?><p class="small"><b><?= h($smp['note_en']) ?></b></p><?php endif; ?>
+    </div>
   <?php elseif ($tab === 'settings'): [$spAmount, $spCur] = service_price(); ?>
     <form method="post" action="/admin/settings" class="card-form wide">
       <?= csrf_field() ?>

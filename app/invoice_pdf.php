@@ -291,14 +291,19 @@ function invoice_full(int $id): ?array
 function invoice_summary(array $inv, string $lang): array
 {
     $ru = $lang === 'ru';
-    $sym = CURRENCIES[$inv['currency']][0] ?? $inv['currency'];
+    $tax = tax_for_invoice($inv);
+    $cur = (string)($inv['currency'] ?: tax_config()['currency']);
     $reason = $inv['todo_name'] !== null ? (string)$inv['todo_name'] : ($ru ? 'Весь контракт' : 'Whole contract');
+    $vatLabel = $tax['no_vat'] ? ($ru ? 'НДС' : 'VAT') : ($ru ? 'НДС ' : 'VAT ') . rtrim(rtrim(number_format((float)$tax['rate'], 2, '.', ''), '0'), '.') . '%' . ($tax['included'] ? ($ru ? ' (в цене)' : ' (included)') : '');
     return [
         'number' => ['№', '#' . $inv['id']],
         'date' => [$ru ? 'Дата' : 'Date', fdate($inv['created_at'])],
         'reason' => [$ru ? 'Основание (задача)' : 'Reason (task)', $reason],
         'contract' => [$ru ? 'Контракт' : 'Contract', (string)$inv['contract_title']],
-        'price' => [$ru ? 'Сумма' : 'Amount', $sym . ' ' . money($inv['amount'])],
+        'net' => [$ru ? 'Сумма без НДС' : 'Net amount (without VAT)', tax_money((float)$tax['net'], $cur)],
+        'vat' => [$vatLabel, $tax['no_vat'] ? ($ru ? 'без НДС' : 'without VAT') : tax_money((float)$tax['vat'], $cur)],
+        'price' => [$ru ? 'Итого к оплате' : 'Total (with VAT)', tax_money((float)$tax['total'], $cur)],
+        'note' => ['', (string)($tax['note_' . ($ru ? 'ru' : 'en')] ?? '')],
     ];
 }
 
@@ -368,14 +373,25 @@ function invoice_pdf(array $inv, string $lang): string
         $pdf->y = $bottom - 6;
     }
     $pdf->line($L, $pdf->y, $R);
-    $pdf->y -= 10;
+    $pdf->y -= 4;
+    foreach (['net', 'vat'] as $k) {
+        $y0 = $pdf->y;
+        $pdf->text($L, $y0 - 18, $sum[$k][0], 10, false, [107, 114, 128]);
+        $w = (new PdfFont(ROOT . '/assets/fonts/DejaVuSans.ttf'))->measure($sum[$k][1], 10);
+        $pdf->text($R - 16 - $w, $y0 - 18, $sum[$k][1], 10);
+        $pdf->y = $y0 - 22;
+    }
+    $pdf->y -= 6;
     // Total
     $pdf->rect($L, $pdf->y - 42, $R - $L, 42, [243, 249, 238]);
     $pdf->text($L + 16, $pdf->y - 26, $sum['price'][0], 12, true);
     $amt = $sum['price'][1];
     $w = (new PdfFont(ROOT . '/assets/fonts/DejaVuSans-Bold.ttf'))->measure($amt, 16);
     $pdf->text($R - 16 - $w, $pdf->y - 28, $amt, 16, true, [10, 107, 27]);
-    $pdf->y -= 60;
+    $pdf->y -= 56;
+    if ($sum['note'][1] !== '') {
+        $pdf->y = $pdf->para($L, $R - $L, $sum['note'][1], 10, true, [10, 107, 27]) - 8;
+    }
 
     if ($tpl) {
         foreach ([$tpl['header_html'], $tpl['footer_html']] as $html) {
@@ -412,7 +428,7 @@ function mail_invoice_copy(int $invoiceId): void
             'lang' => $lang, 'title' => $subject, 'preheader' => $sum['reason'][1] . ' - ' . $sum['price'][1],
             'tag' => $ru ? 'Счёт' : 'Invoice', 'who' => 'bablito', 'when' => date('d.m.Y H:i'),
             'headline' => ($ru ? 'Счёт ' : 'Invoice ') . $sum['number'][1],
-            'rows' => [$sum['reason'], $sum['contract'], $sum['price'], $sum['date']],
+            'rows' => [$sum['reason'], $sum['contract'], $sum['net'], $sum['vat'], $sum['price'], $sum['date']],
             'comment' => ['body' => $ru ? 'Копия счёта во вложении (PDF).' : 'A copy of the invoice is attached (PDF).', 'files' => false, 'label' => 'PDF'],
             'button' => $ru ? 'Открыть счёт' : 'Open invoice', 'url' => $url,
             'link_hint' => $ru ? 'Если кнопка не работает, откройте ссылку:' : 'If the button does not work, open this link:',

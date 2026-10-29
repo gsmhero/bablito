@@ -62,7 +62,7 @@ function payment_dialog_html(array $inv, string $domId, bool $open, string $back
       <tr><td>Contract</td><td><?= h($inv['contract_title']) ?></td></tr>
       <?php if (!empty($inv['todo_name'])): ?><tr><td>Step</td><td><?= h($inv['todo_name']) ?></td></tr><?php endif; ?>
       <tr><td>Payment method</td><td>Card &bull;&bull;&bull;&bull; 4242</td></tr>
-      <tr class="pay-total"><td>Amount</td><td><?= h($sym) ?>&nbsp;<?= money($inv['amount']) ?></td></tr>
+      <tr class="pay-total"><td>Amount</td><td><?= h(tax_money((float)tax_for_invoice($inv)['total'], $inv['currency'])) ?></td></tr>
     </table>
     <form method="post" action="/invoice/<?= (int)$inv['id'] ?>/pay" class="row between pay-actions">
       <?= csrf_field() ?>

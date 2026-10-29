@@ -14,7 +14,10 @@ const INVOICE_SYSTEM_FIELDS = [
     's:contract' => 'Contract name',
     's:todo_name' => 'Todo name',
     's:todo_no' => 'Todo №',
-    's:price' => 'Price',
+    's:price' => 'Price (total)',
+    's:net' => 'Net amount (without VAT)',
+    's:vat' => 'VAT amount',
+    's:tax_note' => 'VAT legal basis',
     's:status' => 'Status',
 ];
 
@@ -273,7 +276,10 @@ function invoice_field_value(string $tok, array $inv, array $user): ?array
             's:contract' => (string)$inv['contract_title'],
             's:todo_name' => (string)($inv['todo_name'] ?? 'Whole contract'),
             's:todo_no' => $inv['todo_name'] !== null ? (string)((int)$inv['todo_pos'] + 1) : '-',
-            's:price' => $sym . ' ' . money($inv['amount']),
+            's:price' => tax_money((float)tax_for_invoice($inv)['total'], $inv['currency']),
+            's:net' => tax_money((float)tax_for_invoice($inv)['net'], $inv['currency']),
+            's:vat' => tax_for_invoice($inv)['no_vat'] ? '' : tax_money((float)tax_for_invoice($inv)['vat'], $inv['currency']),
+            's:tax_note' => (string)(tax_for_invoice($inv)['note_en'] ?? ''),
             's:status' => INVOICE_STATUS[$inv['status']] ?? $inv['status'],
             default => '',
         };

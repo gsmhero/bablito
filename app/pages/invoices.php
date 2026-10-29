@@ -33,7 +33,7 @@ render('Invoices', function () use ($list, $tab, $counts, $u) { ?>
         <td><?= (int)$i['steps'] ?></td>
         <td><a href="/invoice/<?= (int)$i['id'] ?>" title="View invoice"><?= h($i['todo_name'] ?? 'Whole contract') ?></a></td>
         <td><?= $i['todo_name'] !== null ? (int)$i['todo_pos'] + 1 : '-' ?></td>
-        <td class="right"><b><?= h($sym) ?>&nbsp;<?= money($i['amount']) ?></b></td>
+        <td class="right"><b><?= h(tax_money((float)tax_for_invoice($i)['total'], $i['currency'])) ?></b></td>
         <td>
           <?php if ($tab === 'pay' && $i['status'] === 'waiting'): ?>
             <a href="#" class="pay-link" data-open="<?= h($dlg) ?>">Pay now</a>

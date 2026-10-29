@@ -15,7 +15,8 @@ if ($args[1] === 'pay') {
     }
     q("UPDATE invoices SET status = 'pending' WHERE id = ?", [$inv['id']]);
     $ic = load_contract((int)$inv['contract_id']);
-    notify('invoice_paid', $ic, ['to' => [(int)$inv['payee_id']], 'url' => '/invoices?tab=receive', 'extra' => ['en' => 'Amount: ' . money($inv['amount']) . ' ' . $inv['currency'], 'ru' => 'Сумма: ' . money($inv['amount']) . ' ' . $inv['currency']]]);
+    $tot = tax_for_invoice($inv)['total'];
+    notify('invoice_paid', $ic, ['to' => [(int)$inv['payee_id']], 'url' => '/invoices?tab=receive', 'extra' => ['en' => 'Amount: ' . money($tot) . ' ' . $inv['currency'], 'ru' => 'Сумма: ' . money($tot) . ' ' . $inv['currency']]]);
     flash('Payment sent. The invoice is pending until the contractor confirms it.');
     redirect($back);
 }
@@ -24,9 +25,10 @@ if ($args[1] === 'confirm') {
     if ((int)$inv['payee_id'] !== (int)$u['id'] || $inv['status'] !== 'pending') {
         forbidden();
     }
-    q("UPDATE invoices SET status = 'paid', paid_at = NOW() WHERE id = ?", [$inv['id']]);
+    $taxNow = tax_for_invoice(invoice_full((int)$inv['id']) ?: $inv);
+    q("UPDATE invoices SET status = 'paid', paid_at = NOW(), tax_json = ? WHERE id = ?", [json_encode($taxNow, JSON_UNESCAPED_UNICODE), $inv['id']]);
     $ic = load_contract((int)$inv['contract_id']);
-    notify('invoice_confirmed', $ic, ['to' => [(int)$inv['payer_id']], 'url' => '/invoices?tab=pay', 'extra' => ['en' => 'Amount: ' . money($inv['amount']) . ' ' . $inv['currency'], 'ru' => 'Сумма: ' . money($inv['amount']) . ' ' . $inv['currency']]]);
+    notify('invoice_confirmed', $ic, ['to' => [(int)$inv['payer_id']], 'url' => '/invoices?tab=pay', 'extra' => ['en' => 'Amount: ' . money($taxNow['total']) . ' ' . $inv['currency'], 'ru' => 'Сумма: ' . money($taxNow['total']) . ' ' . $inv['currency']]]);
     flash('Payment confirmed.');
     redirect('/invoices?tab=receive');
 }

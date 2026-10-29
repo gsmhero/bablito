@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const SCHEMA_VERSION = 22;
+const SCHEMA_VERSION = 23;
 const ADMIN_EMAIL = 'admin@bablito.ru';
 
 function migrate_if_needed(): void
@@ -231,6 +231,12 @@ function migrate_if_needed(): void
                 }
             }
             $pdo->exec("UPDATE notices SET read_at = shown_at WHERE read_at IS NULL AND shown_at IS NOT NULL");
+        }
+        if ($cur < 23) {
+            // numbers of a paid invoice are frozen here (see app/tax.php)
+            if (!column_exists($pdo, 'invoices', 'tax_json')) {
+                $pdo->exec('ALTER TABLE invoices ADD COLUMN tax_json TEXT NULL');
+            }
         }
         $pdo->exec('REPLACE INTO schema_meta (id, version) VALUES (1, ' . SCHEMA_VERSION . ')');
         ensure_admin();
