@@ -19,19 +19,28 @@ $toType = (string)($inv['author_type'] ?: 'personal');
 $tpl = pick_invoice_template($fromType, $toType);
 
 $block = function (string $title, ?string $json, array $user) use ($inv): void {
-    echo '<div class="inv-block"><h3>' . h($title) . '</h3>';
+    $lines = '';
     foreach (invoice_tokens($json) as $tok) {
         $fv = invoice_field_value($tok, $inv, $user);
         if ($fv) {
-            echo '<div class="inv-line"><span class="inv-label">' . h($fv[0]) . '</span> ' . nl2br(h($fv[1])) . '</div>';
+            $lines .= '<div class="inv-line"><span class="inv-label">' . h($fv[0]) . '</span> ' . nl2br(h($fv[1])) . '</div>';
         }
     }
-    echo '</div>';
+    // a section without any value is not shown at all
+    if ($lines !== '') {
+        echo '<div class="inv-block"><h3>' . h($title) . '</h3>' . $lines . '</div>';
+    }
 };
+$detailsHtml = '';
+if ($tpl) {
+    ob_start();
+    $block('Details', $tpl['content_fields'], $from);
+    $detailsHtml = (string)ob_get_clean();
+}
 
 $sum = invoice_summary($inv, user_lang($u));
 
-render('Invoice #' . $inv['id'], function () use ($inv, $tpl, $from, $to, $fromType, $toType, $block, $sum) { ?>
+render('Invoice #' . $inv['id'], function () use ($inv, $tpl, $from, $to, $fromType, $toType, $block, $sum, $detailsHtml) { ?>
 <div class="wrap">
   <div class="invoice-doc">
     <div class="inv-sum">
@@ -45,7 +54,7 @@ render('Invoice #' . $inv['id'], function () use ($inv, $tpl, $from, $to, $fromT
       <div class="inv-two">
         <?php $block('From', json_encode(invoice_block_tokens($tpl, 'from')), $from); $block('To', json_encode(invoice_block_tokens($tpl, 'to')), $to); ?>
       </div>
-      <div class="inv-content"><?php $block('Details', $tpl['content_fields'], $from); ?></div>
+      <?php if ($detailsHtml !== ''): ?><div class="inv-content"><?= $detailsHtml ?></div><?php endif; ?>
       <div class="inv-foot"><?= $tpl['footer_html'] ?></div>
     <?php else: ?>
       <p class="muted small">No template is set up for <?= h(invoice_pair_label($fromType, $toType)) ?>, so the default layout is shown.</p>
