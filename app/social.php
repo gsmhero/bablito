@@ -146,3 +146,32 @@ function embed_pay_page(string $url, string $back): void
 <?php });
     exit;
 }
+
+/** Link that opens the contract: inside the VK app when VK_APP_ID is known (the start page reads the #/contract/N part), else the site. */
+function contract_share_url(array $c): string
+{
+    $site = rtrim(env('SITE_URL') ?: 'https://bablito.ru', '/');
+    if (embed_platform() === 'vk' && env('VK_APP_ID') !== '') {
+        return 'https://vk.com/app' . env('VK_APP_ID') . '#/contract/' . (int)$c['id'];
+    }
+    return $site . '/contract/' . (int)$c['id'];
+}
+
+/** "Post to my wall" button of a published contract (VK wall post box / OK.ru share dialog). */
+function embed_share_html(array $c): string
+{
+    $p = embed_platform();
+    if ($p === '' || ($c['status'] ?? '') !== 'published') {
+        return '';
+    }
+    $url = contract_share_url($c);
+    $text = (current_lang() === 'ru' ? 'Контракт на bablito: ' : 'Contract on bablito: ') . $c['title'];
+    $fallback = $p === 'vk'
+        ? 'https://vk.com/share.php?url=' . rawurlencode($url) . '&title=' . rawurlencode($text)
+        : 'https://connect.ok.ru/offer?url=' . rawurlencode($url) . '&title=' . rawurlencode($text);
+    $js = json_encode(['url' => $url, 'text' => $text, 'fallback' => $fallback], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP);
+    return '<p><button type="button" class="btn green" id="wall-post">Post to my wall</button></p>'
+        . '<script>(function(){var d=' . $js . ',b=document.getElementById("wall-post");b.addEventListener("click",function(){'
+        . ($p === 'vk' ? 'if(window.vkBridge){vkBridge.send("VKWebAppShowWallPostBox",{message:d.text,attachments:d.url}).catch(function(){window.open(d.fallback,"_blank");});return;}' : '')
+        . 'window.open(d.fallback,"_blank");});})();</script>';
+}

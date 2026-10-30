@@ -26,4 +26,7 @@ if ($platform === 'ok') {
     $_SESSION['ok_api'] = ['server' => preg_match('#^https://[a-z0-9.-]+\.ok\.ru/?$#i', $srv) ? $srv : '', 'conn' => (string)($_GET['apiconnection'] ?? '')];
 }
 set_lang_cookie(in_array($u['lang'] ?? '', SUPPORTED_LANGS, true) ? (string)$u['lang'] : 'ru');
-redirect('/contracts');
+// A post on a wall links to #/contract/N: the hash never reaches the server, so a tiny page forwards it.
+$sid = json_encode(embed_needs_sid() ? session_id() : '');
+echo '<!doctype html><meta charset="utf-8"><title>bablito</title><script>var m=location.hash.match(/^#\/contract\/(\d+)$/),s=' . $sid . ';'
+    . 'location.replace(m?"/contract/"+m[1]+(s?"?_s="+s:""):' . json_encode(embed_url('/contracts'), JSON_UNESCAPED_SLASHES) . ');</script>';

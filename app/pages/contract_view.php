@@ -66,6 +66,7 @@ render($c['title'], function () use ($c, $author, $todos, $files, $tot, $offers,
     <hr>
     <div class="row between"><h3>Description</h3><span class="tiny muted"><?= (int)$c['views'] ?> views<?= $authorSide ? ' · ' . count($offers) . ' offers' : '' ?></span></div>
     <p><?= nl2br(h($c['description'])) ?></p>
+    <?= embed_share_html($c) ?>
     <hr>
     <h3>Contract</h3>
     <?php if ($canOffer): ?><form method="post" action="/contract/<?= (int)$c['id'] ?>/offer" id="offer-form"><?= csrf_field() ?></form><?php endif; ?>

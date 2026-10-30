@@ -126,7 +126,7 @@ $exact = [
     'Transfer to phone number' => 'Перевод по номеру телефона', 'Phone number' => 'Номер телефона', 'Preferred banks' => 'Предпочтительные банки', 'By invoice' => 'По счёту',
     'Download Invoice' => 'Скачать счёт', 'Proceed on Phone' => 'Продолжить на телефоне', 'I have paid' => 'Я оплатил(а)',
     'I accept payments via phone number' => 'Я принимаю платежи по номеру телефона', 'preferred banks:' => 'предпочтительные банки:',
-    'Link account' => 'Привязать аккаунт', 'Account linked.' => 'Аккаунт привязан.', 'Go to payment' => 'Перейти к оплате',
+    'Post to my wall' => 'Опубликовать на стене', 'Link account' => 'Привязать аккаунт', 'Account linked.' => 'Аккаунт привязан.', 'Go to payment' => 'Перейти к оплате',
     'Already registered on bablito.ru? Enter your e-mail and password, and this application will open your account.' => 'Уже зарегистрированы на bablito.ru? Введите e-mail и пароль, и приложение откроет ваш аккаунт.',
     'This account is already linked.' => 'Этот аккаунт уже привязан.',
     'This VK / OK profile already has contracts or offers, so it cannot be merged. Write to us and we will help.' => 'В этом профиле VK / OK уже есть контракты или предложения, поэтому объединить нельзя. Напишите нам, мы поможем.',
