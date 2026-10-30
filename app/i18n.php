@@ -17,18 +17,23 @@ function current_lang(): string
     if (in_array($c, SUPPORTED_LANGS, true)) {
         return $lang = $c;
     }
+    $s = (string)($_SESSION['lang'] ?? '');
+    if (in_array($s, SUPPORTED_LANGS, true)) {
+        return $lang = $s;
+    }
     $al = strtolower((string)($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? ''));
     return $lang = (preg_match('/(^|,)\s*ru\b/', $al) ? 'ru' : 'en');
 }
 
 function set_lang_cookie(string $lang): void
 {
+    $_SESSION['lang'] = $lang; // also kept in the session: a frame may not send cookies
     setcookie('lang', $lang, [
         'expires' => time() + 365 * 86400,
         'path' => '/',
         'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
         'httponly' => false,
-        'samesite' => 'Lax',
+        'samesite' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'None' : 'Lax',
     ]);
 }
 

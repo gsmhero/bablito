@@ -8,6 +8,10 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 $routes = [
     ['GET',  '#^/$#',                              'home'],
+    ['GET',  '#^/(vk|ok)$#',                      'social_launch'],
+    ['POST', '#^/social/name$#',                  'social_name'],
+    ['GET',  '#^/social/link$#',                  'social_link'],
+    ['POST', '#^/social/link$#',                  'social_link'],
     ['GET',  '#^/lang/(ru|en)$#',                'lang'],
     ['GET',  '#^/contracts$#',                     'contracts'],
     ['GET',  '#^/dashboard(?:/(live))?$#',        'dashboard'],

@@ -102,14 +102,26 @@ set_exception_handler(function (Throwable $e) {
 
 ensure_dirs();
 
+// The app is also shown inside VK and OK.ru frames: only those sites may frame it.
+header("Content-Security-Policy: frame-ancestors 'self' https://*.vk.com https://vk.com https://*.vk.ru https://vk.ru https://*.ok.ru https://ok.ru https://*.odnoklassniki.ru https://*.mail.ru https://*.vk-apps.com");
+ini_set('session.use_strict_mode', '1');
+// Safari and others may refuse the cookie inside a frame: the session id can come back in "_s" (embed mode only, see app/social.php).
+$bblSid = (string)($_GET['_s'] ?? $_POST['_s'] ?? '');
+if ($bblSid !== '' && empty($_COOKIE[session_name()]) && preg_match('/^[A-Za-z0-9,-]{16,128}$/', $bblSid)) {
+    session_id($bblSid);
+}
 session_set_cookie_params([
     'lifetime' => 0,
     'path' => '/',
     'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
     'httponly' => true,
-    'samesite' => 'Lax',
+    'samesite' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'None' : 'Lax', // 'None': the cookie must work inside the VK / OK frame
 ]);
 session_start();
+require ROOT . '/app/social.php';
+if (embed_needs_sid()) {
+    ob_start('embed_sid_filter');
+}
 
 require ROOT . '/app/i18n.php';
 if (current_lang() === 'ru') {

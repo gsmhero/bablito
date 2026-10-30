@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const SCHEMA_VERSION = 25;
+const SCHEMA_VERSION = 26;
 const ADMIN_EMAIL = 'admin@bablito.ru';
 
 function migrate_if_needed(): void
@@ -261,6 +261,14 @@ function migrate_if_needed(): void
   paid_at DATETIME NULL,
   INDEX (yk_id), INDEX (offer_id), INDEX (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        }
+        if ($cur < 26) {
+            // VK Mini App / OK.ru app identities (see app/social.php)
+            foreach (['vk_id', 'ok_id'] as $col) {
+                if (!column_exists($pdo, 'users', $col)) {
+                    $pdo->exec("ALTER TABLE users ADD COLUMN $col VARCHAR(24) NULL, ADD UNIQUE KEY uq_users_$col ($col)");
+                }
+            }
         }
         $pdo->exec('REPLACE INTO schema_meta (id, version) VALUES (1, ' . SCHEMA_VERSION . ')');
         ensure_admin();

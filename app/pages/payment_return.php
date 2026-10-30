@@ -2,10 +2,24 @@
 declare(strict_types=1);
 
 // The author comes back from the YooKassa page. The status is asked from YooKassa, not taken from the URL.
-$u = require_login();
+$u = user();
 $p = row('SELECT * FROM payments WHERE id = ?', [(int)$args[0]]);
-if (!$p || (int)$p['user_id'] !== (int)$u['id']) {
+if (!$p || ($u && (int)$p['user_id'] !== (int)$u['id'])) {
     not_found();
+}
+if (!$u) {
+    // YooKassa opened in its own window (VK / OK app): there is no session here, so only the status is shown
+    $state = payment_finalize((int)$p['id']);
+    render('Payment', function () use ($state, $p) { ?>
+<div class="narrow card-form" style="text-align:center">
+  <h1>Payment</h1>
+  <?php if ($state === 'paid'): ?><p>Payment received. You can close this window and return to the application.</p>
+  <?php elseif ($state === 'canceled'): ?><p>The payment was not completed. You can close this window and try again in the application.</p>
+  <?php elseif ($state === 'orphan'): ?><p>The payment was received, but the offer is no longer available. Please write to admin@bablito.ru and we will return the money.</p>
+  <?php else: ?><p>YooKassa has not confirmed the payment yet.</p><p><a class="btn green" href="/payment/return/<?= (int)$p['id'] ?>">Check again</a></p><?php endif; ?>
+</div>
+<?php });
+    exit;
 }
 $state = payment_finalize((int)$p['id']);
 $offerBack = '/offer/' . (int)$p['offer_id'];

@@ -36,9 +36,13 @@ jobs:
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
           YOOKASSA_SHOP_ID: ${{ secrets.YOOKASSA_SHOP_ID }}
           YOOKASSA_SECRET_KEY: ${{ secrets.YOOKASSA_SECRET_KEY }}
+          VK_APP_ID: ${{ secrets.VK_APP_ID }}
+          VK_SECRET_KEY: ${{ secrets.VK_SECRET_KEY }}
+          OK_APP_ID: ${{ secrets.OK_APP_ID }}
+          OK_SECRET_KEY: ${{ secrets.OK_SECRET_KEY }}
         run: |
           {
-            for v in DB_HOST DB_NAME DB_USER DB_PASS SITE_URL SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASS SMTP_FROM YOOKASSA_SHOP_ID YOOKASSA_SECRET_KEY; do
+            for v in DB_HOST DB_NAME DB_USER DB_PASS SITE_URL SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASS SMTP_FROM YOOKASSA_SHOP_ID YOOKASSA_SECRET_KEY VK_APP_ID VK_SECRET_KEY OK_APP_ID OK_SECRET_KEY; do
               val="${!v}"
               val="${val//\\/\\\\}"
               val="${val//\"/\\\"}"

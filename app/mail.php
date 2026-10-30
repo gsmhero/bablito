@@ -12,6 +12,9 @@ function mail_log(string $line): void
 /** Sends a plain-text e-mail. Returns null on success or an error text. */
 function smtp_send(string $to, string $subject, string $text, ?string $html = null, array $attachments = []): ?string
 {
+    if (str_ends_with(strtolower(trim($to)), '.invalid')) {
+        return null; // technical address of a VK / OK user: nobody to write to
+    }
     $host = env('SMTP_HOST');
     $port = (int)(env('SMTP_PORT') ?: 587);
     $user = env('SMTP_USER');

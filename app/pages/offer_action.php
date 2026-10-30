@@ -35,6 +35,9 @@ switch ($args[1]) {
                 flash('The payment could not be started: ' . $payErr, 'err');
                 redirect($back);
             }
+            if (embed_platform() !== '') {
+                embed_pay_page($payUrl, $back);
+            }
             header('Location: ' . $payUrl, true, 303);
             exit;
         }

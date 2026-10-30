@@ -23,7 +23,7 @@ function fdatetime(?string $d): string
 
 function redirect(string $to): void
 {
-    header('Location: ' . $to);
+    header('Location: ' . embed_url($to));
     exit;
 }
 
@@ -382,8 +382,9 @@ function render(string $title, callable $body, array $opts = []): void
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700&family=Fira+Sans+Extra+Condensed:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/style.css?v=<?= (int)@filemtime(ROOT . '/assets/style.css') ?>">
+<?= embed_head_html() ?>
 </head>
-<body>
+<body<?= embed_platform() !== '' ? ' class="embed"' : '' ?>>
 <header class="top">
   <div class="wrap bar">
     <nav class="main-nav">
@@ -418,6 +419,7 @@ function render(string $title, callable $body, array $opts = []): void
             <?php if ($u['role'] === 'admin'): ?><a href="/admin" class="green">Admin mode</a><a href="/home">Homepage</a><?php endif; ?>
             <a href="/dashboard">Dashboard</a>
             <a href="/profile">Profile</a>
+            <a href="/social/link" class="embed-only">Link account</a>
             <a href="/invoices">Invoices</a>
             <a href="/my">My Contracts</a>
             <a href="/contract/new">Create Contract</a>
