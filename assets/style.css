@@ -352,5 +352,5 @@ details.pe-section[open]>summary{border-bottom:1px solid #eee;margin-bottom:10px
 
 /* VK Mini App / OK.ru app (the site shown inside the social network frame) */
 .embed-only{display:none}.embed .embed-only{display:block}
-.embed form[action="/logout"],.embed .d-only{display:none}
+.embed .d-only{display:none}
 .embed .foot{padding-top:10px}.embed .foot .copy{display:none}

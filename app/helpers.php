@@ -419,7 +419,7 @@ function render(string $title, callable $body, array $opts = []): void
             <?php if ($u['role'] === 'admin'): ?><a href="/admin" class="green">Admin mode</a><a href="/home">Homepage</a><?php endif; ?>
             <a href="/dashboard">Dashboard</a>
             <a href="/profile">Profile</a>
-            <a href="/social/link" class="embed-only">Link account</a>
+            <?php if (embed_platform() !== '' && str_ends_with((string)$u['email'], '.invalid')): ?><a href="/social/link">Link account</a><?php endif; ?>
             <a href="/invoices">Invoices</a>
             <a href="/my">My Contracts</a>
             <a href="/contract/new">Create Contract</a>

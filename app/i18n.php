@@ -104,7 +104,8 @@ function i18n_filter(string $html): string
             }
             continue;
         }
-        $p = preg_replace_callback('/>([^<>]+)</', fn($m) => '>' . i18n_node($m[1]) . '<', $p);
+        // a label text right before a <textarea> ends its segment: the text is followed by the segment end, not by '<'
+        $p = preg_replace_callback('/(^|>)([^<>]+)(?=<|$)/', fn($m) => $m[1] . i18n_node($m[2]), $p);
         $p = i18n_attrs($p);
         $parts[$i] = $p;
     }
