@@ -354,3 +354,5 @@ details.pe-section[open]>summary{border-bottom:1px solid #eee;margin-bottom:10px
 .embed-only{display:none}.embed .embed-only{display:block}
 .embed .d-only{display:none}
 .embed .foot{padding-top:10px}.embed .foot .copy{display:none}
+/* VK / OK on a computer: the frame is narrow, so everything (fonts and objects) is scaled down and gets room at the sides */
+@media (min-width:760px){.embed{zoom:.82}.embed .wrap{padding-left:48px;padding-right:48px}}
