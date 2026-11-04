@@ -157,21 +157,51 @@ function contract_share_url(array $c): string
     return $site . '/contract/' . (int)$c['id'];
 }
 
-/** "Post to my wall" button of a published contract (VK wall post box / OK.ru share dialog). */
-function embed_share_html(array $c): string
+/**
+ * "Post to my wall" button of a published contract. VK: the card of the contract is drawn in the browser (assets/vkcard.js),
+ * uploaded as a wall photo and posted with the link. OK.ru: the share dialog.
+ */
+function embed_share_html(array $c, array $author, array $todos, array $files, array $tot): string
 {
     $p = embed_platform();
     if ($p === '' || ($c['status'] ?? '') !== 'published') {
         return '';
     }
+    $ru = current_lang() === 'ru';
     $url = contract_share_url($c);
-    $text = (current_lang() === 'ru' ? 'Контракт на bablito: ' : 'Contract on bablito: ') . $c['title'];
+    $text = ($ru ? 'Контракт на bablito: ' : 'Contract on bablito: ') . $c['title'];
     $fallback = $p === 'vk'
         ? 'https://vk.com/share.php?url=' . rawurlencode($url) . '&title=' . rawurlencode($text)
         : 'https://connect.ok.ru/offer?url=' . rawurlencode($url) . '&title=' . rawurlencode($text);
-    $js = json_encode(['url' => $url, 'text' => $text, 'fallback' => $fallback], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP);
-    return '<p><button type="button" class="btn green" id="wall-post">Post to my wall</button></p>'
-        . '<script>(function(){var d=' . $js . ',b=document.getElementById("wall-post");b.addEventListener("click",function(){'
-        . ($p === 'vk' ? 'if(window.vkBridge){vkBridge.send("VKWebAppShowWallPostBox",{message:d.text,attachments:d.url}).catch(function(){window.open(d.fallback,"_blank");});return;}' : '')
-        . 'window.open(d.fallback,"_blank");});})();</script>';
+    $flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP;
+    $btn = '<p><button type="button" class="btn green" id="wall-post">Post to my wall</button></p>';
+    if ($p === 'ok') {
+        return $btn . '<script>document.getElementById("wall-post").addEventListener("click",function(){window.open(' . json_encode($fallback, $flags) . ',"_blank");});</script>';
+    }
+    $img = '';
+    $cover = false;
+    foreach ($files as $f) {
+        if (($f['kind'] ?? '') === 'image') {
+            $img = '/uploads/' . $f['stored_name'];
+            $cover = true;
+            break;
+        }
+    }
+    if ($img === '') {
+        $cat = (string)(($c['category_image_mobile'] ?? '') ?: ($c['category_image'] ?? ''));
+        $img = $cat !== '' ? '/uploads/' . $cat : '';
+        $cover = ($c['category_fit'] ?? 'cover') !== 'contain';
+    }
+    $sym = CURRENCIES[cur_code($c)][0];
+    $desc = trim((string)$c['description']);
+    $data = [
+        'appId' => (int)env('VK_APP_ID'), 'url' => $url, 'text' => $text, 'fallback' => $fallback, 'csrf' => csrf_token(),
+        'proxy' => embed_url('/vk/upload'), 'image' => $img, 'cover' => $cover,
+        'title' => (string)$c['title'], 'date' => fdate($c['created_at']), 'author' => public_name($author),
+        'rating' => (float)$author['rating_avg'], 'ratingCount' => (int)$author['rating_count'],
+        'location' => (string)$c['location'], 'category' => (string)($c['category'] ?? ''), 'description' => $desc,
+        'steps' => (int)$tot['steps'], 'stepsLabel' => $ru ? 'Шаги' : 'Steps', 'price' => money($tot['price']), 'currency' => cur_code($c), 'symbol' => $sym,
+        'todos' => array_map(fn($t) => ['name' => (string)$t['name'], 'price' => money($t['price'])], $todos),
+    ];
+    return $btn . '<script>window.BBL_CARD=' . json_encode($data, $flags) . ';</script><script src="/assets/vkcard.js?v=' . (int)@filemtime(ROOT . '/assets/vkcard.js') . '"></script>';
 }

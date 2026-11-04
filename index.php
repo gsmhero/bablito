@@ -10,6 +10,7 @@ $routes = [
     ['GET',  '#^/$#',                              'home'],
     ['GET',  '#^/(vk|ok)$#',                      'social_launch'],
     ['POST', '#^/social/name$#',                  'social_name'],
+    ['POST', '#^/vk/upload$#',                    'vk_upload'],
     ['GET',  '#^/social/link$#',                  'social_link'],
     ['POST', '#^/social/link$#',                  'social_link'],
     ['GET',  '#^/lang/(ru|en)$#',                'lang'],
