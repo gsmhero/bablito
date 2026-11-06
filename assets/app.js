@@ -240,7 +240,10 @@ window.T = function (s) { return (window.I18N && window.I18N[s]) || s; };
         var fd = new FormData(f);
         if (e.submitter && e.submitter.name) { fd.set(e.submitter.name, e.submitter.value); }
         var reload = f.hasAttribute('data-reload');
-        fetch(f.action, { method: 'POST', body: fd, credentials: 'same-origin' }).then(function () { if (reload) { location.reload(); } else { load(currentUrl); } });
+        fetch(f.action, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'fetch' } }).then(function (r) {
+          var json = (r.headers.get('content-type') || '').indexOf('json') > -1;
+          return json ? r.json().then(function (d) { if (d && d.msg && window.bblToast) { bblToast(T(d.msg)); } }) : null;
+        }).then(function () { if (reload) { location.reload(); } else { load(currentUrl); } });
       });
     }
     currentUrl = url;
@@ -445,4 +448,95 @@ window.T = function (s) { return (window.I18N && window.I18N[s]) || s; };
   };
   form.addEventListener('change', function (e) { if (e.target.matches('input[name="types[]"]')) { apply(); } });
   apply();
+})();
+
+(function () {
+  'use strict';
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+
+  // ---- toast: a short message at the bottom of the screen ----
+  var toastEl = null, toastT = 0;
+  window.bblToast = function (msg) {
+    if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'toast'; document.body.appendChild(toastEl); }
+    toastEl.textContent = msg; toastEl.classList.add('on');
+    clearTimeout(toastT); toastT = setTimeout(function () { toastEl.classList.remove('on'); }, 2600);
+  };
+
+  // ---- unsaved changes: warn before leaving the contract editor / counteroffer form ----
+  var dirty = false;
+  $$('#contract-form, #offer-form, form[data-warn]').forEach(function (f) {
+    f.addEventListener('input', function () { dirty = true; });
+    f.addEventListener('change', function () { dirty = true; });
+    f.addEventListener('submit', function () { dirty = false; });
+  });
+  window.bblSetDirty = function (v) { dirty = v; };
+  window.addEventListener('beforeunload', function (e) { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+  document.addEventListener('click', function (e) {
+    if (!dirty || e.button !== 0) { return; }
+    var a = e.target.closest ? e.target.closest('a[href]') : null;
+    if (!a || a.target === '_blank' || /^#|^javascript:/.test(a.getAttribute('href'))) { return; }
+    if (!confirm(T('You have unsaved changes. Leave this page without saving?'))) { e.preventDefault(); e.stopPropagation(); } else { dirty = false; }
+  }, true);
+
+  // ---- Watch later without reloading the page ----
+  document.addEventListener('submit', function (e) {
+    var f = e.target;
+    if (!f.action || !/\/contract\/\d+\/watch(\?|$)/.test(f.action)) { return; }
+    e.preventDefault();
+    fetch(f.action, { method: 'POST', body: new FormData(f), credentials: 'same-origin', headers: { 'X-Requested-With': 'fetch' } })
+      .then(function (r) { if (!r.ok) { throw new Error('http'); } return r.json(); })
+      .then(function (d) {
+        var t = f.querySelector('.wl-text');
+        if (t) { t.textContent = T(d.watched ? 'Remove from watch later' : 'Watch later'); }
+        bblToast(T(d.watched ? 'Added to Watch later' : 'Removed from Watch later'));
+        if (!d.watched && location.pathname === '/watchlater') { var card = f.closest('.listing'); if (card) { card.remove(); } }
+      })
+      .catch(function () { f.submit(); });
+  });
+
+  // ---- live regions: [data-live="key"] blocks are refreshed in the background (comments, status, files, images ...) ----
+  var busy = false;
+  function userBusy(el) {
+    var a = document.activeElement;
+    return !!(a && el.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName));
+  }
+  function refresh() {
+    if (busy || !$('[data-live]')) { return Promise.resolve(); }
+    busy = true;
+    return fetch(location.href, { credentials: 'same-origin', cache: 'no-store', headers: { 'X-Live': '1' } })
+      .then(function (r) { if (!r.ok || /\/(login|register)(\?|$)/.test(r.url)) { throw new Error('skip'); } return r.text(); })
+      .then(function (html) {
+        var doc = new DOMParser().parseFromString(html, 'text/html'), fresh = {};
+        $$('[data-live]', doc).forEach(function (x) { fresh[x.getAttribute('data-live')] = x; });
+        $$('[data-live]').forEach(function (cur) {
+          var nw = fresh[cur.getAttribute('data-live')];
+          if (!nw || userBusy(cur)) { return; }
+          if (cur.innerHTML !== nw.innerHTML) { cur.innerHTML = nw.innerHTML; }
+          if (cur.className !== nw.className) { cur.className = nw.className; }
+        });
+      })
+      .catch(function () {})
+      .then(function () { busy = false; });
+  }
+  window.bblRefresh = refresh;
+  if ($('[data-live]')) {
+    // only the bell on the page: slow; a contract / offer page with a conversation: every 5 s
+    var fast = $$('[data-live]').some(function (x) { return x.getAttribute('data-live') !== 'bell'; });
+    setInterval(function () { if (!document.hidden) { refresh(); } }, fast ? 5000 : 30000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) { refresh(); } });
+  }
+
+  // ---- files and images are uploaded in the background and appear in the lists at once ----
+  document.addEventListener('change', function (e) {
+    var inp = e.target, f = inp.form;
+    if (!f || !f.hasAttribute || !f.hasAttribute('data-ajax') || inp.type !== 'file' || !inp.files.length) { return; }
+    fetch(f.action, { method: 'POST', body: new FormData(f), credentials: 'same-origin', headers: { 'X-Requested-With': 'fetch' } })
+      .then(function (r) { if (!r.ok) { throw new Error('http'); } return r.json(); })
+      .then(function (d) {
+        inp.value = '';
+        if (d.ok) { bblToast(T('Uploaded.')); refresh(); } else { bblToast(d.error || T('Upload failed.')); }
+      })
+      .catch(function () { inp.value = ''; bblToast(T('Upload failed.')); });
+  });
 })();

@@ -22,7 +22,7 @@ $form = [
     'category_id' => (int)($c['category_id'] ?? 0),
     'location' => $c['location'] ?? '',
     'description' => $c['description'] ?? '',
-    'allow_extra_todos' => (int)($c['allow_extra_todos'] ?? 0),
+    'allow_extra_todos' => 1, // every offerer may add steps (counteroffer), so the author has no switch for it
     'prepay_required' => (int)($c['prepay_required'] ?? 0),
     'deadline' => $c['deadline'] ?? '',
     'publish' => ($c['status'] ?? 'draft') === 'published' ? 1 : 0,
@@ -38,7 +38,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $form['category_id'] = (int)($_POST['category_id'] ?? 0);
     $form['location'] = trim((string)($_POST['location'] ?? ''));
     $form['description'] = trim((string)($_POST['description'] ?? ''));
-    $form['allow_extra_todos'] = empty($_POST['allow_extra_todos']) ? 0 : 1;
     $form['prepay_required'] = empty($_POST['prepay_required']) ? 0 : 1;
     $form['deadline'] = trim((string)($_POST['deadline'] ?? ''));
     $form['publish'] = empty($_POST['publish']) ? 0 : 1;
@@ -52,6 +51,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     if ($form['category_id'] && !val('SELECT id FROM categories WHERE id = ?', [$form['category_id']])) {
         $form['category_id'] = 0;
+    }
+    if (!$form['category_id'] && categories()) {
+        $errors[] = 'Choose a category of the contract.';
     }
     if ($form['deadline'] !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $form['deadline'])) {
         $errors[] = 'Till date is invalid.';
@@ -169,8 +171,8 @@ render($id ? 'Edit contract' : 'New contract', function () use ($id, $c, $form, 
     <div class="row between">
       <span class="muted"><?= $c ? h(status_label($c['status'])[0]) : 'Status: new' ?></span>
       <label class="inline-label">Category
-        <select name="category_id">
-          <option value="0">Select</option>
+        <select name="category_id" required>
+          <option value="">Select</option>
           <?php foreach (categories() as $cat): ?><option value="<?= (int)$cat['id'] ?>" <?= $form['category_id'] === (int)$cat['id'] ? 'selected' : '' ?>><?= h($cat['name']) ?></option><?php endforeach; ?>
         </select>
       </label>
@@ -181,19 +183,18 @@ render($id ? 'Edit contract' : 'New contract', function () use ($id, $c, $form, 
 
     <div class="row between"><h3>Contract</h3>
       <label class="inline-label">Currency <select name="currency" id="currency-select"><?php foreach (CURRENCIES as $code => $cur): ?><option value="<?= $code ?>" data-code="<?= $code ?>" <?= $form['currency'] === $code ? 'selected' : '' ?>><?= h($cur[1]) ?></option><?php endforeach; ?></select></label>
-      <label class="check"><input type="checkbox" name="allow_extra_todos" value="1" <?= $form['allow_extra_todos'] ? 'checked' : '' ?>> Make Me Offer</label>
     </div>
     <?php if ($hasOffers): ?><p class="muted small">Offers already exist, so the steps can no longer be changed.</p><?php endif; ?>
     <div id="todos">
       <?php foreach ($todos as $i => $t): ?>
         <div class="todo-edit card">
           <input type="hidden" name="todos[<?= $i ?>][id]" value="<?= (int)$t['id'] ?>">
-          <label class="tiny">To Do Name <input name="todos[<?= $i ?>][name]" value="<?= h($t['name']) ?>" maxlength="190" <?= $hasOffers ? 'readonly' : '' ?>></label>
+          <label class="tiny">To Do Name <input name="todos[<?= $i ?>][name]" value="<?= h($t['name']) ?>" maxlength="190" <?= $hasOffers ? 'readonly' : '' ?> <?= $i === 0 ? 'required' : '' ?>></label>
           <label class="tiny">Description <textarea name="todos[<?= $i ?>][description]" rows="2" <?= $hasOffers ? 'readonly' : '' ?>><?= h($t['description']) ?></textarea></label>
           <div class="row gap">
-            <label class="tiny">Price <input class="t-price" name="todos[<?= $i ?>][price]" value="<?= h($t['price'] === '' ? '' : (string)(float)$t['price']) ?>" inputmode="decimal" <?= $hasOffers ? 'readonly' : '' ?>></label>
+            <label class="tiny">Price <input class="t-price" name="todos[<?= $i ?>][price]" value="<?= h($t['price'] === '' ? '' : (string)(float)$t['price']) ?>" inputmode="decimal" <?= $hasOffers ? 'readonly' : '' ?> <?= $i === 0 ? 'required' : '' ?>></label>
             <label class="tiny">Days <input class="t-days" name="todos[<?= $i ?>][days]" type="number" min="0" value="<?= (int)$t['days'] ?>" <?= $hasOffers ? 'readonly' : '' ?>></label>
-            <?php if (!$hasOffers): ?><button type="button" class="linkbtn red remove-todo">Remove</button><?php endif; ?>
+            <?php if (!$hasOffers && $i > 0): ?><button type="button" class="linkbtn red remove-todo">Remove</button><?php elseif (!$hasOffers): ?><span class="tiny muted">The first To Do is required</span><?php endif; ?>
           </div>
         </div>
       <?php endforeach; ?>
@@ -203,6 +204,7 @@ render($id ? 'Edit contract' : 'New contract', function () use ($id, $c, $form, 
 
   <div class="col">
     <hr>
+    <h3>Images</h3>
     <label class="btn small file-btn">Upload Image <input type="file" name="images[]" accept="image/*" multiple hidden></label>
     <span class="muted small" id="img-count"></span>
     <div class="gallery">

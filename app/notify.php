@@ -47,6 +47,7 @@ const NOTIFY_PHRASES = [
     'resumed'            => ['en' => 'resumed the contract', 'ru' => 'возобновил(а) контракт'],
     'fired'              => ['en' => 'dismissed you from the contract', 'ru' => 'уволил(а) вас с контракта'],
     'prepaid'            => ['en' => 'marked the prepayment as paid', 'ru' => 'отметил(а) предоплату как оплаченную'],
+    'log_shared'         => ['en' => 'sent you the work log of the contract', 'ru' => 'отправил(а) вам журнал работы по контракту'],
     'upload'             => ['en' => 'uploaded a file to the contract', 'ru' => 'загрузил(а) файл в контракт'],
     'invoice_paid'       => ['en' => 'sent a payment, please confirm it', 'ru' => 'отправил(а) оплату, подтвердите её'],
     'invoice_confirmed'  => ['en' => 'confirmed your payment', 'ru' => 'подтвердил(а) вашу оплату'],

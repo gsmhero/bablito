@@ -15,7 +15,7 @@ function listing_card(array $c, ?int $watchUserId = null): void
   </a>
   <div class="listing-body">
     <div class="row between">
-      <h3><a href="/contract/<?= (int)$c['id'] ?>"><?= h($c['title']) ?></a></h3>
+      <h3><a class="card-link" href="/contract/<?= (int)$c['id'] ?>"><?= h($c['title']) ?></a></h3>
       <span class="small muted"><?= h(fdate($c['created_at'])) ?></span>
     </div>
     <div class="row between">
@@ -35,7 +35,7 @@ function listing_card(array $c, ?int $watchUserId = null): void
       <span><?= (int)$c['views'] ?> views</span>
       <span class="listing-meta">
         <?php if ($watchUserId): ?>
-          <form method="post" action="/contract/<?= (int)$c['id'] ?>/watch" class="inline"><?= csrf_field() ?><button class="linkbtn green watch" type="submit"><?= clock_icon() ?> <?= $watched ? 'Remove from watch later' : 'Watch later' ?></button></form>
+          <form method="post" action="/contract/<?= (int)$c['id'] ?>/watch" class="inline"><?= csrf_field() ?><button class="linkbtn green watch" type="submit"><?= clock_icon() ?> <span class="wl-text"><?= $watched ? 'Remove from watch later' : 'Watch later' ?></span></button></form>
         <?php endif; ?>
         <span>·</span> <span>Contract ID: <?= str_pad((string)$c['id'], 3, '0', STR_PAD_LEFT) ?></span>
       </span>

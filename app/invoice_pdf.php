@@ -296,7 +296,7 @@ function invoice_summary(array $inv, string $lang): array
     $reason = $inv['todo_name'] !== null ? (string)$inv['todo_name'] : ($ru ? 'Весь контракт' : 'Whole contract');
     $vatLabel = $tax['no_vat'] ? ($ru ? 'НДС' : 'VAT') : ($ru ? 'НДС ' : 'VAT ') . rtrim(rtrim(number_format((float)$tax['rate'], 2, '.', ''), '0'), '.') . '%' . ($tax['included'] ? ($ru ? ' (в цене)' : ' (included)') : '');
     return [
-        'number' => ['№', '#' . $inv['id']],
+        'number' => ['№', invoice_number($inv)],
         'date' => [$ru ? 'Дата' : 'Date', fdate($inv['created_at'])],
         'reason' => [$ru ? 'Основание (задача)' : 'Reason (task)', $reason],
         'contract' => [$ru ? 'Контракт' : 'Contract', (string)$inv['contract_title']],
@@ -436,7 +436,7 @@ function mail_invoice_copy(int $invoiceId): void
             'settings_label' => $ru ? 'Настройки профиля' : 'Profile settings',
             'settings_url' => $site . '/profile', 'site_url' => $site,
         ]);
-        $file = 'invoice-' . $inv['id'] . '.pdf';
+        $file = 'invoice-' . preg_replace('/[^A-Za-z0-9._-]+/', '_', invoice_number($inv)) . '.pdf';
         queue_mail((string)$payer['email'], 'bablito: ' . $subject, $text, $html, [['name' => $file, 'type' => 'application/pdf', 'data' => invoice_pdf($inv, $lang)]]);
     } catch (Throwable $e) {
         error_log('invoice mail failed: ' . $e);

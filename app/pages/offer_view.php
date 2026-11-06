@@ -82,6 +82,7 @@ render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $com
   </div>
   <div class="col">
     <hr>
+    <h3>Images</h3>
     <div class="gallery">
       <?php if (!array_filter($files, fn($f) => $f['kind'] === 'image') && category_picture($c) !== ''): ?><figure class="cat-fig"><?= category_picture($c) ?></figure><?php endif; ?>
       <?php foreach ($files as $f): if ($f['kind'] !== 'image') { continue; } ?><figure><img src="/uploads/<?= h($f['stored_name']) ?>" alt=""></figure><?php endforeach; ?>
@@ -166,7 +167,7 @@ render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $com
 
 <div class="wrap" id="comments">
   <h3>Comments</h3>
-  <?php render_comments($comments, (int)$c['user_id'], true); ?>
+  <div data-live="comments"><?php render_comments($comments, (int)$c['user_id'], true); ?></div>
   <form method="post" action="/offer/<?= (int)$offer['id'] ?>/comment" class="comment-form" enctype="multipart/form-data">
     <?= csrf_field() ?>
     <input name="body" maxlength="4000" placeholder="Write a comment">

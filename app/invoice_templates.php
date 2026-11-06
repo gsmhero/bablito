@@ -271,11 +271,11 @@ function invoice_field_value(string $tok, array $inv, array $user): ?array
             'u:name' => display_name($user),
             'u:email' => (string)($user['contact_email'] ?: $user['email']),
             'u:phone' => (string)$user['contact_phone'],
-            's:number' => '#' . $inv['id'],
+            's:number' => invoice_number($inv),
             's:date' => fdate($inv['created_at']),
             's:contract' => (string)$inv['contract_title'],
             's:todo_name' => (string)($inv['todo_name'] ?? 'Whole contract'),
-            's:todo_no' => $inv['todo_name'] !== null ? (string)((int)$inv['todo_pos'] + 1) : '-',
+            's:todo_no' => $inv['todo_name'] !== null ? (string)((int)$inv['todo_pos'] + 1) : '', // a whole-contract invoice has no step: the line is hidden
             's:price' => tax_money((float)tax_for_invoice($inv)['total'], $inv['currency']),
             's:net' => tax_money((float)tax_for_invoice($inv)['net'], $inv['currency']),
             's:vat' => tax_for_invoice($inv)['no_vat'] ? '' : tax_money((float)tax_for_invoice($inv)['vat'], $inv['currency']),

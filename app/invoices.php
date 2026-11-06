@@ -29,8 +29,16 @@ function create_invoice(array $contract, ?array $todo, float $amount): int
     q('INSERT INTO invoices (contract_id, todo_id, payer_id, payee_id, amount, currency, status) VALUES (?,?,?,?,?,?,?)',
         [$contract['id'], $todo['id'] ?? null, $contract['user_id'], $contract['contractor_id'], $amount, cur_code($contract), 'waiting']);
     $id = (int)db()->lastInsertId();
+    q('UPDATE invoices SET number = ? WHERE id = ?', ['BABL-' . $id, $id]);
     mail_invoice_copy($id);
     return $id;
+}
+
+/** Number shown on the invoice: BABL-<id> unless the contractor changed it. */
+function invoice_number(array $inv): string
+{
+    $n = trim((string)($inv['number'] ?? ''));
+    return $n !== '' ? $n : 'BABL-' . (int)$inv['id'];
 }
 
 function has_unpaid_invoice(int $contractId): bool
@@ -83,7 +91,7 @@ function payment_dialog_html(array $inv, string $domId, bool $open, string $back
     </div>
     <h2>Payment</h2>
     <table class="pay-table">
-      <tr><td>Invoice</td><td>#<?= (int)$inv['id'] ?></td></tr>
+      <tr><td>Invoice</td><td><?= h(invoice_number($inv)) ?></td></tr>
       <tr><td>Contract</td><td><?= h($inv['contract_title']) ?></td></tr>
       <?php if (!empty($inv['todo_name'])): ?><tr><td>Step</td><td><?= h($inv['todo_name']) ?></td></tr><?php endif; ?>
       <?php if ($byPhone): ?>

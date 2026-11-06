@@ -71,6 +71,11 @@ function csrf_check(): void
     }
 }
 
+function is_live_request(): bool
+{
+    return ($_SERVER['HTTP_X_LIVE'] ?? '') === '1';
+}
+
 function flash(?string $msg = null, string $type = 'ok'): ?array
 {
     if ($msg !== null) {
@@ -78,7 +83,9 @@ function flash(?string $msg = null, string $type = 'ok'): ?array
         return null;
     }
     $f = $_SESSION['flash'] ?? null;
-    unset($_SESSION['flash']);
+    if (!is_live_request()) { // the background refresh (assets/app.js) must not use up the message of the next page
+        unset($_SESSION['flash']);
+    }
     return $f;
 }
 
@@ -398,7 +405,7 @@ function render(string $title, callable $body, array $opts = []): void
       <?php else: ?>
         <span class="small"><a href="/login">Login</a> | <a href="/register">Register</a></span>
       <?php endif; ?>
-      <?php if ($u): ?><a href="/notifications" class="icon-btn bell" title="Notifications" aria-label="Notifications"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><?php if ($unread > 0): ?><span class="bell-n"><?= $unread > 99 ? '99+' : $unread ?></span><?php endif; ?></a><?php endif; ?>
+      <?php if ($u): ?><a href="/notifications" class="icon-btn bell" data-live="bell" title="Notifications" aria-label="Notifications"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><?php if ($unread > 0): ?><span class="bell-n"><?= $unread > 99 ? '99+' : $unread ?></span><?php endif; ?></a><?php endif; ?>
       <a href="/watchlater" class="icon-btn" title="Watch later" aria-label="Watch later">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
       </a>

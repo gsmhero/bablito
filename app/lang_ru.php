@@ -136,6 +136,10 @@ $exact = [
     'Payment received. You can close this window and return to the application.' => 'Платёж получен. Закройте это окно и вернитесь в приложение.',
     'The payment was not completed. You can close this window and try again in the application.' => 'Платёж не завершён. Закройте это окно и попробуйте снова в приложении.',
     'YooKassa has not confirmed the payment yet.' => 'ЮKassa ещё не подтвердила платёж.',
+    'Send to the client\'s e-mail' => 'Отправить на почту клиенту', 'Send to my e-mail' => 'Отправить на мою почту', 'Images' => 'Изображения',
+    'Choose a category of the contract.' => 'Выберите категорию контракта.', 'The first To Do is required' => 'Первое задание обязательно',
+    'Invoice number' => 'Номер счёта', 'Save number' => 'Сохранить номер', 'Invoice number saved.' => 'Номер счёта сохранён.',
+    'The invoice number must be 1 to 40 characters.' => 'Номер счёта должен содержать от 1 до 40 символов.', 'This invoice number is already used.' => 'Такой номер счёта уже используется.',
     'Proceed' => 'Продолжить', 'Cancel' => 'Отмена', 'Invoice' => 'Счёт', 'Payment card illustration' => 'Иллюстрация платёжной карты',
     'Confirm payment' => 'Подтвердить оплату', 'Contract ID' => 'ID контракта',
 
@@ -297,11 +301,18 @@ $patterns = [
 // strings used by the browser scripts (window.I18N)
 $js = [
     'Remove' => 'Удалить',
+    'The log was sent to the client.' => 'Журнал отправлен клиенту.', 'The log was sent to your e-mail.' => 'Журнал отправлен на вашу почту.',
+    'Your account has no e-mail address.' => 'В вашем аккаунте нет адреса почты.', 'The client has no e-mail address.' => 'У клиента нет адреса почты.',
+    'Nothing logged yet.' => 'В журнале пока ничего нет.', 'Please wait a few seconds before sending again.' => 'Подождите несколько секунд перед повторной отправкой.',
     'Not saved yet. Press Save Contract to upload.' => 'Ещё не сохранено. Нажмите «Сохранить контракт», чтобы загрузить.',
     'Will be sent with your comment.' => 'Будет отправлено вместе с комментарием.',
     'Started' => 'Запущен', 'Stopped' => 'Остановлен',
     'Fields of the "' => 'Используются поля разделов «', '" sections of the User Profile Editor are used:' => '» из редактора профиля:',
     'Close' => 'Закрыть', 'Previous' => 'Назад', 'Next' => 'Вперёд',
+    'Watch later' => 'Смотреть позже', 'Remove from watch later' => 'Убрать из «Смотреть позже»',
+    'Added to Watch later' => 'Контракт добавлен в «Смотреть позже»', 'Removed from Watch later' => 'Контракт убран из «Смотреть позже»',
+    'Uploaded.' => 'Загружено.', 'Upload failed.' => 'Не удалось загрузить.',
+    'You have unsaved changes. Leave this page without saving?' => 'Есть несохранённые изменения. Покинуть страницу без сохранения?',
 ];
 
 return ['exact' => $exact, 'patterns' => $patterns, 'js' => $js];

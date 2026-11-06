@@ -40,7 +40,7 @@ if ($tpl) {
 
 $sum = invoice_summary($inv, user_lang($u));
 
-render('Invoice #' . $inv['id'], function () use ($inv, $tpl, $from, $to, $fromType, $toType, $block, $sum, $detailsHtml) { ?>
+render('Invoice ' . invoice_number($inv), function () use ($inv, $tpl, $from, $to, $fromType, $toType, $block, $sum, $detailsHtml) { ?>
 <div class="wrap">
   <div class="invoice-doc">
     <div class="inv-sum">
@@ -72,6 +72,12 @@ render('Invoice #' . $inv['id'], function () use ($inv, $tpl, $from, $to, $fromT
       </div>
     <?php endif; ?>
   </div>
+  <?php if ((int)$inv['payee_id'] === (int)user()['id'] && $inv['status'] !== 'paid'): ?>
+  <form method="post" action="/invoice/<?= (int)$inv['id'] ?>/number" class="inv-number-form"><?= csrf_field() ?>
+    <label class="small">Invoice number <input name="number" value="<?= h(invoice_number($inv)) ?>" maxlength="40" required></label>
+    <button class="btn small" type="submit">Save number</button>
+  </form>
+  <?php endif; ?>
   <p class="right"><a class="btn" href="/invoice/<?= (int)$inv['id'] ?>.pdf">Download PDF</a> <button class="btn" type="button" onclick="window.print()">Print</button></p>
 </div>
 <?php }, ['back' => '/invoices']);

@@ -27,7 +27,9 @@ $total = array_sum(array_map(fn($r) => (int)$r['secs'], $log));
 $rate = hour_rate($c);
 $sym = cur_symbol($c);
 
-$body = function () use ($c, $log, $total, $rate, $sym) { ?>
+$isCtr = (int)($c['contractor_id'] ?? 0) === (int)$u['id'];
+$canShare = is_participant($c);
+$body = function () use ($c, $log, $total, $rate, $sym, $isCtr, $canShare) { ?>
 <div class="timelog">
   <h2>Stopwatch log</h2>
   <div class="muted small"><?= h($c['title']) ?></div>
@@ -47,6 +49,12 @@ $body = function () use ($c, $log, $total, $rate, $sym) { ?>
       <?php endforeach; ?>
       <tr><td></td><td class="right"><b>Total</b></td><td><b><?= h(hms($total)) ?></b></td><td class="right"><b><?= $rate === null ? '-' : h($sym . ' ' . money2($total / 3600 * $rate)) ?></b></td></tr>
     </table>
+    <?php if ($canShare): ?>
+    <div class="row gap log-share">
+      <?php if ($isCtr): ?><form method="post" action="/contract/<?= (int)$c['id'] ?>/log-mail" class="inline"><?= csrf_field() ?><input type="hidden" name="to" value="client"><button class="btn small" type="submit">Send to the client's e-mail</button></form><?php endif; ?>
+      <form method="post" action="/contract/<?= (int)$c['id'] ?>/log-mail" class="inline"><?= csrf_field() ?><input type="hidden" name="to" value="me"><button class="btn small" type="submit">Send to my e-mail</button></form>
+    </div>
+    <?php endif; ?>
   <?php endif; ?>
 </div>
 <?php };

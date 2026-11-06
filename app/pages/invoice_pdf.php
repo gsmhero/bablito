@@ -14,7 +14,7 @@ while (ob_get_level() > 0) {
     ob_end_clean();
 }
 header('Content-Type: application/pdf');
-header('Content-Disposition: attachment; filename="invoice-' . (int)$inv['id'] . '.pdf"');
+header('Content-Disposition: attachment; filename="invoice-' . preg_replace('/[^A-Za-z0-9._-]+/', '_', invoice_number($inv)) . '.pdf"');
 header('Content-Length: ' . strlen($pdf));
 echo $pdf;
 exit;

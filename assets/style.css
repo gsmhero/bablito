@@ -92,7 +92,7 @@ label.small,label.tiny{margin:8px 0}
 .progress{height:10px;background:#ccc;border-radius:5px;overflow:hidden;margin:12px 0 4px}.progress span{display:block;height:100%;background:#0a9be8}
 .note-box{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fff;font-size:.9rem;min-height:2em}
 .stopwatch{font-family:"Fira Sans Extra Condensed",sans-serif;font-size:1.7rem;font-weight:500;color:var(--blue);border:1px solid #bbb;border-radius:10px;padding:0 12px}.stopwatch.late{color:var(--red)}
-.todo-work.is-accepted h4,.todo-work.is-accepted .mid{color:#999}
+.todo-work.is-accepted h4,.todo-work.is-accepted .mid,.todo-work .is-accepted h4,.todo-work .is-accepted .mid{color:#999}
 .todo-work .tiny{margin-top:6px}
 .comment-box{border:1px solid var(--line);border-radius:8px;padding:8px;background:#fff}
 .bubble{border-radius:8px;padding:6px 10px;margin:6px 0;font-size:.9rem;max-width:88%;overflow-wrap:anywhere}
@@ -356,3 +356,16 @@ details.pe-section[open]>summary{border-bottom:1px solid #eee;margin-bottom:10px
 .embed .foot{padding-top:10px}.embed .foot .copy{display:none}
 /* VK / OK on a computer: the frame is narrow, so everything (fonts and objects) is scaled down and gets room at the sides */
 @media (min-width:760px){.embed{zoom:.82}.embed .wrap{padding-left:48px;padding-right:48px}}
+
+/* whole listing card is a link: the title link is stretched over the card, other links stay clickable above it */
+.listing{position:relative;cursor:pointer}.listing .card-link::after{content:"";position:absolute;inset:0;z-index:1}
+.listing a:not(.card-link),.listing button,.listing form{position:relative;z-index:2}
+/* work page: "Mark as Done" row under price and deadline */
+.done-row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:12px 0 6px;padding:12px 16px;background:#f3f8f3;border:1px solid #dcebdc;border-radius:10px}
+.done-title{font-size:1.15rem;font-weight:600;color:var(--ink)}
+.done-boxes{display:flex;gap:26px;flex-wrap:wrap}
+.done-row .check{font-size:1.15rem}.done-row input[type=checkbox]{width:24px;height:24px}
+.log-share{margin:14px 0}
+.inv-number-form{display:flex;align-items:flex-end;gap:10px;margin:14px 0;flex-wrap:wrap}.inv-number-form label{margin:0}
+/* toast (live updates, watch later) */
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 18px;border-radius:22px;font-size:.95rem;z-index:2000;box-shadow:0 6px 24px rgba(0,0,0,.3);opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center}.toast.on{opacity:1}

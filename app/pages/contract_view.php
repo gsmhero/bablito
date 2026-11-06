@@ -94,7 +94,8 @@ render($c['title'], function () use ($c, $author, $todos, $files, $tot, $offers,
 
   <div class="col">
     <hr>
-    <div class="gallery">
+    <h3>Images</h3>
+    <div class="gallery" data-live="images">
       <?php if (!array_filter($files, fn($f) => $f['kind'] === 'image') && category_picture($c) !== ''): ?><figure class="cat-fig"><?= category_picture($c) ?></figure><?php endif; ?>
       <?php foreach ($files as $f): if ($f['kind'] !== 'image') { continue; } ?><figure><a href="/uploads/<?= h($f['stored_name']) ?>" target="_blank"><img src="/uploads/<?= h($f['stored_name']) ?>" alt=""></a></figure><?php endforeach; ?>
     </div>
@@ -126,6 +127,7 @@ render($c['title'], function () use ($c, $author, $todos, $files, $tot, $offers,
       <p><a href="/login">Log in</a> to make an offer.</p>
     <?php endif; ?>
 
+    <div data-live="offers">
     <?php if ($isOwner && $offers): ?>
       <h3>Offers (<?= count($offers) ?>)</h3>
       <table class="offers">
@@ -139,9 +141,11 @@ render($c['title'], function () use ($c, $author, $todos, $files, $tot, $offers,
         <?php endforeach; ?>
       </table>
     <?php endif; ?>
+    </div>
 
     <?php if ($u && $c['status'] === 'published' && !$isOwner): ?>
-      <form method="post" action="/contract/<?= (int)$c['id'] ?>/watch" class="right"><?= csrf_field() ?><button class="linkbtn watch" type="submit"><?= clock_icon() ?> Watch later</button></form>
+      <?php $wl = (bool)val('SELECT 1 FROM watch_later WHERE user_id = ? AND contract_id = ?', [$u['id'], $c['id']]); ?>
+      <form method="post" action="/contract/<?= (int)$c['id'] ?>/watch" class="right"><?= csrf_field() ?><button class="linkbtn watch" type="submit"><?= clock_icon() ?> <span class="wl-text"><?= $wl ? 'Remove from watch later' : 'Watch later' ?></span></button></form>
     <?php endif; ?>
 
     <?php if ($c['status'] === 'published' && $u): ?>
@@ -150,12 +154,12 @@ render($c['title'], function () use ($c, $author, $todos, $files, $tot, $offers,
       <p class="tiny muted">Private: only the author and the other participant can read this conversation.</p>
       <?php if ($authorSide): ?>
         <?php if (!$threads): ?><p class="muted small">No one has written to you yet.</p><?php endif; ?>
-        <div class="thread-tabs">
+        <div class="thread-tabs" data-live="threads">
           <?php foreach ($threads as $th): ?><a class="<?= (int)$th['uid'] === $threadId ? 'on' : '' ?>" href="?thread=<?= (int)$th['uid'] ?>#comments"><?= h($th['uname']) ?> (<?= (int)$th['n'] ?>)</a><?php endforeach; ?>
         </div>
       <?php endif; ?>
       <?php if (!$authorSide || $threadId): ?>
-        <?php render_comments($comments, (int)$c['user_id'], true); ?>
+        <div data-live="comments"><?php render_comments($comments, (int)$c['user_id'], true); ?></div>
         <form method="post" action="/contract/<?= (int)$c['id'] ?>/comment" class="comment-form" enctype="multipart/form-data">
           <?= csrf_field() ?>
           <?php if ($authorSide): ?><input type="hidden" name="thread" value="<?= $threadId ?>"><?php endif; ?>

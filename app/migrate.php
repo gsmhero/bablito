@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const SCHEMA_VERSION = 26;
+const SCHEMA_VERSION = 27;
 const ADMIN_EMAIL = 'admin@bablito.ru';
 
 function migrate_if_needed(): void
@@ -268,6 +268,16 @@ function migrate_if_needed(): void
                 if (!column_exists($pdo, 'users', $col)) {
                     $pdo->exec("ALTER TABLE users ADD COLUMN $col VARCHAR(24) NULL, ADD UNIQUE KEY uq_users_$col ($col)");
                 }
+            }
+        }
+        if ($cur < 27) {
+            // invoice number (default BABL-<id>, editable) and the per-offer step order / "unnecessary" marks
+            if (!column_exists($pdo, 'invoices', 'number')) {
+                $pdo->exec('ALTER TABLE invoices ADD COLUMN number VARCHAR(40) NULL, ADD UNIQUE KEY uq_invoices_number (number)');
+            }
+            $pdo->exec("UPDATE invoices SET number = CONCAT('BABL-', id) WHERE number IS NULL");
+            if (!column_exists($pdo, 'offer_todos', 'position')) {
+                $pdo->exec('ALTER TABLE offer_todos ADD COLUMN position INT NULL, ADD COLUMN excluded TINYINT(1) NOT NULL DEFAULT 0');
             }
         }
         $pdo->exec('REPLACE INTO schema_meta (id, version) VALUES (1, ' . SCHEMA_VERSION . ')');

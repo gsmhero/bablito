@@ -49,7 +49,7 @@ render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $
     <?php if ($isOwner && in_array($c['status'], ['fulfilled', 'terminated'], true)): ?>
       <form method="post" action="/contract/<?= (int)$c['id'] ?>/repeat" class="repeat-form" onsubmit="return confirm('Create a new draft from this contract? Comments and the contractor\x27s files are not copied.')"><?= csrf_field() ?><button class="btn green" type="submit">Repeat Contract</button></form>
     <?php endif; ?>
-    <div class="pills">
+    <div class="pills" data-live="pills">
     <span class="pill <?= h($overdue ? 'red' : $cls) ?>"><?= h($overdue ? 'Overdue' : $lbl) ?></span>
     <?php if ($c['prepay_required']): ?><span class="pill blue"><?= $c['prepaid_at'] ? 'Prepayd' : 'Prepayment pending' ?></span><?php endif; ?>
     </div>
@@ -67,14 +67,17 @@ render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $
     <?php foreach ($todos as $t):
         $done = (bool)$t['done_at'];
         $acc = (bool)$t['accepted_at']; ?>
-      <div class="card todo-work <?= $acc ? 'is-accepted' : '' ?>" id="todo-<?= (int)$t['id'] ?>">
+      <div class="card todo-work" id="todo-<?= (int)$t['id'] ?>">
+        <div data-live="todo-<?= (int)$t['id'] ?>" class="<?= $acc ? 'is-accepted' : '' ?>">
         <h4><?= h($t['name']) ?></h4>
         <p class="small"><?= nl2br(h($t['description'])) ?></p>
         <div class="row between">
           <div><div class="tiny">Price</div><div class="mid <?= $acc ? 'grey' : 'blue' ?>"><?= h(cur_symbol($c)) ?>&nbsp;<?= money($t['agreed_price']) ?></div></div>
           <div><div class="tiny">Deadline</div><div class="mid <?= (!$acc && $t['deadline'] < date('Y-m-d')) ? 'red' : 'blue' ?>"><?= h(fdate($t['deadline'])) ?></div></div>
-          <div>
-            <div class="tiny">Mark as Done</div>
+        </div>
+        <div class="done-row">
+          <div class="done-title">Mark as Done</div>
+          <div class="done-boxes">
             <form method="post" action="/todo/<?= (int)$t['id'] ?>/done" class="inline"><?= csrf_field() ?>
               <label class="check"><input type="checkbox" <?= $done ? 'checked' : '' ?> <?= ($isContractor && $active && !$acc) ? 'onchange="this.form.submit()"' : 'disabled' ?>> Contractor Done</label>
             </form>
@@ -84,9 +87,10 @@ render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $
             </form>
           </div>
         </div>
+        </div>
         <div class="tiny muted">Comments</div>
         <div class="comment-box">
-          <?php render_comments($todoComments[(int)$t['id']] ?? [], (int)$c['user_id'], true); ?>
+          <div data-live="tc-<?= (int)$t['id'] ?>"><?php render_comments($todoComments[(int)$t['id']] ?? [], (int)$c['user_id'], true); ?></div>
           <form method="post" action="/todo/<?= (int)$t['id'] ?>/comment" class="comment-form" enctype="multipart/form-data"><?= csrf_field() ?>
             <input name="body" maxlength="4000" placeholder="Comment on this step">
             <?= attach_button() ?>
@@ -96,7 +100,7 @@ render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $
       </div>
     <?php endforeach; ?>
     <?php if ($isOwner && in_array($c['status'], ['active', 'paused'], true)): ?>
-      <div class="row between">
+      <div class="row between" data-live="actions">
         <form method="post" action="/contract/<?= (int)$c['id'] ?>/pause"><?= csrf_field() ?><button class="btn green" type="submit"><?= $c['status'] === 'paused' ? 'Resume Contract' : 'Pause Contract' ?></button></form>
         <form method="post" action="/contract/<?= (int)$c['id'] ?>/fire" onsubmit="return confirm('Dismiss the contractor and archive this contract?')"><?= csrf_field() ?><button class="btn <?= $overdue ? 'red' : 'red-outline' ?>" type="submit">Fire Contractor</button></form>
       </div>
@@ -115,23 +119,25 @@ render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $
       <a class="btn small" href="/contract/<?= (int)$c['id'] ?>/timelog" data-modal>Log</a>
     </div>
     <hr>
+    <h3>Images</h3>
     <?php if ($canUpload): ?>
       <div class="row gap">
-        <form method="post" action="/contract/<?= (int)$c['id'] ?>/upload" enctype="multipart/form-data" class="inline"><?= csrf_field() ?><input type="hidden" name="kind" value="image">
-          <label class="btn small file-btn">Upload Image <input type="file" name="upload" accept="image/*" hidden onchange="this.form.submit()"></label></form>
+        <form method="post" action="/contract/<?= (int)$c['id'] ?>/upload" enctype="multipart/form-data" class="inline" data-ajax="upload"><?= csrf_field() ?><input type="hidden" name="kind" value="image">
+          <label class="btn small file-btn">Upload Image <input type="file" name="upload" accept="image/*" hidden></label></form>
       </div>
     <?php endif; ?>
-    <div class="gallery">
+    <div class="gallery" data-live="images">
       <?php foreach ($files as $f): if ($f['kind'] !== 'image') { continue; } ?><figure class="<?= $f['by_contractor'] ? 'by-contractor' : '' ?>"><a href="/uploads/<?= h($f['stored_name']) ?>" target="_blank"><img src="/uploads/<?= h($f['stored_name']) ?>" alt=""></a></figure><?php endforeach; ?>
     </div>
     <hr>
     <h3>Files</h3>
     <?php if ($canUpload): ?>
-      <form method="post" action="/contract/<?= (int)$c['id'] ?>/upload" enctype="multipart/form-data" class="inline"><?= csrf_field() ?><input type="hidden" name="kind" value="file">
-        <label class="btn small file-btn">Upload File <input type="file" name="upload" hidden onchange="this.form.submit()"></label></form>
+      <form method="post" action="/contract/<?= (int)$c['id'] ?>/upload" enctype="multipart/form-data" class="inline" data-ajax="upload"><?= csrf_field() ?><input type="hidden" name="kind" value="file">
+        <label class="btn small file-btn">Upload File <input type="file" name="upload" hidden></label></form>
     <?php endif; ?>
-    <ul class="files"><?php foreach ($files as $f): if ($f['kind'] !== 'file') { continue; } ?><li class="<?= $f['by_contractor'] ? 'by-contractor' : '' ?>"><a href="/uploads/<?= h($f['stored_name']) ?>" download="<?= h($f['original_name']) ?>"><?= h($f['original_name']) ?></a></li><?php endforeach; ?></ul>
+    <ul class="files" data-live="files"><?php foreach ($files as $f): if ($f['kind'] !== 'file') { continue; } ?><li class="<?= $f['by_contractor'] ? 'by-contractor' : '' ?>"><a href="/uploads/<?= h($f['stored_name']) ?>" download="<?= h($f['original_name']) ?>"><?= h($f['original_name']) ?></a></li><?php endforeach; ?></ul>
     <hr>
+    <div data-live="sums">
     <div class="sums">
       <div><div class="lbl">Price</div><div class="big blue"><?= money($c['agreed_price']) ?></div><div class="cur"><?= h(cur_code($c)) ?></div></div>
       <div class="center"><div class="lbl">Time days</div><div class="big blue"><?= (int)$c['agreed_days'] ?></div></div>
@@ -139,6 +145,7 @@ render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $
     </div>
     <div class="progress"><span style="width:<?= $n ? round($accepted / $n * 100) : 0 ?>%"></span></div>
     <div class="row between blue small"><b><?= $accepted ?>/<?= $n ?></b><span><b><?= money($acceptedSum) ?></b> <?= h(cur_code($c)) ?> accepted</span></div>
+    </div>
     <?php if ($offer && $offer['notes']): ?><div class="small"><b>Notes</b><div class="note-box"><?= nl2br(h($offer['notes'])) ?></div></div><?php endif; ?>
 
     <?php if ($c['prepay_required']): ?>
@@ -156,7 +163,7 @@ render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $
 
     <div id="comments">
       <h3>Comments</h3>
-      <?php render_comments($comments, (int)$c['user_id'], true); ?>
+      <div data-live="comments"><?php render_comments($comments, (int)$c['user_id'], true); ?></div>
       <?php if ($isOwner || $isContractor): ?>
       <form method="post" action="/contract/<?= (int)$c['id'] ?>/comment" class="comment-form" enctype="multipart/form-data"><?= csrf_field() ?>
         <input name="body" maxlength="4000" placeholder="Write a comment">

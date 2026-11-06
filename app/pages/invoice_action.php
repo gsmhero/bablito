@@ -21,6 +21,23 @@ if ($args[1] === 'pay') {
     redirect($back);
 }
 
+if ($args[1] === 'number') {
+    // the contractor (issuer of the invoice) may replace the default BABL-<id> with their own number until it is paid
+    if ((int)$inv['payee_id'] !== (int)$u['id'] || $inv['status'] === 'paid') {
+        forbidden();
+    }
+    $num = trim((string)($_POST['number'] ?? ''));
+    if ($num === '' || mb_strlen($num) > 40 || preg_match('/[\x00-\x1F<>"\']/', $num)) {
+        flash('The invoice number must be 1 to 40 characters.', 'err');
+    } elseif (val('SELECT id FROM invoices WHERE number = ? AND id <> ?', [$num, $inv['id']])) {
+        flash('This invoice number is already used.', 'err');
+    } else {
+        q('UPDATE invoices SET number = ? WHERE id = ?', [$num, $inv['id']]);
+        flash('Invoice number saved.');
+    }
+    redirect('/invoice/' . (int)$inv['id']);
+}
+
 if ($args[1] === 'confirm') {
     if ((int)$inv['payee_id'] !== (int)$u['id'] || $inv['status'] !== 'pending') {
         forbidden();

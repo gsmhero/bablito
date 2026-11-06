@@ -21,6 +21,11 @@ switch ($action) {
         } else {
             q('INSERT INTO watch_later (user_id, contract_id) VALUES (?, ?)', [$u['id'], $id]);
         }
+        if (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'fetch') {
+            header('Content-Type: application/json');
+            echo json_encode(['watched' => (bool)val('SELECT 1 FROM watch_later WHERE user_id = ? AND contract_id = ?', [$u['id'], $id])]);
+            exit;
+        }
         $ref = (string)($_SERVER['HTTP_REFERER'] ?? '');
         redirect(safe_local_path($ref !== '' ? (string)parse_url($ref, PHP_URL_PATH) : $back));
 
@@ -78,11 +83,22 @@ switch ($action) {
         }
         $kind = ($_POST['kind'] ?? '') === 'image' ? 'image' : 'file';
         $res = store_upload($_FILES['upload'] ?? ['error' => UPLOAD_ERR_NO_FILE], $kind);
+        $viaFetch = ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'fetch'; // uploaded in the background by assets/app.js
         if (is_string($res)) {
+            if ($viaFetch) {
+                header('Content-Type: application/json');
+                echo json_encode(['ok' => false, 'error' => $res]);
+                exit;
+            }
             flash($res, 'err');
         } else {
             q('INSERT INTO files (contract_id, user_id, kind, stored_name, original_name, by_contractor) VALUES (?,?,?,?,?,?)', [$id, $u['id'], $res[0], $res[1], $res[2], $isContractor ? 1 : 0]);
             notify('upload', $c, ['to' => [other_participant($c, (int)$u['id'])], 'extra' => ['en' => 'File: ' . $res[2], 'ru' => 'Файл: ' . $res[2]]]);
+            if ($viaFetch) {
+                header('Content-Type: application/json');
+                echo json_encode(['ok' => true]);
+                exit;
+            }
             flash('Uploaded.');
         }
         redirect($back);
