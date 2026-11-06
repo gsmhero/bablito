@@ -67,17 +67,19 @@ switch ($args[1]) {
         if (!$isOfferer || $offer['status'] !== 'pending' || $c['status'] !== 'published') {
             forbidden();
         }
-        $todos = rows('SELECT id FROM todos WHERE contract_id = ?', [$c['id']]);
-        $o = parse_offer_input($todos, (bool)$c['allow_extra_todos']);
+        $todos = rows('SELECT id, price, days FROM todos WHERE contract_id = ?', [$c['id']]);
+        $o = parse_offer_items($todos);
         if (is_string($o)) {
+            $_SESSION['offer_draft']['o' . $offer['id']] = ['items' => $_POST['items'] ?? [], 'notes' => (string)($_POST['notes'] ?? ''), 'payment_type' => (string)($_POST['payment_type'] ?? ''), 'offerer_type' => (string)($_POST['offerer_type'] ?? '')];
             flash($o, 'err');
-            redirect($back);
+            redirect($back . '?edit=1');
         }
         $pdo = db();
         $pdo->beginTransaction();
         q('UPDATE offers SET seen_at = NULL WHERE id = ?', [$offer['id']]);
         q('UPDATE offers SET price = ?, days = ?, notes = ?, payment_type = ?, offerer_type = ? WHERE id = ?', [$o['price'], $o['days'], $o['notes'], $o['payment_type'], $o['offerer_type'], $offer['id']]);
-        save_offer_steps((int)$offer['id'], $o['steps'], $o['extras']);
+        save_offer_items((int)$offer['id'], $o['items']);
+        unset($_SESSION['offer_draft']['o' . $offer['id']]);
         $pdo->commit();
         notify('offer_edit', $c, ['to' => [(int)$c['user_id']], 'url' => $back]);
         flash('Offer updated.');

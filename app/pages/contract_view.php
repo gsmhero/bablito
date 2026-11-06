@@ -34,6 +34,16 @@ $offers = $authorSide ? rows('SELECT o.*, COALESCE(NULLIF(u.name,\'\'), CONCAT(\
 $myOffer = ($u && !$isOwner) ? row('SELECT id FROM offers WHERE contract_id = ? AND user_id = ?', [$id, $u['id']]) : null;
 $canOffer = $u && !$isOwner && !$myOffer && $c['status'] === 'published';
 
+// A counteroffer that did not pass validation comes back with everything the person typed (the live refresh only looks).
+$draft = null;
+if ($canOffer && isset($_SESSION['offer_draft'][$id])) {
+    $draft = $_SESSION['offer_draft'][$id];
+    if (!is_live_request()) {
+        unset($_SESSION['offer_draft'][$id]);
+    }
+}
+$items = offer_items($todos, [], $draft);
+
 // Discussion is private: the author sees one thread per user, everyone else only their own thread.
 $threads = [];
 $threadId = 0;
@@ -49,8 +59,8 @@ if ($authorSide) {
     $comments = comments_for("cm.contract_id = ? AND cm.scope = 'public' AND cm.thread_user_id = ?", [$id, $u['id']]);
 }
 
-render($c['title'], function () use ($c, $author, $todos, $files, $tot, $offers, $myOffer, $comments, $threads, $threadId, $canOffer, $isOwner, $authorSide, $u) { ?>
-<div class="wrap two-col">
+render($c['title'], function () use ($c, $author, $todos, $files, $tot, $offers, $myOffer, $comments, $threads, $threadId, $canOffer, $isOwner, $authorSide, $u, $items, $draft) { ?>
+<div class="wrap two-col<?= $draft ? ' counter-mode' : '' ?>" id="contract-cols">
   <div class="col">
     <?php if ($authorSide): ?><div class="right"><a class="btn small" href="/contract/<?= (int)$c['id'] ?>/edit">Edit Contract</a></div><?php endif; ?>
     <h1><?= h($c['title']) ?></h1>
@@ -69,26 +79,12 @@ render($c['title'], function () use ($c, $author, $todos, $files, $tot, $offers,
     <?= embed_share_html($c, $author, $todos, $files, $tot) ?>
     <hr>
     <h3>Contract</h3>
-    <?php if ($canOffer): ?><form method="post" action="/contract/<?= (int)$c['id'] ?>/offer" id="offer-form"><?= csrf_field() ?></form><?php endif; ?>
-    <?php foreach ($todos as $t): ?>
-      <div class="card todo-view">
-        <h4><?= h($t['name']) ?></h4>
-        <p class="small"><?= nl2br(h($t['description'])) ?></p>
-        <div class="todo-fields">
-          <div><div class="tiny">Price</div><div class="mid green"><?= h(cur_symbol($c)) ?>&nbsp;<?= money($t['price']) ?></div></div>
-          <div><div class="tiny">Days</div><div class="mid grey"><?= (int)$t['days'] ?></div></div>
-          <?php if ($canOffer): ?>
-            <label class="tiny">Offer price <input form="offer-form" name="otodo[<?= (int)$t['id'] ?>][price]" class="num o-price" inputmode="decimal"></label>
-            <label class="tiny">Offer Days <input form="offer-form" name="otodo[<?= (int)$t['id'] ?>][days]" class="num o-days" type="number" min="0"></label>
-          <?php endif; ?>
-        </div>
-      </div>
-    <?php endforeach; ?>
-    <?php if ($canOffer && $c['allow_extra_todos']): ?>
-      <div id="extra-todos"></div>
-      <div class="right"><button type="button" class="btn small blue-outline" id="add-extra">+ Add To Do</button></div>
-      <p class="tiny muted">The author allows you to add your own To Dos to the contract.</p>
-      <template id="extra-tpl"><?= extra_todo_row(0) ?></template>
+    <?php if ($canOffer): ?><form method="post" action="/contract/<?= (int)$c['id'] ?>/offer" id="offer-form"><?= csrf_field() ?></form>
+      <form method="post" action="/contract/<?= (int)$c['id'] ?>/offer" id="accept-asis"><?= csrf_field() ?><input type="hidden" name="mode" value="accept"></form><?php endif; ?>
+    <?= offer_task_list($c, $items, $canOffer ? 'edit' : 'view') ?>
+    <?php if ($canOffer): ?>
+      <div class="right view-only"><button type="button" class="btn blue-outline" id="start-counter">Make counteroffer</button></div>
+      <p class="tiny muted edit-only">Change the price and days of the To Dos, mark the ones you do not need as Unnecessary, move the To Dos up and down, or add your own.</p>
     <?php endif; ?>
   </div>
 
@@ -109,18 +105,26 @@ render($c['title'], function () use ($c, $author, $todos, $files, $tot, $offers,
     </div>
     <hr>
     <?php if ($canOffer): ?>
-      <div class="offer-row">
-        <label class="tiny">Price <input form="offer-form" name="price" id="offer-price" class="num" inputmode="decimal"></label>
-        <label class="tiny">Time days <input form="offer-form" name="days" id="offer-days" class="num" type="number" min="0"></label>
-        <button form="offer-form" class="btn green-outline" type="submit">Make Offer</button>
+      <div class="view-only">
+        <button class="btn green" type="button" data-open="accept-asis-dialog">Accept Contract</button>
+        <p class="tiny muted">Accept the contract as the author wrote it, or make a counteroffer.</p>
       </div>
-      <div class="small"><b>Offer as</b> <?= as_select('offerer_type', user_types($u), null, 'offer-form') ?></div>
-      <div class="small pay-type"><b>Payment for the contract</b>
-        <label class="check"><input type="radio" form="offer-form" name="payment_type" value="finish" checked> When Contract Finished</label>
-        <label class="check"><input type="radio" form="offer-form" name="payment_type" value="step"> Step by Step</label>
+      <div class="edit-only">
+        <div class="sums two">
+          <div><div class="lbl">Offer Price</div><div class="big blue" id="ot-price"><?= money($tot['price']) ?></div><div class="cur"><?= h(cur_code($c)) ?></div></div>
+          <div class="center"><div class="lbl">Offer days</div><div class="big blue" id="ot-days"><?= (int)$tot['days'] ?></div></div>
+        </div>
+        <div class="small"><b>Offer as</b> <?= as_select('offerer_type', user_types($u), $draft['offerer_type'] ?? null, 'offer-form') ?></div>
+        <div class="small pay-type"><b>Payment for the contract</b>
+          <label class="check"><input type="radio" form="offer-form" name="payment_type" value="finish" <?= ($draft['payment_type'] ?? 'finish') !== 'step' ? 'checked' : '' ?>> When Contract Finished</label>
+          <label class="check"><input type="radio" form="offer-form" name="payment_type" value="step" <?= ($draft['payment_type'] ?? '') === 'step' ? 'checked' : '' ?>> Step by Step</label>
+        </div>
+        <label class="small">Notes <textarea form="offer-form" name="notes" rows="4"><?= h($draft['notes'] ?? '') ?></textarea></label>
+        <div class="row gap offer-actions">
+          <button form="offer-form" class="btn green" type="submit">Send Counteroffer</button>
+          <button class="btn" type="button" id="cancel-counter">Cancel</button>
+        </div>
       </div>
-      <label class="small">Notes <textarea form="offer-form" name="notes" rows="4"></textarea></label>
-      <p class="tiny muted">Either fill an offer price and days for every To Do, or enter one total price and days. 0 days means the same day.</p>
     <?php elseif ($myOffer): ?>
       <p><a class="btn" href="/offer/<?= (int)$myOffer['id'] ?>">View my offer</a></p>
     <?php elseif (!$u && $c['status'] === 'published'): ?>
@@ -174,4 +178,22 @@ render($c['title'], function () use ($c, $author, $todos, $files, $tot, $offers,
     <?php endif; ?>
   </div>
 </div>
+<?php if ($canOffer): ?>
+<div class="modal" id="accept-asis-dialog" hidden>
+  <div class="modal-card pay-card" role="dialog" aria-modal="true">
+    <h2>Accept Contract</h2>
+    <p class="small">You accept the contract as it is: every To Do with the author's price and days (<b><?= h(cur_symbol($c)) ?>&nbsp;<?= money($tot['price']) ?></b>, <?= (int)$tot['days'] ?> days). The author confirms the offer after that.</p>
+    <div class="small"><b>Offer as</b> <?= as_select('offerer_type', user_types($u), null, 'accept-asis') ?></div>
+    <div class="small pay-type"><b>Payment for the contract</b>
+      <label class="check"><input type="radio" form="accept-asis" name="payment_type" value="finish" checked> When Contract Finished</label>
+      <label class="check"><input type="radio" form="accept-asis" name="payment_type" value="step"> Step by Step</label>
+    </div>
+    <label class="small">Notes <textarea form="accept-asis" name="notes" rows="3"></textarea></label>
+    <div class="row between pay-actions">
+      <button type="submit" form="accept-asis" class="btn green">Accept Contract</button>
+      <button type="button" class="btn" data-close="accept-asis-dialog">Cancel</button>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
 <?php });

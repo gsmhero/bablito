@@ -38,9 +38,14 @@ switch ($action) {
             flash('You have already made an offer.', 'err');
             redirect($back);
         }
-        $todos = rows('SELECT id FROM todos WHERE contract_id = ?', [$id]);
-        $o = parse_offer_input($todos, (bool)$c['allow_extra_todos']);
+        $todos = rows('SELECT id, price, days FROM todos WHERE contract_id = ?', [$id]);
+        $asIs = ($_POST['mode'] ?? '') === 'accept'; // "Accept Contract": the author's own prices and days
+        $o = parse_offer_items($todos, $asIs);
         if (is_string($o)) {
+            if (!$asIs) {
+                // keep what the person typed: the page opens the counteroffer form again with these values
+                $_SESSION['offer_draft'][$id] = ['items' => $_POST['items'] ?? [], 'notes' => (string)($_POST['notes'] ?? ''), 'payment_type' => (string)($_POST['payment_type'] ?? ''), 'offerer_type' => (string)($_POST['offerer_type'] ?? '')];
+            }
             flash($o, 'err');
             redirect($back);
         }
@@ -48,10 +53,11 @@ switch ($action) {
         $pdo->beginTransaction();
         q('INSERT INTO offers (contract_id, user_id, price, days, notes, payment_type, offerer_type) VALUES (?,?,?,?,?,?,?)', [$id, $u['id'], $o['price'], $o['days'], $o['notes'], $o['payment_type'], $o['offerer_type']]);
         $oid = (int)$pdo->lastInsertId();
-        save_offer_steps($oid, $o['steps'], $o['extras']);
+        save_offer_items($oid, $o['items']);
         $pdo->commit();
         notify('offer_new', $c, ['to' => [(int)$c['user_id']], 'url' => '/offer/' . $oid, 'extra' => ['en' => 'Offer: ' . money($o['price']) . ' ' . cur_code($c) . ', ' . (int)$o['days'] . ' days', 'ru' => 'Предложение: ' . money($o['price']) . ' ' . cur_code($c) . ', дней: ' . (int)$o['days']]]);
-        flash('Offer sent.');
+        unset($_SESSION['offer_draft'][$id]);
+        flash($asIs ? 'You accepted the contract. The author has to confirm it.' : 'Counteroffer sent.');
         redirect('/offer/' . $oid);
 
     case 'comment':

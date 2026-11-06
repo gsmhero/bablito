@@ -39,19 +39,6 @@ window.T = function (s) { return (window.I18N && window.I18N[s]) || s; };
     if (imgs) { imgs.addEventListener('change', function () { $('#img-count').textContent = imgs.files.length + ' selected'; }); }
   }
 
-  // offer form: per-step offers drive the totals
-  var op = $('#offer-price'), od = $('#offer-days');
-  if (op && od) {
-    var sync = function () {
-      var P = $$('.o-price'), D = $$('.o-days'), anyP = false, anyD = false, sp = 0, sd = 0;
-      P.forEach(function (el, i) { if (el.value.trim() !== '' || D[i].value.trim() !== '') { anyP = true; } if (D[i].value.trim() !== '') { anyD = true; } sp += num(el.value); sd += parseInt(D[i].value, 10) || 0; });
-      op.readOnly = anyP; od.readOnly = anyD;
-      if (anyP) { op.value = sp || ''; }
-      if (anyD) { od.value = sd; }
-    };
-    $$('.o-price, .o-days').forEach(function (el) { el.addEventListener('input', sync); });
-  }
-
   // profile: add custom field
   var addField = $('#add-field');
   if (addField) {
@@ -95,31 +82,6 @@ window.T = function (s) { return (window.I18N && window.I18N[s]) || s; };
       };
       setInterval(poll, 8000);
     }
-  }
-})();
-
-(function () {
-  'use strict';
-  // offerer's own extra To Dos (contract + offer pages)
-  var box = document.getElementById('extra-todos'), addBtn = document.getElementById('add-extra'), tpl = document.getElementById('extra-tpl');
-  if (box && addBtn && tpl) {
-    var n = box.querySelectorAll('.extra-todo').length + 100;
-    addBtn.addEventListener('click', function () {
-      box.insertAdjacentHTML('beforeend', tpl.innerHTML.replace(/extra\[0\]/g, 'extra[' + (n++) + ']'));
-      var last = box.lastElementChild; if (last) { var i = last.querySelector('input'); if (i) { i.focus(); } }
-    });
-    box.addEventListener('click', function (e) {
-      if (e.target.classList.contains('remove-extra')) { e.target.closest('.extra-todo').remove(); box.dispatchEvent(new Event('input', { bubbles: true })); }
-    });
-    box.addEventListener('input', function () {
-      var op = document.getElementById('offer-price'), od = document.getElementById('offer-days');
-      if (!op || !od) { return; }
-      var P = document.querySelectorAll('.o-price'), D = document.querySelectorAll('.o-days'), anyP = false, anyD = false, sp = 0, sd = 0;
-      P.forEach(function (el, i) { if (el.value.trim() !== '' || D[i].value.trim() !== '') { anyP = true; } if (D[i].value.trim() !== '') { anyD = true; } sp += parseFloat(String(el.value).replace(/\s/g, '').replace(',', '.')) || 0; sd += parseInt(D[i].value, 10) || 0; });
-      op.readOnly = anyP; od.readOnly = anyD;
-      if (anyP) { op.value = sp || ''; }
-      if (anyD) { od.value = sd; }
-    });
   }
 })();
 
@@ -465,11 +427,10 @@ window.T = function (s) { return (window.I18N && window.I18N[s]) || s; };
 
   // ---- unsaved changes: warn before leaving the contract editor / counteroffer form ----
   var dirty = false;
-  $$('#contract-form, #offer-form, form[data-warn]').forEach(function (f) {
-    f.addEventListener('input', function () { dirty = true; });
-    f.addEventListener('change', function () { dirty = true; });
-    f.addEventListener('submit', function () { dirty = false; });
-  });
+  var warnForm = function (f) { return !!f && (f.id === 'contract-form' || f.id === 'offer-form' || f.hasAttribute('data-warn')); };
+  document.addEventListener('input', function (e) { if (warnForm(e.target.form)) { dirty = true; } });
+  document.addEventListener('change', function (e) { if (warnForm(e.target.form)) { dirty = true; } });
+  document.addEventListener('submit', function (e) { if (warnForm(e.target)) { dirty = false; } });
   window.bblSetDirty = function (v) { dirty = v; };
   window.addEventListener('beforeunload', function (e) { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
   document.addEventListener('click', function (e) {
@@ -539,4 +500,54 @@ window.T = function (s) { return (window.I18N && window.I18N[s]) || s; };
       })
       .catch(function () { inp.value = ''; bblToast(T('Upload failed.')); });
   });
+})();
+
+
+(function () {
+  'use strict';
+  // ---- counteroffer editor (contract page and offer page): offer price / days, "Unnecessary", order, own steps ----
+  var list = document.getElementById('otasks');
+  if (!list) { return; }
+  var host = list.closest('.two-col'), tpl = document.getElementById('otask-tpl'), next = 1000;
+  var num = function (v) { return parseFloat(String(v).replace(/[\s ]/g, '').replace(',', '.')) || 0; };
+  var fmt = function (n) { return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' '); };
+  var dirtyMark = function () { if (window.bblSetDirty) { window.bblSetDirty(true); } };
+
+  function sum() {
+    var P = document.getElementById('ot-price'), D = document.getElementById('ot-days');
+    if (!P || !D || !list.querySelector('.o-price')) { return; }
+    var p = 0, d = 0;
+    Array.prototype.forEach.call(list.querySelectorAll('.otask'), function (c) {
+      if (c.classList.contains('unneeded')) { return; }
+      var pi = c.querySelector('.o-price'), di = c.querySelector('.o-days');
+      if (pi) { p += num(pi.value); }
+      if (di) { d += parseInt(di.value, 10) || 0; }
+    });
+    P.textContent = fmt(p); D.textContent = d;
+  }
+
+  var start = document.getElementById('start-counter'), cancel = document.getElementById('cancel-counter');
+  if (start && host) { start.addEventListener('click', function () { host.classList.add('counter-mode'); sum(); }); }
+  if (cancel) { cancel.addEventListener('click', function () { if (window.bblSetDirty) { window.bblSetDirty(false); } location.reload(); }); }
+
+  list.addEventListener('input', function () { sum(); });
+  list.addEventListener('change', function (e) {
+    if (e.target.matches && e.target.matches('.unneeded-chk input')) { e.target.closest('.otask').classList.toggle('unneeded', e.target.checked); sum(); }
+  });
+  list.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('button') : null, card = b ? b.closest('.otask') : null;
+    if (!b || !card) { return; }
+    if (b.classList.contains('otask-up')) { var p = card.previousElementSibling; if (p) { list.insertBefore(card, p); dirtyMark(); } }
+    else if (b.classList.contains('otask-down')) { var n = card.nextElementSibling; if (n) { list.insertBefore(n, card); dirtyMark(); } }
+    else if (b.classList.contains('remove-otask')) { card.remove(); sum(); dirtyMark(); }
+  });
+  var add = document.getElementById('add-otask');
+  if (add && tpl) {
+    add.addEventListener('click', function () {
+      list.insertAdjacentHTML('beforeend', tpl.innerHTML.replace(/__k__/g, String(next++)));
+      var i = list.lastElementChild.querySelector('input:not([type=hidden])'); if (i) { i.focus(); }
+      sum(); dirtyMark();
+    });
+  }
+  sum();
 })();

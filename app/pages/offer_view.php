@@ -14,7 +14,7 @@ if (!$isOwner && !$isOfferer && !is_admin()) {
     forbidden();
 }
 $author = row('SELECT * FROM users WHERE id = ?', [$c['user_id']]);
-$todos = rows('SELECT t.*, ot.price AS o_price, ot.days AS o_days FROM todos t LEFT JOIN offer_todos ot ON ot.todo_id = t.id AND ot.offer_id = ? WHERE t.contract_id = ? ORDER BY t.position, t.id', [$offer['id'], $c['id']]);
+$todos = rows('SELECT t.*, ot.price AS o_price, ot.days AS o_days, ot.position AS o_pos, ot.excluded AS o_excl FROM todos t LEFT JOIN offer_todos ot ON ot.todo_id = t.id AND ot.offer_id = ? WHERE t.contract_id = ? ORDER BY t.position, t.id', [$offer['id'], $c['id']]);
 $files = rows('SELECT * FROM files WHERE contract_id = ? AND by_contractor = 0 ORDER BY id', [$c['id']]);
 $tot = contract_totals((int)$c['id']);
 $comments = comments_for("cm.scope = 'offer' AND cm.offer_id = ?", [$offer['id']]);
@@ -25,11 +25,17 @@ if ($isOwner && !$offer['seen_at']) {
 }
 $decidable = $isOwner && $offer['status'] === 'pending' && $c['status'] === 'published';
 $extras = rows('SELECT * FROM offer_extra_todos WHERE offer_id = ? ORDER BY position, id', [$offer['id']]);
-$hasSteps = $extras || (bool)array_filter($todos, fn($t) => $t['o_price'] !== null);
-$hasDays = (bool)array_filter($extras, fn($e) => (int)$e['days'] > 0) || (bool)array_filter($todos, fn($t) => (int)($t['o_days'] ?? 0) > 0);
-
-render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $comments, $editable, $editing, $decidable, $hasSteps, $hasDays, $isOwner, $extras) { ?>
-<form method="post" action="/offer/<?= (int)$offer['id'] ?>/edit" class="wrap two-col" id="offer-form">
+// A counteroffer edit that did not pass validation comes back with what the person typed (the live refresh only looks).
+$draft = null;
+if ($editing && isset($_SESSION['offer_draft']['o' . $offer['id']])) {
+    $draft = $_SESSION['offer_draft']['o' . $offer['id']];
+    if (!is_live_request()) {
+        unset($_SESSION['offer_draft']['o' . $offer['id']]);
+    }
+}
+$items = offer_items($todos, $extras, $draft);
+render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $comments, $editable, $editing, $decidable, $isOwner, $extras, $items, $draft) { ?>
+<form method="post" action="/offer/<?= (int)$offer['id'] ?>/edit" class="wrap two-col<?= $editing ? ' counter-mode' : '' ?>" id="offer-form">
   <?= csrf_field() ?>
   <div class="col">
     <h1><a href="/contract/<?= (int)$c['id'] ?>" class="plain"><?= h($c['title']) ?></a></h1>
@@ -44,35 +50,7 @@ render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $com
     <p><?= nl2br(h($c['description'])) ?></p>
     <hr>
     <h3>Contract</h3>
-    <?php foreach ($todos as $t): ?>
-      <div class="card todo-view">
-        <h4><?= h($t['name']) ?></h4>
-        <p class="small"><?= nl2br(h($t['description'])) ?></p>
-        <div class="todo-fields">
-          <div><div class="tiny">Price</div><div class="mid green"><?= h(cur_symbol($c)) ?>&nbsp;<?= money($t['price']) ?></div></div>
-          <div><div class="tiny">Days</div><div class="mid grey"><?= (int)$t['days'] ?></div></div>
-          <?php if ($editing): ?>
-            <label class="tiny">Offer price <input name="otodo[<?= (int)$t['id'] ?>][price]" value="<?= $t['o_price'] === null ? '' : h((string)(float)$t['o_price']) ?>" class="num o-price" inputmode="decimal"></label>
-            <label class="tiny">Offer days <input name="otodo[<?= (int)$t['id'] ?>][days]" value="<?= $t['o_days'] === null ? '' : (int)$t['o_days'] ?>" class="num o-days" type="number" min="0"></label>
-          <?php elseif ($t['o_price'] !== null): ?>
-            <div><div class="tiny">Offer price</div><div class="mid blue"><?= h(cur_symbol($c)) ?>&nbsp;<?= money($t['o_price']) ?></div></div>
-            <div><div class="tiny">Offer days</div><div class="mid blue"><?= (int)$t['o_days'] ?></div></div>
-          <?php endif; ?>
-        </div>
-      </div>
-    <?php endforeach; ?>
-    <?php if ($extras || ($editing && $c['allow_extra_todos'])): ?>
-      <h3>Added by the offerer</h3>
-      <div id="extra-todos">
-      <?php foreach ($extras as $i => $e): ?>
-        <?php if ($editing): echo extra_todo_row($i, $e); else: ?>
-        <div class="card todo-view"><h4><?= h($e['name']) ?></h4><p class="small"><?= nl2br(h($e['description'])) ?></p>
-          <div class="todo-fields"><div><div class="tiny">Offer price</div><div class="mid blue"><?= h(cur_symbol($c)) ?>&nbsp;<?= money($e['price']) ?></div></div><div><div class="tiny">Offer days</div><div class="mid blue"><?= (int)$e['days'] ?></div></div></div></div>
-        <?php endif; ?>
-      <?php endforeach; ?>
-      </div>
-      <?php if ($editing && $c['allow_extra_todos']): ?><div class="right"><button type="button" class="btn small blue-outline" id="add-extra">+ Add To Do</button></div><template id="extra-tpl"><?= extra_todo_row(0) ?></template><?php endif; ?>
-    <?php endif; ?>
+    <div id="offer-editor"><?= offer_task_list($c, $items, $editing ? 'edit' : 'view') ?></div>
     <?php if ($decidable): ?>
     <div class="row between">
       <button class="btn green" type="button" data-open="accept-dialog">Accept Offer</button>
@@ -96,24 +74,22 @@ render('Offer', function () use ($offer, $c, $author, $todos, $files, $tot, $com
     </div>
     <hr>
     <div class="sums">
-      <div><div class="lbl">Offer Price</div>
-        <?php if ($editing): ?><input name="price" id="offer-price" value="<?= h((string)(float)$offer['price']) ?>" inputmode="decimal" <?= $hasSteps ? 'readonly' : '' ?>><?php else: ?><div class="big blue"><?= money($offer['price']) ?></div><?php endif; ?>
+      <div><div class="lbl">Offer Price</div><div class="big blue" id="ot-price"><?= money($offer['price']) ?></div>
         <div class="cur"><?= h(cur_code($c)) ?></div></div>
-      <div class="center"><div class="lbl">Offer days</div>
-        <?php if ($editing): ?><input name="days" id="offer-days" type="number" min="0" value="<?= (int)$offer['days'] ?>" <?= $hasDays ? 'readonly' : '' ?>><?php else: ?><div class="big blue"><?= (int)$offer['days'] ?></div><?php endif; ?></div>
+      <div class="center"><div class="lbl">Offer days</div><div class="big blue" id="ot-days"><?= (int)$offer['days'] ?></div></div>
       <div class="center"><div class="lbl">Offer From</div><a class="blue" href="/user/<?= (int)$offer['user_id'] ?>"><?= h($offer['oname']) ?></a><?= party_pill($offer['offerer_type'] ?? null) ?> <?= stars((float)$offer['rating_avg'], (int)$offer['rating_count']) ?></div>
     </div>
-    <?php if ($editing): ?><div class="small"><b>Offer as</b> <?= as_select('offerer_type', user_types(user()), $offer['offerer_type'] ?? null) ?></div><?php endif; ?>
+    <?php if ($editing): ?><div class="small"><b>Offer as</b> <?= as_select('offerer_type', user_types(user()), $draft['offerer_type'] ?? ($offer['offerer_type'] ?? null)) ?></div><?php endif; ?>
     <div class="small pay-type"><b>Payment for the contract</b>
       <?php if ($editing): ?>
-        <label class="check"><input type="radio" name="payment_type" value="finish" <?= ($offer['payment_type'] ?? 'finish') === 'finish' ? 'checked' : '' ?>> When Contract Finished</label>
-        <label class="check"><input type="radio" name="payment_type" value="step" <?= ($offer['payment_type'] ?? 'finish') === 'step' ? 'checked' : '' ?>> Step by Step</label>
+        <label class="check"><input type="radio" name="payment_type" value="finish" <?= ($draft['payment_type'] ?? ($offer['payment_type'] ?? 'finish')) !== 'step' ? 'checked' : '' ?>> When Contract Finished</label>
+        <label class="check"><input type="radio" name="payment_type" value="step" <?= ($draft['payment_type'] ?? ($offer['payment_type'] ?? 'finish')) === 'step' ? 'checked' : '' ?>> Step by Step</label>
       <?php else: ?>
         <div class="pay-type-val"><?= h(payment_type_label($offer['payment_type'] ?? null)) ?></div>
       <?php endif; ?>
     </div>
     <label class="small">Notes
-      <?php if ($editing): ?><textarea name="notes" rows="4"><?= h($offer['notes']) ?></textarea><?php else: ?><div class="note-box"><?= nl2br(h($offer['notes'])) ?></div><?php endif; ?>
+      <?php if ($editing): ?><textarea name="notes" rows="4"><?= h($draft['notes'] ?? $offer['notes']) ?></textarea><?php else: ?><div class="note-box"><?= nl2br(h($offer['notes'])) ?></div><?php endif; ?>
     </label>
     <?php if ($editing): ?>
     <div class="row right gap">
