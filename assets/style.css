@@ -377,3 +377,6 @@ details.pe-section[open]>summary{border-bottom:1px solid #eee;margin-bottom:10px
 .otask-tools .linkbtn{font-size:1.25rem;padding:0 6px;line-height:1}
 .otask.unneeded{opacity:.45;background:#f2f2f2}.otask.unneeded h4,.otask.unneeded .mid{color:#999}
 .offer-actions{margin-top:12px}
+
+.offer-list{margin:10px 0}.offer-item{padding:10px 6px;border-bottom:1px solid var(--line)}.offer-who{margin-bottom:6px}
+.offer-nums{display:grid;grid-template-columns:minmax(90px,1fr) minmax(70px,1fr) auto;align-items:center;gap:8px}.offer-nums .btn{justify-self:end}
