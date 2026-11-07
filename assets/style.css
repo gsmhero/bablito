@@ -380,3 +380,5 @@ details.pe-section[open]>summary{border-bottom:1px solid #eee;margin-bottom:10px
 
 .offer-list{margin:10px 0}.offer-item{padding:10px 6px;border-bottom:1px solid var(--line)}.offer-who{margin-bottom:6px}
 .offer-nums{display:grid;grid-template-columns:minmax(90px,1fr) minmax(70px,1fr) auto;align-items:center;gap:8px}.offer-nums .btn{justify-self:end}
+
+.notice-row{display:flex;align-items:stretch;gap:6px}.notice-row .notice-item{flex:1}.notice-row form{display:flex}.notice-x{background:none;border:0;font-size:1.4rem;color:#999;cursor:pointer;padding:0 10px}.notice-x:hover{color:#c00}

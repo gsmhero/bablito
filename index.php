@@ -19,6 +19,7 @@ $routes = [
     ['GET',  '#^/home$#',                         'home'],
     ['GET',  '#^/invoices$#',                     'invoices'],
     ['GET',  '#^/notifications$#',                'notifications'],
+    ['POST', '#^/notifications/clear$#',          'notifications_clear'],
     ['POST', '#^/invoice/(\d+)/(pay|confirm|number)$#', 'invoice_action'],
     ['GET',  '#^/invoice/(\d+)$#',               'invoice_view'],
     ['GET',  '#^/invoice/(\d+)\.pdf$#',        'invoice_pdf'],

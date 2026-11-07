@@ -148,6 +148,7 @@ $exact = [
     'The author confirms the offer after that.' => 'После этого автор подтверждает предложение.',
     'You accepted the contract. The author has to confirm it.' => 'Вы приняли контракт. Автор должен его подтвердить.', 'Counteroffer sent.' => 'Встречное предложение отправлено.',
     'Keep at least one To Do in the offer.' => 'Оставьте в предложении хотя бы одно задание.', 'Check the price and days of the To Dos.' => 'Проверьте цену и дни заданий.',
+    'Clear all' => 'Очистить все', 'Clear' => 'Удалить', 'Clear all notifications?' => 'Удалить все уведомления?',
     'Proceed' => 'Продолжить', 'Cancel' => 'Отмена', 'Invoice' => 'Счёт', 'Payment card illustration' => 'Иллюстрация платёжной карты',
     'Confirm payment' => 'Подтвердить оплату', 'Contract ID' => 'ID контракта',
 
@@ -319,7 +320,7 @@ $js = [
     'Close' => 'Закрыть', 'Previous' => 'Назад', 'Next' => 'Вперёд',
     'Watch later' => 'Смотреть позже', 'Remove from watch later' => 'Убрать из «Смотреть позже»',
     'Added to Watch later' => 'Контракт добавлен в «Смотреть позже»', 'Removed from Watch later' => 'Контракт убран из «Смотреть позже»',
-    'Uploaded.' => 'Загружено.', 'Upload failed.' => 'Не удалось загрузить.', 'Could not send the comment.' => 'Не удалось отправить комментарий.',
+    'Uploaded.' => 'Загружено.', 'Upload failed.' => 'Не удалось загрузить.', 'Clear all notifications?' => 'Удалить все уведомления?', 'Could not send the comment.' => 'Не удалось отправить комментарий.',
     'You have unsaved changes. Leave this page without saving?' => 'Есть несохранённые изменения. Покинуть страницу без сохранения?',
 ];
 
