@@ -457,7 +457,7 @@ function render(string $title, callable $body, array $opts = []): void
   </div>
 </footer>
 <script>window.LANG="<?= h(current_lang()) ?>";window.I18N=<?= i18n_js_json() ?>;</script>
-<script src="/assets/app.js"></script>
+<script src="/assets/app.js?v=<?= (int)@filemtime(ROOT . '/assets/app.js') ?>"></script>
 </body>
 </html>
 <?php
