@@ -180,12 +180,12 @@ render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $
     <div class="contract-invoices" data-live="invoices">
     <?php if ($cInvoices): ?>
       <h3>Invoices</h3>
-      <div class="table-wrap">
+      <div class="mini-inv">
       <table class="admin-table inv-table">
         <tr><th>Todo name</th><th>Date</th><th class="right">Price</th><th>Pay now</th><th>Status</th></tr>
         <?php foreach ($cInvoices as $i): ?>
           <tr>
-            <td><a href="/invoice/<?= (int)$i['id'] ?>"><?= h($i['todo_name'] ?? 'Whole contract') ?></a></td>
+            <td><a href="/invoice/<?= (int)$i['id'] ?>" title="<?= h($i['todo_name'] ?? 'Whole contract') ?>"><?= h($i['todo_name'] ?? 'Whole contract') ?></a></td>
             <td><?= h(fdate($i['created_at'])) ?></td>
             <td class="right"><b><?= h(tax_money((float)tax_for_invoice($i)['total'], $i['currency'])) ?></b></td>
             <td>
