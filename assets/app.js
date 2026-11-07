@@ -500,6 +500,21 @@ window.T = function (s) { return (window.I18N && window.I18N[s]) || s; };
       })
       .catch(function () { inp.value = ''; bblToast(T('Upload failed.')); });
   });
+
+  // ---- comments are posted in the background: the page (and an offer being edited) stays as it is ----
+  document.addEventListener('submit', function (e) {
+    var f = e.target;
+    if (!f.classList || !f.classList.contains('comment-form') || !window.fetch) { return; }
+    e.preventDefault();
+    var body = f.querySelector('input[name=body], textarea[name=body]');
+    var fi = f.querySelector('input[type=file]'); if (body && !body.value.trim() && !(fi && fi.files.length)) { return; }
+    var btn = f.querySelector('button[type=submit], button:not([type])');
+    if (btn) { btn.disabled = true; }
+    fetch(f.action, { method: 'POST', body: new FormData(f), credentials: 'same-origin' })
+      .then(function (r) { if (!r.ok) { throw new Error('http'); } f.reset(); refresh(); })
+      .catch(function () { bblToast(T('Could not send the comment.')); })
+      .then(function () { if (btn) { btn.disabled = false; } });
+  });
 })();
 
 

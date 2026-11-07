@@ -319,7 +319,7 @@ $js = [
     'Close' => 'Закрыть', 'Previous' => 'Назад', 'Next' => 'Вперёд',
     'Watch later' => 'Смотреть позже', 'Remove from watch later' => 'Убрать из «Смотреть позже»',
     'Added to Watch later' => 'Контракт добавлен в «Смотреть позже»', 'Removed from Watch later' => 'Контракт убран из «Смотреть позже»',
-    'Uploaded.' => 'Загружено.', 'Upload failed.' => 'Не удалось загрузить.',
+    'Uploaded.' => 'Загружено.', 'Upload failed.' => 'Не удалось загрузить.', 'Could not send the comment.' => 'Не удалось отправить комментарий.',
     'You have unsaved changes. Leave this page without saving?' => 'Есть несохранённые изменения. Покинуть страницу без сохранения?',
 ];
 
