@@ -39,9 +39,13 @@ $payInv = null;
 if ($u && $isOwner && isset($_GET['pay'])) {
     $payInv = row("SELECT i.*, c.title AS contract_title, t.name AS todo_name FROM invoices i JOIN contracts c ON c.id = i.contract_id LEFT JOIN todos t ON t.id = i.todo_id WHERE i.id = ? AND i.contract_id = ? AND i.payer_id = ? AND i.status = 'waiting'", [(int)$_GET['pay'], $id, $u['id']]);
 }
+$cInvoices = [];
+if ($u && ($isOwner || $isContractor)) {
+    $cInvoices = rows('SELECT i.*, t.name AS todo_name, t.position AS todo_pos FROM invoices i LEFT JOIN todos t ON t.id = i.todo_id WHERE i.contract_id = ? AND (i.payer_id = ? OR i.payee_id = ?) ORDER BY i.id DESC', [$id, $u['id'], $u['id']]);
+}
 $timer = row('SELECT timer_seconds + IF(timer_started_at IS NULL, 0, TIMESTAMPDIFF(SECOND, timer_started_at, NOW())) AS s, timer_started_at IS NOT NULL AS running FROM contracts WHERE id = ?', [$id]);
 
-render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $offer, $comments, $todoComments, $accepted, $acceptedSum, $n, $overdue, $tillDate, $active, $canUpload, $isOwner, $isContractor, $myReview, $other, $u, $timer, $isStep, $payInv) { ?>
+render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $offer, $comments, $todoComments, $accepted, $acceptedSum, $n, $overdue, $tillDate, $active, $canUpload, $isOwner, $isContractor, $myReview, $other, $u, $timer, $isStep, $payInv, $cInvoices) { ?>
 <div class="wrap two-col">
   <div class="col">
     <h1><?= h($c['title']) ?></h1>
@@ -171,6 +175,29 @@ render($c['title'], function () use ($c, $author, $contractor, $todos, $files, $
         <button class="btn small" type="submit">Post Comment</button>
       </form>
       <?php endif; ?>
+    </div>
+
+    <div class="contract-invoices" data-live="invoices">
+    <?php if ($cInvoices): ?>
+      <h3>Invoices</h3>
+      <div class="table-wrap">
+      <table class="admin-table inv-table">
+        <tr><th>Todo name</th><th>Date</th><th class="right">Price</th><th>Pay now</th><th>Status</th></tr>
+        <?php foreach ($cInvoices as $i): ?>
+          <tr>
+            <td><a href="/invoice/<?= (int)$i['id'] ?>"><?= h($i['todo_name'] ?? 'Whole contract') ?></a></td>
+            <td><?= h(fdate($i['created_at'])) ?></td>
+            <td class="right"><b><?= h(tax_money((float)tax_for_invoice($i)['total'], $i['currency'])) ?></b></td>
+            <td>
+              <?php if ((int)$i['payer_id'] === (int)$u['id'] && $i['status'] === 'waiting'): ?><a href="/contract/<?= (int)$c['id'] ?>?pay=<?= (int)$i['id'] ?>" class="pay-link">Pay now</a>
+              <?php else: ?>-<?php endif; ?>
+            </td>
+            <td><span class="pill inv-<?= h($i['status']) ?>"><?= h(INVOICE_STATUS[$i['status']] ?? $i['status']) ?></span></td>
+          </tr>
+        <?php endforeach; ?>
+      </table>
+      </div>
+    <?php endif; ?>
     </div>
   </div>
 </div>

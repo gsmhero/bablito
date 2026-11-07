@@ -384,3 +384,6 @@ details.pe-section[open]>summary{border-bottom:1px solid #eee;margin-bottom:10px
 .notice-row{display:flex;align-items:stretch;gap:6px}.notice-row .notice-item{flex:1}.notice-row form{display:flex}.notice-x{background:none;border:0;font-size:1.4rem;color:#999;cursor:pointer;padding:0 10px}.notice-x:hover{color:#c00}
 
 .two-col #comments{border-top:1px solid var(--line);margin-top:18px;padding-top:14px}
+
+.inv-search{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}.inv-search input[type=search]{flex:1;min-width:200px}.inv-table th a{color:inherit;text-decoration:none}.inv-table th a:hover{text-decoration:underline}
+.contract-invoices{border-top:1px solid var(--line);margin-top:18px;padding-top:14px}

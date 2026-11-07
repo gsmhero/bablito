@@ -149,6 +149,7 @@ $exact = [
     'You accepted the contract. The author has to confirm it.' => 'Вы приняли контракт. Автор должен его подтвердить.', 'Counteroffer sent.' => 'Встречное предложение отправлено.',
     'Keep at least one To Do in the offer.' => 'Оставьте в предложении хотя бы одно задание.', 'Check the price and days of the To Dos.' => 'Проверьте цену и дни заданий.',
     'Clear all' => 'Очистить все', 'Clear' => 'Удалить', 'Clear all notifications?' => 'Удалить все уведомления?',
+    'Search' => 'Поиск', 'Nothing found.' => 'Ничего не найдено.', 'Search by contract, todo or invoice number' => 'Поиск по контракту, заданию или номеру счёта',
     'Proceed' => 'Продолжить', 'Cancel' => 'Отмена', 'Invoice' => 'Счёт', 'Payment card illustration' => 'Иллюстрация платёжной карты',
     'Confirm payment' => 'Подтвердить оплату', 'Contract ID' => 'ID контракта',
 
